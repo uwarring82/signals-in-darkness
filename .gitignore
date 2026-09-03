@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 docs/_generated/
+# Fresh reproduction results and resume checkpoints. The published reference
+# archive lives in analysis/outputs/ and is never written by a run script.
+analysis/reproduction/
