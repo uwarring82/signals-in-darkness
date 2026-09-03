@@ -1,0 +1,117 @@
+# Claim ledger — one entry per reported claim. status ∈ {result, pilot, open, withdrawn}
+# Fields: id, statement, status, note, run, seed_ref, output, supersedes (optional), errata (optional)
+- id: C01
+  statement: Extremum-channel exact Bernoulli divergence and its small-s expansion; expansion within 6 % for s^2 C/(1-C^2) <= 0.06
+  status: result
+  note: notes/2026-09-02-note-01.md#1
+  run: analysis/runs/sid_core.py (section A)
+  seed_ref: none (analytic)
+  output: analysis/outputs/res1_core.json (A)
+- id: C02
+  statement: Exact mid-fringe lag correlation r_k = C^2 e^{-s^2} sinh(s^2 a_k); leading-order rate carries factor e^{-2 s^2}
+  status: result
+  note: notes/2026-09-02-note-01.md#2a
+  run: analysis/runs/sid_run2.py, sid_run3.py
+  seed_ref: none (analytic)
+  output: analysis/outputs/res2_partial.json
+- id: C03
+  statement: Mid-fringe leading-order expansion valid only when the spectral perturbation delta(0)=2 sum r_k << 1; v1.0 box C^4 s^4 sum a_k^2 << 1 withdrawn
+  status: result
+  note: notes/2026-09-02-note-01.md#2b
+  run: analysis/runs/sid_run2.py (B2), sid_run3.py
+  seed_ref: seeds.md#run2
+  output: analysis/outputs/res2_partial.json
+  supersedes: cards/v1.0-frozen.md (mid-fringe validity box)
+- id: C04
+  statement: Gaussian spectral comparator with exact r_k reproduces the grid-converged latent-AR(1) binary rate within Monte-Carlo error (SE ~7 % at 1e5 shots) in all tested cases
+  status: result
+  note: notes/2026-09-02-note-02.md (checks 2, 3a)
+  run: analysis/runs/sid_run3.py, sid_run4.py
+  seed_ref: seeds.md#run3, seeds.md#run4
+  output: analysis/outputs/res2_partial.json; figure figures/sid_midfringe_rate_check.png
+- id: C05
+  statement: Crossover in tau_c/c is amplitude-dependent beyond leading order (C=0.4: 4.65 at s->0, 5.46 at s=0.3, 7.24 at s=0.5); absent at C=0.99 for s>=0.5
+  status: result
+  note: notes/2026-09-02-note-01.md#3
+  run: analysis/runs/sid_run3.py
+  seed_ref: none (comparator); HMM check seeds.md#run2
+  output: printed table (to be stored as csv — [unreproduced-from-file])
+- id: C06
+  statement: Endpoint lemma — interior critical point is a minimum; reference-detector profiles consistent with flatness within ~5 % over theta in [60,90] deg near the crossover
+  status: result
+  note: notes/2026-09-02-note-01.md#4; note-02 check 3a
+  run: analysis/runs/sid_core.py (C), sid_run2.py (C2)
+  seed_ref: seeds.md#core, seeds.md#run2
+  output: analysis/outputs/res1_core.json (C); figure figures/sid_endpoint_check.png
+- id: C07
+  statement: Filtered-OU closed forms for s_tau^2 and a_k match numerical integration
+  status: result
+  note: notes/2026-09-02-note-01.md#5
+  run: analysis/runs/sid_core.py (D)
+  seed_ref: none
+  output: analysis/outputs/res1_core.json (D)
+- id: C08
+  statement: tau-optimised physical map (T2=10 t_dead, g sigma_x T2 = 0.5 rad): mid-fringe wins only for tau_c/t_dead >~ 210 (C0=0.4), 140 (0.5), 75 (0.7), 45 (0.9)
+  status: result
+  note: notes/2026-09-02-note-01.md#6
+  run: analysis/runs/sid_run3.py
+  seed_ref: none (deterministic)
+  output: figure figures/sid_regime_map_tau_optimised_exact.png (grid values not stored — [unreproduced-from-file])
+- id: C09
+  statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20, consistent with the comparator crossover 7.2; delay advantage compressed 1.5-3x relative to rate ratio
+  status: pilot
+  note: notes/2026-09-02-note-02.md (check 3b); note-03 §2
+  run: analysis/runs/sid_run5.py, sid_run6s.py
+  seed_ref: seeds.md#run5, seeds.md#run6
+  output: analysis/outputs/res6_policies.json
+- id: C10
+  statement: Martingale bound E0[T] >= e^h holds for the restarted-SPRT variant under the action-conditional null but is loose by 1e2-1e4; calibration is by simulation
+  status: result
+  note: notes/2026-09-02-note-02.md; cards/v1.1-frozen.md (false-alarm control)
+  run: analysis/runs/sid_run5.py
+  seed_ref: seeds.md#run5
+  output: printed table ([unreproduced-from-file])
+- id: C11
+  statement: At the pilot operating point (C=0.4, s=0.5, E0T~3e4, tau_c/c in {1,5,20}) no tested hedge shows a worst-case delay-ratio advantage over fixed-extremum operation (1.56 vs 1.64-1.67); ARL precision +-30 % does not order them
+  status: pilot
+  note: notes/2026-09-02-note-03.md#3; notes/2026-09-03-note-03a-errata.md E1-E3
+  run: analysis/runs/sid_run6s.py, sid_run8.py
+  seed_ref: seeds.md#run6, seeds.md#run8
+  output: analysis/outputs/res6_policies.json, res8_switch.json; figure figures/sid_policy_delays.png
+- id: C12
+  statement: Composite-model (bank) detection at mid-fringe shows no resolved penalty relative to the known-tau_c fixed endpoint (0.98x)
+  status: pilot
+  note: notes/2026-09-03-note-03a-errata.md E2
+  run: analysis/runs/sid_run6s.py
+  seed_ref: seeds.md#run6
+  output: analysis/outputs/res6_policies.json
+- id: C13
+  statement: tau-scan identifiability — pointwise band gives zero retained information at tau_c <~ T2/5; Markov-parametric class retains 2e-3 to 2e-2 there and 20-50 % (eta0=2 %) for tau_c >~ T2; general fast-noise criterion Delta Gamma_phi > 2 eta0 Gamma_hat
+  status: result
+  note: notes/2026-09-02-note-03.md#4; note-03a E4
+  run: analysis/runs/sid_run7.py (A)
+  seed_ref: none (deterministic)
+  output: analysis/outputs/res7A_identifiability.json
+- id: C14
+  statement: In the tested independent-phase, small-modulation servo model both channels reduce to the binary-link form with matching effective contrast within 2 %; C_eff>0.8 needs kappa >~ 5 at C1=C2=0.9
+  status: pilot
+  note: notes/2026-09-02-note-03.md#5; note-03a E5
+  run: analysis/runs/sid_run7.py (B)
+  seed_ref: none
+  output: analysis/outputs/res7B_servo.json; figure figures/sid_servo_effective_contrast.png
+- id: C15
+  statement: Extremum-stream correlation bonus at most 6 % across tested points; the earlier 10 % figure was Monte-Carlo noise
+  status: withdrawn
+  note: notes/2026-09-02-note-03.md#1; note-03a E6
+  run: analysis/runs/sid_run6s.py (section 1)
+  seed_ref: seeds.md#run6
+  output: printed ([unreproduced-from-file])
+  errata: notes/2026-09-03-note-03a-errata.md#E6
+- id: C16
+  statement: Learn-then-lock-in O(A^2) vs O(A^4) scaling argument (draft 03)
+  status: withdrawn
+  note: cards/history/scope-path.md
+  run: none
+  seed_ref: none
+  output: none
+  errata: cards/v1.0-frozen.md (adaptive policy section replaces it)

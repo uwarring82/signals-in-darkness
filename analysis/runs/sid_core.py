@@ -1,0 +1,276 @@
+import os
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'outputs')
+import os
+"""Signals in Darkness v1.0 -- core numerical execution.
+
+Sections
+  A  extremum channel: exact Bernoulli divergence vs leading order
+  B  mid-fringe channel: exact lag correlation, 1/2 sum r_k^2 vs exact HMM rate
+  C  endpoint lemma: exact information rate vs Ramsey phase theta
+  D  filtered-OU corollary: closed-form a_k vs numerical integration
+  E  regime map (C, tau_c/c): analytic crossover, validity overlays, tau-optimised map
+  F  oracle CUSUM delay vs log(gamma)/I at both operating points
+"""
+import numpy as np, math, json, time
+from scipy.integrate import dblquad
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+INK, SEA, SIG, STONE, PARCH = "#1a1a1a", "#2c5f7c", "#c0392b", "#6b6b6b", "#f5f0e8"
+plt.rcParams.update({"font.family": "serif", "axes.edgecolor": INK, "text.color": INK,
+                     "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+rng = np.random.default_rng(1)
+report = {}
+
+# ---------- helpers ----------
+def DB(p, q):
+    return p*np.log(p/q) + (1-p)*np.log((1-p)/(1-q))
+
+def I_ext_exact(C, s):
+    return DB((1-C*np.exp(-s*s/2))/2, (1-C)/2)
+
+def I_ext_lo(C, s):
+    return C**2*s**4/(8*(1-C**2))
+
+def rk_exact(C, s, a):
+    # theta = pi/2: P(Y=1|eps)=1/2(1 - C sin eps); Corr = C^2 E[sin sin]; Var=1/4
+    return 0.5*C**2*(np.exp(-s*s*(1-a)) - np.exp(-s*s*(1+a)))
+
+def S2_point(tc_over_c):
+    return 1.0/np.expm1(2.0/tc_over_c)
+
+def I_mid_lo(C, s, S2):
+    return 0.5*C**4*s**4*S2
+
+def I_lo_theta(C, s, S2, theta):
+    x = np.cos(theta)**2
+    A = C**2*s**4/8; B = 0.5*C**4*s**4*S2
+    return A*x/(1-C**2*x) + B*(1-x)**2/(1-C**2*x)**2
+
+# ---------- exact latent-AR(1) binary HMM ----------
+def make_hmm(C, s, theta, a, M=121, L=5.0):
+    g = np.linspace(-L*s, L*s, M)
+    sd = s*np.sqrt(1-a*a)
+    T = np.exp(-(g[None, :]-a*g[:, None])**2/(2*sd*sd)); T /= T.sum(1, keepdims=True)
+    e1 = 0.5*(1+C*np.cos(theta+g)); e0 = 1-e1
+    prior = np.exp(-g**2/(2*s*s)); prior /= prior.sum()
+    return g, T, e1, e0, prior
+
+def simulate(C, s, theta, a, N, rng):
+    sd = s*np.sqrt(1-a*a)
+    eta = rng.normal(0, 1, N); eps = np.empty(N); x = rng.normal(0, s)
+    for n in range(N):
+        x = a*x + sd*eta[n]; eps[n] = x
+    p = 0.5*(1+C*np.cos(theta+eps))
+    return (rng.random(N) < p).astype(np.int8)
+
+def hmm_rate(C, s, theta, a, N=100_000, seed=0, M=121):
+    """Exact (grid) KL rate E_1[log P1(y_n|past) - log P0(y_n)] for the latent AR(1) binary process."""
+    r = np.random.default_rng(seed)
+    g, T, e1, e0, prior = make_hmm(C, s, theta, a, M)
+    y = simulate(C, s, theta, a, N, r)
+    p0 = 0.5*(1+C*np.cos(theta))
+    alpha = prior.copy(); ll1 = 0.0
+    for n in range(N):
+        alpha = alpha @ T
+        alpha *= (e1 if y[n] else e0)
+        z = alpha.sum(); ll1 += math.log(z); alpha /= z
+    ll0 = np.sum(y*np.log(p0) + (1-y)*np.log(1-p0))
+    return (ll1-ll0)/N
+
+# ---------- A ----------
+print("== A: extremum channel exact vs leading order ==")
+A_rows = []
+for C in [0.4, 0.5, 0.7, 0.9, 0.99]:
+    for s in [0.1, 0.3, 0.5, 1.0]:
+        ex, lo = I_ext_exact(C, s), I_ext_lo(C, s)
+        val = s*s*C/(1-C*C)
+        A_rows.append((C, s, ex, lo, lo/ex, val))
+        print(f"C={C:5.2f} s={s:4.2f}  I_exact={ex:.3e}  I_lo={lo:.3e}  lo/exact={lo/ex:6.3f}  s^2 C/(1-C^2)={val:.3f}")
+report["A"] = A_rows
+
+# ---------- B ----------
+print("\n== B: mid-fringe channel: 1/2 sum r_k^2 (exact r_k) vs exact HMM rate ==")
+B_rows = []
+cases = [(0.4, 0.5, 20.0), (0.4, 0.5, 5.0), (0.4, 0.5, 1.0), (0.9, 0.3, 5.0), (0.4, 1.0, 20.0), (0.9, 0.6, 20.0)]
+for C, s, tcc in cases:
+    a = math.exp(-1/tcc)
+    ks = np.arange(1, 400); ak = a**ks
+    S2 = S2_point(tcc)
+    Imid_lo = I_mid_lo(C, s, S2)
+    Imid_rk = 0.5*np.sum(rk_exact(C, s, ak)**2)
+    t0 = time.time(); Imid_hmm = hmm_rate(C, s, math.pi/2, a, N=100_000, seed=1); dt = time.time()-t0
+    pert = C**4*s**4*S2
+    Iext = I_ext_exact(C, s)
+    B_rows.append((C, s, tcc, S2, Imid_lo, Imid_rk, Imid_hmm, pert, Iext))
+    print(f"C={C} s={s} tc/c={tcc:5.1f} S2={S2:6.2f}  lo={Imid_lo:.3e}  half-sum-rk^2(exact rk)={Imid_rk:.3e}  HMM={Imid_hmm:.3e}  "
+          f"pert-param={pert:.3f}  I_ext_exact={Iext:.3e}  [{dt:.1f}s]")
+report["B"] = B_rows
+
+# ---------- C ----------
+print("\n== C: endpoint lemma: exact HMM rate vs theta ==")
+thetas = np.array([0, 15, 30, 45, 60, 75, 90])*math.pi/180
+C_rows = {}
+for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 1.0), (0.9, 0.3, 5.0)]:
+    a = math.exp(-1/tcc); S2 = S2_point(tcc)
+    ex = []; lo = []
+    for th in thetas:
+        ex.append(hmm_rate(C, s, th, a, N=60_000, seed=2)); lo.append(I_lo_theta(C, s, S2, th))
+    C_rows[f"{C},{s},{tcc}"] = (thetas.tolist(), ex, lo)
+    print(f"C={C} s={s} tc/c={tcc}:")
+    for th, e_, l_ in zip(thetas, ex, lo):
+        print(f"   theta={math.degrees(th):4.0f}  exact={e_:.3e}  lo={l_:.3e}")
+    i_ex = int(np.argmax(ex)); print(f"   exact argmax theta = {math.degrees(thetas[i_ex]):.0f} deg; endpoints: {ex[0]:.3e} (0), {ex[-1]:.3e} (90)")
+report["C"] = C_rows
+
+# ---------- D ----------
+print("\n== D: filtered-OU corollary ==")
+def F_closed(u):
+    return (math.cosh(u)-1)/(u-1+math.exp(-u))
+def s2_closed(tau, tc):  # per (g sigma_x)^2
+    return 2*(tc*tau - tc*tc*(1-math.exp(-tau/tc)))
+def cov_num(tau, tc, kc):
+    f = lambda t2, t1: math.exp(-abs(kc+t2-t1)/tc)
+    v, _ = dblquad(f, 0, tau, 0, tau)
+    return v
+D_rows = []
+for tau, tc, c in [(0.1, 1.0, 0.3), (1.0, 1.0, 1.5), (3.0, 1.0, 3.5), (0.5, 5.0, 1.0)]:
+    u = tau/tc
+    s2c = s2_closed(tau, tc); s2n = cov_num(tau, tc, 0.0)
+    a1c = math.exp(-c/tc)*F_closed(u); a1n = cov_num(tau, tc, c)/s2n
+    D_rows.append((tau, tc, c, s2c, s2n, a1c, a1n))
+    print(f"tau={tau} tc={tc} c={c}: s^2 closed={s2c:.5f} num={s2n:.5f} | a_1 closed={a1c:.5f} num={a1n:.5f}")
+report["D"] = D_rows
+
+# ---------- E ----------
+print("\n== E: regime map ==")
+def crossover_tcc(C):
+    return 2.0/np.log1p(4*C*C*(1-C*C))
+for C in [0.2, 0.4, 0.5, 0.7, 1/math.sqrt(2), 0.9, 0.99]:
+    print(f"C={C:5.3f}: crossover tau_c/c = {crossover_tcc(C):6.2f} shots  (sum a_k^2 threshold {1/(4*C*C*(1-C*C)):6.2f})")
+
+Cs = np.linspace(0.05, 0.995, 400); tccs = np.logspace(-0.7, 2.3, 400)
+CC, TT = np.meshgrid(Cs, tccs)
+S2g = 1.0/np.expm1(2.0/TT)
+s_ref = 0.5
+Iext_g = CC**2/(8*(1-CC**2)); Imid_g = 0.5*CC**4*S2g   # per s^4
+win_mid = Imid_g > Iext_g
+pert_mid = CC**4*s_ref**4*S2g          # must be << 1
+pert_ext = s_ref**2*CC/(1-CC**2)       # must be << 1
+
+fig, ax = plt.subplots(figsize=(7.2, 5.2), dpi=150, facecolor=PARCH)
+ax.set_facecolor(PARCH)
+ax.contourf(CC, TT, win_mid.astype(float), levels=[-0.5, 0.5, 1.5], colors=[PARCH, "#cfdde6"])
+ax.plot(Cs, crossover_tcc(Cs), color=SEA, lw=2, label="crossover  $\\Sigma a_k^2=1/[4\\bar C^2(1-\\bar C^2)]$")
+ax.contour(CC, TT, pert_mid, levels=[0.3], colors=[SIG], linestyles="--", linewidths=1.4)
+ax.contour(CC, TT, pert_ext, levels=[0.3], colors=[SIG], linestyles=":", linewidths=1.4)
+ax.axvline(0.5, color=STONE, lw=1.2); ax.axvline(0.405, color=STONE, lw=1.2, ls="-.")
+ax.text(0.505, 60, "parity ceiling $\\bar C=1/2$", color=STONE, fontsize=8, rotation=90, va="top")
+ax.text(0.41, 60, "realistic parity $\\bar C\\simeq0.4$", color=STONE, fontsize=8, rotation=90, va="top")
+ax.text(0.12, 30, "mid-fringe (correlation) wins", color=SEA, fontsize=10)
+ax.text(0.55, 0.45, "extremum (contrast-loss) wins", color=INK, fontsize=10)
+ax.text(0.75, 2.6, "servo-tracked regime $\\rightarrow$", color=STONE, fontsize=8)
+ax.plot([], [], color=SIG, ls="--", label=f"mid-fringe expansion: $\\bar C^4 s^4\\Sigma a_k^2=0.3$ ($s={s_ref}$)")
+ax.plot([], [], color=SIG, ls=":", label=f"extremum expansion: $s^2\\bar C/(1-\\bar C^2)=0.3$ ($s={s_ref}$)")
+ax.set_yscale("log"); ax.set_xlabel("effective contrast $\\bar C$"); ax.set_ylabel("correlation time in shot cycles  $\\tau_c/c$")
+ax.set_title("Operating-point regime map (leading order, point-sampled OU)", fontsize=11)
+ax.legend(loc="upper right", fontsize=7.5, framealpha=0.9)
+fig.tight_layout(); fig.savefig(f"{OUT}/sid_regime_map.png"); plt.close(fig)
+
+# tau-optimised map (leading order; amplitude cancels). Units: t_dead = 1, T2 = 10.
+T2, td = 10.0, 1.0
+C0s = np.linspace(0.05, 0.995, 120); tcs = np.logspace(-1, 2.5, 120)
+taus = np.logspace(-2, np.log10(3*T2), 300)
+win = np.zeros((len(tcs), len(C0s))); tau_opt = np.zeros_like(win); ratio = np.zeros_like(win)
+for i, tc in enumerate(tcs):
+    u = taus/tc; c = taus+td
+    s2 = 2*(tc*taus - tc*tc*(1-np.exp(-u)))
+    F = (np.cosh(u)-1)/(u-1+np.exp(-u))
+    S2 = F**2/np.expm1(2*c/tc)
+    for j, C0 in enumerate(C0s):
+        Ct = C0*np.exp(-taus/T2)
+        Rext = Ct**2*s2**2/(8*(1-Ct**2))/c
+        Rmid = 0.5*Ct**4*s2**2*S2/c
+        ie, im = np.argmax(Rext), np.argmax(Rmid)
+        win[i, j] = 1.0 if Rmid[im] > Rext[ie] else 0.0
+        tau_opt[i, j] = taus[im] if win[i, j] else taus[ie]
+        ratio[i, j] = Rmid[im]/Rext[ie]
+fig, ax = plt.subplots(1, 2, figsize=(11, 4.6), dpi=150, facecolor=PARCH)
+for a_ in ax: a_.set_facecolor(PARCH)
+X, Y = np.meshgrid(C0s, tcs)
+ax[0].contourf(X, Y, win, levels=[-0.5, 0.5, 1.5], colors=[PARCH, "#cfdde6"])
+cs = ax[0].contour(X, Y, np.log10(ratio), levels=[-2, -1, 0, 1, 2], colors=[SEA], linewidths=1)
+ax[0].clabel(cs, fmt="%d", fontsize=7)
+ax[0].axvline(0.5, color=STONE, lw=1); ax[0].axvline(0.405, color=STONE, lw=1, ls="-.")
+ax[0].set_yscale("log"); ax[0].set_xlabel("$\\bar C_0$ (zero-$\\tau$ contrast)"); ax[0].set_ylabel("$\\tau_c / t_{\\rm dead}$")
+ax[0].set_title("$\\tau$-optimised winner; contours: $\\log_{10}(R_{\\rm mid}/R_{\\rm ext})$", fontsize=10)
+ax[0].text(0.1, 100, "mid-fringe", color=SEA); ax[0].text(0.6, 0.15, "extremum", color=INK)
+im = ax[1].pcolormesh(X, Y, np.log10(tau_opt/T2), cmap="cividis", shading="auto")
+ax[1].set_yscale("log"); ax[1].set_xlabel("$\\bar C_0$"); ax[1].set_title("optimal $\\log_{10}(\\tau/T_2)$ of winning channel", fontsize=10)
+fig.colorbar(im, ax=ax[1])
+fig.suptitle(f"$\\tau$-optimised regime map, $T_2 = 10\\,t_{{\\rm dead}}$, exponential contrast, leading order (amplitude-free)", fontsize=10)
+fig.tight_layout(); fig.savefig(f"{OUT}/sid_regime_map_tau_optimised.png"); plt.close(fig)
+print("tau-optimised map: fraction of grid where mid-fringe wins =", win.mean().round(3))
+print("tau_opt/T2 range (winner):", (tau_opt/T2).min().round(3), (tau_opt/T2).max().round(3))
+
+# ---------- F ----------
+print("\n== F: oracle CUSUM delay vs log(gamma)/I ==")
+def cusum_ext(C, s, a, h, runs, seed):
+    r = np.random.default_rng(seed)
+    p0 = (1-C)/2; p1 = (1-C*math.exp(-s*s/2))/2
+    l1, l0 = math.log(p1/p0), math.log((1-p1)/(1-p0))
+    out = []
+    for _ in range(runs):
+        y = simulate(C, s, math.pi, a, 20*int(h/max(I_ext_exact(C, s), 1e-9)), r)
+        W = 0.0
+        for n, yn in enumerate(y):
+            W = max(0.0, W + (l1 if yn else l0))
+            if W >= h: out.append(n+1); break
+    return np.array(out)
+
+def cusum_mid(C, s, a, h, runs, seed, M=121):
+    r = np.random.default_rng(seed)
+    g, T, e1, e0, prior = make_hmm(C, s, math.pi/2, a, M)
+    out = []
+    Nmax = 12*int(h/max(hmm_rate_cache.get((C, s, a), 1e-3), 1e-9))
+    for _ in range(runs):
+        y = simulate(C, s, math.pi/2, a, Nmax, r)
+        W = 0.0; alpha = prior.copy()
+        for n, yn in enumerate(y):
+            alpha = alpha @ T
+            alpha *= (e1 if yn else e0)
+            z = alpha.sum(); alpha /= z
+            W = W + math.log(z) - math.log(0.5)
+            if W <= 0.0:
+                W = 0.0; alpha = prior.copy()     # reset filter with the statistic
+            if W >= h: out.append(n+1); break
+    return np.array(out)
+
+hmm_rate_cache = {}
+gamma = 1e3; h = math.log(gamma)
+F_rows = []
+for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 1.0)]:
+    a = math.exp(-1/tcc)
+    Iext = I_ext_exact(C, s)
+    Imid = [row[6] for row in B_rows if row[0] == C and row[1] == s and row[2] == tcc][0]
+    hmm_rate_cache[(C, s, a)] = Imid
+    de = cusum_ext(C, s, a, h, 60, 11); dm = cusum_mid(C, s, a, h, 40, 12)
+    F_rows.append((C, s, tcc, Iext, Imid, de.mean(), de.std()/math.sqrt(len(de)), h/Iext, dm.mean(), dm.std()/math.sqrt(len(dm)), h/Imid))
+    print(f"C={C} s={s} tc/c={tcc}: extremum delay={de.mean():.0f}+-{de.std()/math.sqrt(len(de)):.0f} (h/I={h/Iext:.0f}) | "
+          f"mid-fringe delay={dm.mean():.0f}+-{dm.std()/math.sqrt(len(dm)):.0f} (h/I={h/Imid:.0f})  [runs {len(de)},{len(dm)}]")
+report["F"] = F_rows
+
+# endpoint figure
+fig, ax = plt.subplots(figsize=(6.4, 4.2), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
+for (key, (th, ex, lo)), col in zip(C_rows.items(), [SEA, SIG, INK]):
+    C, s, tcc = key.split(",")
+    ax.plot(np.degrees(th), ex, "o-", color=col, label=f"exact HMM: $\\bar C$={C}, s={s}, $\\tau_c/c$={tcc}")
+    ax.plot(np.degrees(th), lo, "--", color=col, alpha=0.6)
+ax.set_xlabel("Ramsey phase $\\theta$ (deg; 0 = extremum, 90 = mid-fringe)"); ax.set_ylabel("information per shot (nats)")
+ax.set_yscale("log"); ax.legend(fontsize=7.5); ax.set_title("Endpoint lemma check: exact (solid) vs leading order (dashed)", fontsize=10)
+fig.tight_layout(); fig.savefig(f"{OUT}/sid_endpoint_check.png"); plt.close(fig)
+
+json.dump(report, open(os.path.join(OUTD, "res1_core.json"), "w"), default=float, indent=1)
+print("\ndone")

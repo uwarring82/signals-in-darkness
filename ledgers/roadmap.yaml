@@ -1,0 +1,21 @@
+# v2.0 gating runs (cards/v2.0-seed.md)
+- id: A
+  title: Prior-art audit — Sakuldee & Cywinski 2019/2020 in full text, citers, Fisher-information operating-point analyses
+  state: open
+  gates_freeze: true
+- id: B
+  title: Second operating point (C=0.8, s=0.3) — benchmark, three hedges, tau_c in {1,5,20}, tightened ARL
+  state: open
+  gates_freeze: true
+- id: C
+  title: Posterior-driven action selection vs true oracle over the same action set
+  state: open
+  gates_freeze: false
+- id: D
+  title: Correlated oscillator residual (AR(1) phase) in the four-outcome likelihood — size effect on C_eff
+  state: open
+  gates_freeze: false
+- id: E
+  title: Identifiability in dimensionless form at the second operating point and two calibration uncertainties
+  state: open
+  gates_freeze: true

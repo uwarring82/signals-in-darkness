@@ -1,0 +1,17 @@
+# Signals in Darkness — execution note 03a (3 Sept 2026): errata to note 03
+
+Note 03 is left as written for provenance. The following statements supersede the corresponding passages. Each item also records the consequence for card v2.0.
+
+**E1 — "Oracle" is the best fixed-endpoint benchmark.** The comparator in note 03 §3 chose the better of two fixed operating points with τ_c known. A mixed schedule beat it at τ_c/c = 5 within error, so it is not an oracle over the action set used by the hedges. Rename throughout: *best fixed-endpoint benchmark*. A true known-τ_c oracle must be optimised over the same action set (schedules included); this is a v2.0 task.
+
+**E2 — The learner did not adapt.** The bank updated the signal model, but every tested schedule (interleave B = 1, B = 10, explore-then-switch) was predetermined. Note 03 therefore shows that composite-model detection carries no resolved penalty at mid-fringe — not that active parameter learning is free. The posterior-driven action-selection run has not been done and is the item that decides whether the policy contribution is an appendix or a result.
+
+**E3 — Regret wording and scope of the conclusion.** Card v1.1 defines regret additively; note 03 §3 reported ratios. Replace "max regret 1.56×" with *worst-case delay ratio 1.56*. The conclusion is limited to the tested policies and the three-point τ_c grid {1, 5, 20}: *at the pilot operating point, no tested hedge shows a worst-case advantage over fixed-extremum operation; current ARL precision (±30 %, ≈ ±10 % in delay) does not sharply order fixed extremum (1.56) and the best hedges (1.64–1.67).*
+
+**E4 — Identifiability: general criterion, not a T₂ threshold.** "τ_c ≳ T₂" is specific to gσ_xT₂ = 0.5 and the tested η₀. The general statement is the fast-noise-limit criterion ΔΓ_φ = (gσ_x)²τ_c > 2η₀Γ̂. Rename "unconstrained divergence" to *known-baseline divergence*. For τ_c ≲ T₂/5 the retained fraction under the Markov class is 2 × 10⁻³ to 2 × 10⁻² of the known-baseline value (table values 2.5e-9/1.1e-6, 2.7e-7/1.2e-5, 2.2e-8/6.3e-6, 2.1e-6/6.7e-5), not 10⁻³–10⁻². The result's core — that a τ-scan helps only because the admissible dephasing class has shape, and a pointwise band destroys the argument — stands and is promoted to equal billing with the crossover.
+
+**E5 — Servo reduction is supported, not proved.** The calculation used independent oscillator phases between shots, a small white modulation (s = 0.3) for the variance channel, and a 13 × 13 phase grid. State: *in the tested independent-phase, small-modulation model, both channels reduce to the binary-link form with matching effective contrasts within 2 %.* The κ ≳ 5 requirement for C_eff > 0.8 holds for C̄₁ = C̄₂ = 0.9 and must be recomputed for other contrasts.
+
+**E6 — Extremum correlation bonus.** Rejected as Monte-Carlo noise at the 10 % level. Report: at most 6 % across the tested points (C̄ = 0.9, s = 0.3, τ_c/c ∈ {5, 20}; C̄ = 0.4, s = 0.5, τ_c/c = 20), not as a global bound. Removed from the open-item list; retained as a high-contrast footnote.
+
+**Paper hierarchy adopted for v2.0:** (1) operating-point crossover and physical regime map; (2) detection-versus-identification boundary under a shape-constrained dephasing baseline; (3) extension to the independently randomised servo model through C_eff(κ); (4) pilot policy comparison, explicitly not an adaptive-policy or minimax result until the posterior-driven run exists.

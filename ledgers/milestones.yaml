@@ -1,0 +1,9 @@
+- date: 2026-09-02
+  tag: card-v1.0
+  summary: Preregistered first-paper card frozen — one theorem, one adaptive question, one OU process, two-axis map.
+- date: 2026-09-02
+  tag: card-v1.1
+  summary: Mathematical correction after execution pass 1 — exact lag correlation, spectral validity condition, spectral comparator as working formula, tau-optimised physical map, matched-run-length comparisons.
+- date: 2026-09-03
+  tag: note-03a
+  summary: Errata to pass 2 — benchmark renamed, learner not adaptive, worst-case delay ratio wording, general identifiability criterion, servo reduction supported not proved, bonus withdrawn; paper hierarchy reweighted.

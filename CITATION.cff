@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this repository, cite it as below. A DOI will be added at the first public release."
+title: "Signals in Darkness: operating-point crossover in sequential quantum-clock detection"
+type: software
+version: "0.0.0-seed"
+date-released: "2026-09-03"
+authors:
+  - family-names: Warring
+    given-names: Ulrich
+    affiliation: "Physikalisches Institut, Albert-Ludwigs-Universität Freiburg"
+    orcid: "https://orcid.org/TODO"
+repository-code: "https://github.com/uwarring82/signals-in-darkness"
+license: Apache-2.0
+keywords:
+  - quickest change detection
+  - Ramsey interferometry
+  - quantum clocks
+  - correlation spectroscopy
+  - identifiability
