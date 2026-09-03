@@ -59,11 +59,12 @@
   output: figure figures/sid_regime_map_tau_optimised_exact.png (grid values not stored — [unreproduced-from-file])
 - id: C09
   statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20, consistent with the comparator crossover 7.2; delay advantage compressed 1.5-3x relative to rate ratio
-  status: pilot
+  status: open
   note: notes/2026-09-02-note-02.md (check 3b); note-03 §2
   run: analysis/runs/sid_run5.py, sid_run6s.py
   seed_ref: seeds.md#run5, seeds.md#run6
   output: analysis/outputs/res6_policies.json
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - the tau_c/c=20 comparison divides by the withdrawn C18 benchmark entry)
 - id: C10
   statement: Martingale bound E0[T] >= e^h holds for the restarted-SPRT variant under the action-conditional null but is loose by 1e2-1e4; calibration is by simulation
   status: result
@@ -73,18 +74,20 @@
   output: printed table ([unreproduced-from-file])
 - id: C11
   statement: At the pilot operating point (C=0.4, s=0.5, E0T~3e4, tau_c/c in {1,5,20}) no tested hedge shows a worst-case delay-ratio advantage over fixed-extremum operation (1.56 vs 1.64-1.67); ARL precision +-30 % does not order them
-  status: pilot
+  status: open
   note: notes/2026-09-02-note-03.md#3; notes/2026-09-03-note-03a-errata.md E1-E3
   run: analysis/runs/sid_run6s.py, sid_run8.py
   seed_ref: seeds.md#run6, seeds.md#run8
   output: analysis/outputs/res6_policies.json, res8_switch.json; figure figures/sid_policy_delays.png
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - the 1.56 worst-case ratio divides by the withdrawn C18 benchmark entry, and the hedge leg rests on C19)
 - id: C12
   statement: Composite-model (bank) detection at mid-fringe shows no resolved penalty relative to the known-tau_c fixed endpoint (0.98x)
-  status: pilot
+  status: open
   note: notes/2026-09-03-note-03a-errata.md E2
   run: analysis/runs/sid_run6s.py
   seed_ref: seeds.md#run6
   output: analysis/outputs/res6_policies.json
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - 0.98x is 1299.03/1332.19 and the denominator is the withdrawn C18 benchmark entry)
 - id: C13
   statement: tau-scan identifiability — pointwise band gives zero retained information at tau_c <~ T2/5; Markov-parametric class retains 2e-3 to 2e-2 there and 20-50 % (eta0=2 %) for tau_c >~ T2; general fast-noise criterion Delta Gamma_phi > 2 eta0 Gamma_hat
   status: result
@@ -115,3 +118,35 @@
   seed_ref: none
   output: none
   errata: cards/v1.0-frozen.md (adaptive policy section replaces it)
+- id: C17
+  statement: Archived calibration rows for oracle-mid(tc=20) [h*=4.359, ARL=33852+-3394] and learner-interleave-B10(bank) [h*=3.55, ARL=34015+-3017] in note 03 section 2 - provenance lost; no code in this repository generates them, and they are not reproduced even when the simulator is driven at their own archived threshold. The other five rows of that table regenerate bit-identically and retain their standing.
+  status: withdrawn
+  note: notes/2026-09-03-note-04-reproduction-defect.md#2
+  run: analysis/runs/sid_run6s.py
+  seed_ref: seeds.md#run6
+  output: analysis/outputs/res6_policies.json (cal)
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#2
+- id: C18
+  statement: Delay entries measured at the two thresholds withdrawn under C17 - oracle-mid(tc=20) at tau_c/c=20 (1332.19+-114.43) and learner-interleave-B10(bank) at tau_c/c=20, 5, 1 (2044.02+-178.89, 2680.20+-256.65, 4580.78+-339.08). The tau_c/c=20 benchmark is min(oracle-mid(tc=20), extremum-only) and is one of these, so every ratio reported at tau_c/c=20 divides by a withdrawn quantity; the matched-E0[T] premise fails there (measured 44699 and 47313 against a 3e4 target).
+  status: withdrawn
+  note: notes/2026-09-03-note-04-reproduction-defect.md#3
+  run: analysis/runs/sid_run6s.py
+  seed_ref: seeds.md#run6
+  output: analysis/outputs/res6_policies.json (delays); figure figures/sid_policy_delays.png
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#3
+- id: C19
+  statement: Explore-then-switch outputs in res8_switch.json - unresolved provenance. sid_run8.py wrote its output to the current working directory rather than to analysis/outputs/, so the archived copy cannot have been written in place by a run performed as documented. Nothing contradicts the values; they are unverified until independently regenerated and compared.
+  status: open
+  note: notes/2026-09-03-note-04-reproduction-defect.md#4
+  run: analysis/runs/sid_run8.py
+  seed_ref: seeds.md#run8
+  output: analysis/outputs/res8_switch.json
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#4
+- id: C20
+  statement: The documented reproduction route at tag archive-2026-09-03 consumed committed cache state - sid_run6s.py used its own published output as checkpoint, so a clean clone recomputed nothing and reprinted the archive in 0 s against a true cost of 7.7 min. The binding reproduction acceptance criterion of cards/repo-seed-v0.2.md fails at that tag. Interface repaired in the commit carrying note 04; the criterion stays open until a clean-checkout rerun of the whole affected chain under a pinned environment.
+  status: open
+  note: notes/2026-09-03-note-04-reproduction-defect.md#1
+  run: analysis/runs/sid_run6s.py; gate tests/test_reproduction_route.py
+  seed_ref: seeds.md#run6
+  output: none (route defect)
+  errata: notes/2026-09-03-note-04-reproduction-defect.md#5
