@@ -151,3 +151,11 @@
   seed_ref: seeds.md#run6
   output: none (route defect)
   errata: notes/2026-09-03-note-04-reproduction-defect.md#5
+- id: C21
+  statement: Contrast dependence of the extremum leading-order accuracy. At q = s^2 Cbar/(1-Cbar^2) = 0.06 the leading-order overestimate is 10.1 % at Cbar=0.3, 7.3 % at 0.4, 5.6 % at 0.5, 3.6 % at 0.7 and 2.4 % at 0.9; at q = 0.17 it is 30.5, 21.6, 16.3, 10.3 and 6.8 %. At the reference contrast Cbar=0.4, 6 % accuracy holds only for q <= 0.0497 and 20 % only for q <= 0.1583. The mechanism is the first omitted term, I_exact/I_LO = 1 - k s^2 + O(s^4) with k = 1/2 + Cbar^2/(3(1-Cbar^2)), confirmed against the closed form at 60-digit precision. Replaces the contrast-independent ranges withdrawn as C01; the exact divergence and its asymptotic expansion are unaffected.
+  status: result
+  note: notes/2026-09-03-note-01a-errata.md
+  run: analysis/runs/sid_core.py (section A2)
+  seed_ref: none (deterministic)
+  output: analysis/outputs/res1_core.json (A2)
+  supersedes: C01
