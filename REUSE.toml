@@ -1,0 +1,64 @@
+# File-scoped licensing for signals-in-darkness (REUSE 3.2).
+#
+# Why this file exists: the repository is Apache-2.0 for code and CC-BY-4.0 for the
+# evidence record. CITATION.cff cannot express that -- CFF reads a list of licences as
+# OR, meaning the whole cited work is available under either, which would misstate the
+# arrangement -- so its `license` field is deliberately omitted and the mapping is
+# declared here instead. codemeta.json describes the software component only, and
+# correctly carries Apache-2.0 alone.
+#
+# LICENSES/Apache-2.0.txt is a byte-identical copy of the root LICENSE: REUSE requires
+# the text under LICENSES/, GitHub detects the licence only from the root file. The
+# duplication is deliberate and guarded by a test (tests/test_licensing.py).
+
+version = 1
+SPDX-PackageName = "signals-in-darkness"
+SPDX-PackageDownloadLocation = "https://github.com/uwarring82/signals-in-darkness"
+
+# ---- code: the machinery that computes ----
+[[annotations]]
+path = [
+  "analysis/lib/**",
+  "analysis/runs/**",
+  "tests/**",
+  "tools/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Ulrich Warring"
+SPDX-License-Identifier = "Apache-2.0"
+
+# ---- evidence record: prose, cards, notes, figures, tables, recorded outputs ----
+[[annotations]]
+path = [
+  "cards/**",
+  "notes/**",
+  "labbook/**",
+  "ledgers/**",
+  "figures/**",
+  "docs/**",
+  "references/**",
+  "analysis/outputs/**",
+  "analysis/seeds.md",
+  "README.md",
+  "FAIR.md",
+  "CHANGELOG.md",
+  "SEED_HANDOVER.md",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Ulrich Warring"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# ---- packaging and repository metadata ----
+[[annotations]]
+path = [
+  "CITATION.cff",
+  "codemeta.json",
+  "REUSE.toml",
+  ".gitignore",
+  "environment.yml",
+  "requirements.txt",
+  ".github/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Ulrich Warring"
+SPDX-License-Identifier = "Apache-2.0"

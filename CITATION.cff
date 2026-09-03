@@ -8,9 +8,13 @@ authors:
   - family-names: Warring
     given-names: Ulrich
     affiliation: "Physikalisches Institut, Albert-Ludwigs-Universität Freiburg"
-    orcid: "https://orcid.org/TODO"
+    # orcid: added when a real identifier is supplied. A placeholder here makes the
+    # whole record fail CFF 1.2 validation, so the field is omitted rather than stubbed.
 repository-code: "https://github.com/uwarring82/signals-in-darkness"
-license: Apache-2.0
+# license: deliberately omitted. CFF reads a list of licences as OR -- the whole cited
+# work being available under either -- not as file-scoped licensing. This repository is
+# Apache-2.0 for code and CC-BY-4.0 for cards, notes, labbook, figures and recorded
+# outputs, which CFF cannot express. The mapping is declared in REUSE.toml and README.md.
 keywords:
   - quickest change detection
   - Ramsey interferometry

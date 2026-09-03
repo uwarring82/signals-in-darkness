@@ -2,11 +2,12 @@
 # Fields: id, statement, status, note, run, seed_ref, output, supersedes (optional), errata (optional)
 - id: C01
   statement: Extremum-channel exact Bernoulli divergence and its small-s expansion; expansion within 6 % for s^2 C/(1-C^2) <= 0.06
-  status: result
+  status: withdrawn
   note: notes/2026-09-02-note-01.md#1
   run: analysis/runs/sid_core.py (section A)
   seed_ref: none (analytic)
   output: analysis/outputs/res1_core.json (A)
+  errata: notes/2026-09-03-note-01a-errata.md (the 6 % and 20 % ranges were stated as contrast-independent and are not - at q=0.06 the error is 7.3 % at Cbar=0.4 and 10.1 % at 0.3; the section A grid began at Cbar=0.5 and never tested the reference contrast. The exact divergence and its asymptotic expansion are unaffected.)
 - id: C02
   statement: Exact mid-fringe lag correlation r_k = C^2 e^{-s^2} sinh(s^2 a_k); leading-order rate carries factor e^{-2 s^2}
   status: result

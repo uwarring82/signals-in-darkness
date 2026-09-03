@@ -91,6 +91,47 @@ for C in [0.4, 0.5, 0.7, 0.9, 0.99]:
         print(f"C={C:5.2f} s={s:4.2f}  I_exact={ex:.3e}  I_lo={lo:.3e}  lo/exact={lo/ex:6.3f}  s^2 C/(1-C^2)={val:.3f}")
 report["A"] = A_rows
 
+# ---------- A2: contrast dependence of the expansion accuracy ----------
+# Deterministic, no seed. Card v1.1 and note 01 §1 stated the leading-order extremum
+# expansion as accurate "within 6 % for q = s^2 C/(1-C^2) <= 0.06" and within 20 % up to
+# q = 0.17, as if q alone fixed the relative error. It does not: the first omitted term
+# carries its own contrast dependence,
+#     I_exact/I_LO = 1 - k s^2 + O(s^4),   k = 1/2 + C^2/(3(1-C^2)),
+# so the accuracy at fixed q degrades as the contrast falls. The A grid above starts at
+# C = 0.5, which is why the original check did not see it. Withdrawn as C01; see
+# notes/2026-09-03-note-01a-errata.md.
+from scipy.optimize import brentq
+
+print("\n== A2: contrast dependence of the leading-order accuracy bound ==")
+
+
+def _s_of_q(C, q):
+    return math.sqrt(q*(1-C*C)/C)
+
+
+def _rel_err(C, q):
+    s = _s_of_q(C, q)
+    return I_ext_lo(C, s)/I_ext_exact(C, s) - 1
+
+
+A2_rows = []
+# Bracket floor: below q ~ 1e-4 the exact divergence is O(1e-13) and the Bernoulli
+# difference cancels in double precision, so _rel_err loses its sign there. The
+# root is far above the floor in every row; the postcondition below checks it.
+Q_LO, Q_HI = 1e-4, 1.0
+for C in [0.3, 0.4, 0.5, 0.7, 0.9]:
+    e06, e17 = _rel_err(C, 0.06), _rel_err(C, 0.17)
+    q06 = brentq(lambda q: _rel_err(C, q) - 0.06, Q_LO, Q_HI)
+    q20 = brentq(lambda q: _rel_err(C, q) - 0.20, Q_LO, Q_HI)
+    assert abs(_rel_err(C, q06) - 0.06) < 1e-9 and abs(_rel_err(C, q20) - 0.20) < 1e-9, \
+        f"A2 root-finding postcondition failed at C={C}"
+    assert Q_LO < q06 < q20 < Q_HI, f"A2 roots outside the bracket at C={C}"
+    k = 0.5 + C*C/(3*(1-C*C))
+    A2_rows.append((C, e06, e17, q06, q20, k))
+    print(f"C={C:4.2f}  err at q=0.06: {100*e06:5.1f}%   err at q=0.17: {100*e17:5.1f}%   "
+          f"q for 6%: {q06:.4f}   q for 20%: {q20:.4f}   k={k:.4f}")
+report["A2"] = A2_rows
+
 # ---------- B ----------
 print("\n== B: mid-fringe channel: 1/2 sum r_k^2 (exact r_k) vs exact HMM rate ==")
 B_rows = []

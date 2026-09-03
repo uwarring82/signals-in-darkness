@@ -34,7 +34,12 @@ Scripts locate `analysis/lib` relative to their own file, so the tree can be mov
 **Two rows of the note 03 §2 calibration table do not reproduce** and are withdrawn, along with four delay entries measured at their thresholds (claims C17–C20). Before that was found, this route consumed its own committed output as cache and recomputed nothing. See `notes/2026-09-03-note-04-reproduction-defect.md`; `tests/test_reproduction_route.py` is the gate that keeps it from recurring.
 
 ## Cite
-See `CITATION.cff`. Content: CC BY 4.0. Code: Apache-2.0 (default; follows `iontrap-dynamics` if that repository fixes a different licence).
+See `CITATION.cff`. Two licences apply, by file:
+
+- **Apache-2.0** — `analysis/lib/`, `analysis/runs/`, `tests/`, `tools/` and repository metadata (default; follows `iontrap-dynamics` if that repository fixes a different licence).
+- **CC BY 4.0** — cards, notes, labbook, ledgers, figures, references, docs and the recorded outputs in `analysis/outputs/`.
+
+The mapping is machine-readable in `REUSE.toml`, with the licence texts under `LICENSES/`. `CITATION.cff` deliberately carries **no** `license:` field: CFF reads a list of licences as OR over the whole cited work, which would misstate this arrangement. `codemeta.json` describes the software component only and carries Apache-2.0 alone.
 
 ## Feedback
 Discussions for interpretation and objections; Issues for reproduction defects, numerical errors, reference or documentation corrections (templates in `.github/`). External suggestions enter the ledger as `open`.
