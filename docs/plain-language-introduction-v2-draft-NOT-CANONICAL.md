@@ -25,7 +25,10 @@ At the steep side of this fringe—**mid-fringe**—a small phase shift has a la
 
 At the top or bottom of the fringe—a **fringe extremum**—the outcome is initially almost certain. Random phase excursions blur that certainty and reduce the fringe's contrast. Its trace therefore appears as a change in balance. Unfortunately, ordinary sensor degradation can produce exactly the same effect.
 
-![Sketch of a Ramsey fringe marking mid-fringe and a dark extremum. Mid-fringe reveals temporal memory; the extremum reveals contrast loss.](/Users/uwarring/Documents/Codex/2026-09-02/you-may-remember-my-project-which/outputs/signals-in-darkness-fringe-sketch.svg)
+![Sketch of a Ramsey fringe marking mid-fringe and a dark extremum. Mid-fringe reveals temporal memory; the extremum reveals contrast loss.](signals-in-darkness-fringe-sketch.svg)
+<!-- TODO(owner): the SVG itself is still to be supplied (SEED_HANDOVER.md, "deliberately missing").
+     The link was an absolute path into a local working directory until 2026-09-03; it is now
+     relative, per cards/repo-seed-v0.2.md ("relative links only"). The target does not yet exist. -->
 
 Neither setting is always best. Fast fluctuations leave little memory between measurements, making contrast loss the more useful clue. Slow fluctuations persist across many measurements, making their temporal pattern valuable.
 
