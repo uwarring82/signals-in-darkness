@@ -37,7 +37,23 @@ Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
   `ext_error_crossings` (contrast at which that error reaches each declared level; `null` if the
   level is not attained on the axis); `ext_error_min` (the floor over the axis). See
   notes/2026-09-04-note-06-regime-map-overlays.md.
-- `res2_partial.json` — dict B2: list of [C, s, tcc, null, null, null, I_hmm]; reconstructed from run2 stdout after a figure crash; the other fields are in the note.
+- `res2_partial.json` — written by `sid_run2.py`. Four keys:
+  - `B2` — 7 rows of [C, s, tau_c/c, I_mid_lo, half_sum_rk2, I_gp, I_hmm, delta0, frozen_limit, I_ext_exact]; nats per shot.
+  - `crossover` — {"C,s": [tau_c/c grid, I_hmm at each, I_ext_exact, crossover tau_c/c]} from the HMM grid. This is `sid_run2.py`'s own crossover estimate and is NOT the comparator crossover of claim C05, which comes from `sid_run3.py` and remains unstored.
+  - `C2` — [thetas_rad, exact_rate, standard_error] over 7 Ramsey phases; the endpoint profile behind note 01 section 4.
+  - `F2` — 3 rows of [C, s, tau_c/c, I_ext, I_mid, delay_ext_mean, delay_ext_se, h/I_ext, delay_mid_mean, delay_mid_se, h/I_mid, runs_detected]; shots, at gamma = 1e3, h = ln(1e3). Claim C25.
+
+  *Provenance, 4 Sept 2026.* Earlier copies of this file held only `B2`, with 7 fields per row and
+  columns 3-5 null, because they were reconstructed by hand from stdout: `sid_run2.py` used a
+  `\tfrac` mathtext macro that no matplotlib version defines, and its `json.dump` sat after that
+  figure, so the script always died before writing. With the macro corrected and the dump moved
+  ahead of all plotting, this file is now the direct output of a run in the pinned environment
+  (python 3.12.14, numpy 2.4.4, scipy 1.17.1, matplotlib 3.10.8; macOS x86_64 under Rosetta 2 on
+  an Apple M1 Pro; BLAS 3.9.0). The legacy 7 fields map index-for-index onto the first 7 of the
+  new 10; every overlapping value equals the reproduced value rounded to the 4 significant figures
+  it was stored at. Columns 3-5, columns 7-9 and the keys `crossover`, `C2` and `F2` are newly
+  archived — they were never previously stored and are not reproductions of archived values.
+  See notes/2026-09-04-note-07-pinned-certification.md.
 - `res6_policies.json` — {"cal": {policy: [h_star, ARL, ARL_se, capped_runs]}, "delays": {tau_c: {policy: [mean, se, capped]}}}. Units: shots.
 - `res8_switch.json` — {B: [h_star, ARL, {tau_c: [mean, se]}]}.
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.

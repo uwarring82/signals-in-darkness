@@ -29,14 +29,16 @@ EXPECTED_NULLS = {
     # res7B_servo.json has no nulls: its infinite coherence is a known limiting case and
     # carries the sentinel string instead (see test_known_limiting_case_uses_the_sentinel)
     "res7B_servo.json": set(),
-    # B2 columns 3-5 (delta(0), LO, half-sum) were never stored; note 01 carries them
-    "res2_partial.json": {("B2", i, j) for i in range(7) for j in (3, 4, 5)},
+    # res2_partial.json has no nulls since the 4 Sept 2026 adoption: it is now the direct
+    # output of sid_run2.py rather than a hand reconstruction with three unstored columns.
+    "res2_partial.json": set(),
 }
 
 EXPECTED_SHAPE = {
     "res1_core.json": lambda d: len(d["F"]) == 2,
     "res7B_servo.json": lambda d: len(d) == 8,
-    "res2_partial.json": lambda d: len(d["B2"]) == 7,
+    "res2_partial.json": lambda d: (len(d["B2"]) == 7 and len(d["B2"][0]) == 10
+                                    and set(d) == {"B2", "C2", "F2", "crossover"}),
 }
 
 

@@ -189,4 +189,5 @@
   note: notes/2026-09-02-note-01.md#7
   run: analysis/runs/sid_run2.py (F2)
   seed_ref: seeds.md#run2
-  output: analysis/outputs/res2_partial.json key F2 - written by the producer but absent from the archived copy, which SCHEMA.md records as reconstructed from stdout after a figure crash ([unreproduced-from-file])
+  output: analysis/outputs/res2_partial.json key F2
+  reproduced: 2026-09-04, pinned environment (python 3.12.14, numpy 2.4.4, scipy 1.17.1, matplotlib 3.10.8; macOS x86_64 under Rosetta 2 on Apple M1 Pro; BLAS 3.9.0). All eleven values quoted in note 01 section 7 reproduce at their stated precision. The archival gap is closed - key F2 had never been written, because sid_run2.py died at a mathtext macro before its dump - but the scientific status is unchanged by that: it rests on the note, not on the file now existing. The note's summary that delays run 0.8-0.9 of h/I is looser than its own numbers, which span 0.799-0.916; the reproduction spans 0.799-0.917.
