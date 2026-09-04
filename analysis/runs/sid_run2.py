@@ -107,13 +107,30 @@ def cusum_ext(C, s, a, h, runs, seed):
     return np.array(out)
 
 h = math.log(1e3)
+
+
+def _mean_se(sample, label):
+    """(mean, s.e.) or (None, None) if no run reached the threshold -- that is undefined.
+
+    Any other non-finite value is a calculation error and stops the run here, rather than at
+    the json.dump at the end of the script after the whole computation has been paid for.
+    """
+    if len(sample) == 0:
+        return None, None
+    m = float(sample.mean()); se = float(sample.std()/math.sqrt(len(sample)))
+    if not (math.isfinite(m) and math.isfinite(se)):
+        raise ValueError(f"non-finite {label} statistic from {len(sample)} completed runs")
+    return m, se
+
+
 frows = []
 for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 5.0), (0.4, 0.5, 1.0)]:
     a = math.exp(-1/tcc)
     Imid = [r_[6] for r_ in rows if (r_[0], r_[1], r_[2]) == (C, s, tcc)][0]
     Iext = I_ext_exact(C, s)
     de = cusum_ext(C, s, a, h, 80, 31); dm = cusum_mid(C, s, a, h, 40, 32, Imid)
-    frows.append((C, s, tcc, Iext, Imid, de.mean(), de.std()/math.sqrt(len(de)), h/Iext, dm.mean(), dm.std()/math.sqrt(len(dm)), h/Imid, len(dm)))
+    de_m, de_se = _mean_se(de, "extremum"); dm_m, dm_se = _mean_se(dm, "mid-fringe")
+    frows.append((C, s, tcc, Iext, Imid, de_m, de_se, h/Iext, dm_m, dm_se, h/Imid, len(dm)))
     print(f"C={C} s={s} tc/c={tcc:5.1f}: ext delay={de.mean():6.0f}+-{de.std()/math.sqrt(len(de)):4.0f} (h/I={h/Iext:6.0f}) | "
           f"mid delay={dm.mean():6.0f}+-{dm.std()/math.sqrt(len(dm)):4.0f} (h/I_HMM={h/Imid:6.0f})  detected {len(dm)}/40")
 res["F2"] = frows
