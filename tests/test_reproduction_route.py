@@ -154,21 +154,83 @@ def test_delays_refuses_thresholds_from_a_different_run(isolated_reproduction_di
     assert "numpy" in err, err
 
 
-@pytest.mark.parametrize("field,value", [
-    ("revision", "deadbee"),
-    ("python", "2.7.18"),
-])
-def test_delays_refuses_on_each_bound_field(isolated_reproduction_dir, counting_calibrate,
-                                            monkeypatch, capsys, field, value):
+@pytest.mark.parametrize("field", sid_repro.IDENTITY_FIELDS)
+def test_delays_refuses_on_every_bound_identity_field(isolated_reproduction_dir,
+                                                      counting_calibrate, monkeypatch,
+                                                      capsys, field):
+    """Parametrised over IDENTITY_FIELDS itself, so a new bound field cannot go untested.
+
+    machine/platform/blas matter as much as the library versions: identical pins on a
+    different architecture, or under binary translation, are a different numerical stack.
+    """
     _stub_delay(monkeypatch)
     sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
     capsys.readouterr()
     p = isolated_reproduction_dir / "res6_policies.json"
     state = json.loads(p.read_text())
-    state["meta"][field] = value
+    state["meta"][field] = "mutated-for-this-test"
+    p.write_text(json.dumps(state))
+    assert sid_run6s.main(["sid_run6s.py", "delays"]) == 2, f"{field} mismatch was accepted"
+    assert field in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("field", sid_repro.IDENTITY_FIELDS)
+def test_delays_refuses_when_a_bound_field_is_absent(isolated_reproduction_dir,
+                                                     counting_calibrate, monkeypatch,
+                                                     capsys, field):
+    """Fail closed: a missing identity field must not read as 'compatible'."""
+    _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    capsys.readouterr()
+    p = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(p.read_text())
+    del state["meta"][field]
+    p.write_text(json.dumps(state))
+    assert sid_run6s.main(["sid_run6s.py", "delays"]) == 2, f"absent {field} was accepted"
+    assert field in capsys.readouterr().err
+
+
+def test_delays_refuses_a_changed_configuration_field(isolated_reproduction_dir,
+                                                      counting_calibrate, monkeypatch, capsys):
+    """A threshold measured at a different gamma is not this run's threshold."""
+    _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    capsys.readouterr()
+    p = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(p.read_text())
+    state["meta"]["config"]["gamma"] = 1.0e4
+    state["meta"]["config_digest"] = sid_repro.config_digest(state["meta"]["config"])
     p.write_text(json.dumps(state))
     assert sid_run6s.main(["sid_run6s.py", "delays"]) == 2
-    assert field in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert "config_digest" in err and "gamma" in err, err
+
+
+def test_delays_refuses_a_changed_policy_set(isolated_reproduction_dir, counting_calibrate,
+                                             monkeypatch, capsys):
+    """The digest must move when the policy set does, even if every other field matches."""
+    _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    capsys.readouterr()
+    p = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(p.read_text())
+    state["meta"]["config"]["policies"] = state["meta"]["config"]["policies"][:-1]
+    state["meta"]["config_digest"] = sid_repro.config_digest(state["meta"]["config"])
+    p.write_text(json.dumps(state))
+    assert sid_run6s.main(["sid_run6s.py", "delays"]) == 2
+    assert "config.policies" in capsys.readouterr().err
+
+
+def test_identity_is_not_silently_narrowed():
+    """The four platform facts must stay bound; dropping one would weaken the gate quietly."""
+    for field in ("machine", "platform", "blas", "scipy"):
+        assert field in sid_repro.IDENTITY_FIELDS, field
+    meta = sid_repro.run_metadata({"a": 1})
+    assert set(sid_repro.IDENTITY_FIELDS) <= set(meta), "run_metadata omits a bound field"
+    assert meta["config_digest"] == sid_repro.config_digest({"a": 1})
+    assert sid_repro.incompatibilities(meta, meta) == []
+    assert sid_repro.blas_is_identified({"blas": "unknown"}) is False
+    assert sid_repro.blas_is_identified({"blas": "blas 3.9.0"}) is True
 
 
 def test_resume_skips_measured_delay_rows_only(isolated_reproduction_dir, counting_calibrate,

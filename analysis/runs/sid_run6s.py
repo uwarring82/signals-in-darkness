@@ -96,7 +96,11 @@ def main(argv):
             state["cal"] = prior["cal"]
             state["meta"] = prior["meta"]
             log(f"thresholds from this run's cal stage: run {prior['meta']['run_id']}, "
-                f"{len(prior['cal'])} policies")
+                f"{len(prior['cal'])} policies, {prior['meta']['machine']} / "
+                f"{prior['meta']['blas']}")
+            if not sid_repro.blas_is_identified(prior["meta"]):
+                log("note: BLAS could not be identified, so this run certifies one build "
+                    "only -- no cross-platform checkpoint compatibility is claimed")
     policies, _, _ = build_policies()
     computed = cached = 0
 

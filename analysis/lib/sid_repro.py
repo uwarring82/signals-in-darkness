@@ -101,34 +101,62 @@ def save_checkpoint(name, state):
 # "some thresholds someone left on disk", so the checkpoint carries the identity of the run
 # that wrote it and the delay stage refuses anything that does not match.
 
+# Every field that changes the numerical stack. Language and library versions are not
+# enough: identical pins on a different architecture, or under binary translation, are a
+# different stack, and a checkpoint from one must not be consumed by the other.
+IDENTITY_FIELDS = ("revision", "python", "numpy", "scipy", "matplotlib",
+                   "machine", "platform", "blas")
+
+
+def config_digest(config):
+    return hashlib.sha256(
+        json.dumps(config, sort_keys=True, default=str).encode()).hexdigest()[:16]
+
+
 def run_metadata(config):
     prov = provenance()
-    ident = hashlib.sha256(json.dumps(
-        {"revision": prov["revision"], "python": prov["python"], "numpy": prov["numpy"],
-         "scipy": prov["scipy"], "config": config}, sort_keys=True, default=str
-    ).encode()).hexdigest()[:12]
-    return {"run_id": ident, "revision": prov["revision"], "python": prov["python"],
-            "numpy": prov["numpy"], "scipy": prov["scipy"], "config": config,
-            "written": prov["started"]}
+    ident = {f: prov.get(f) for f in IDENTITY_FIELDS}
+    ident["config_digest"] = config_digest(config)
+    run_id = hashlib.sha256(
+        json.dumps(ident, sort_keys=True, default=str).encode()).hexdigest()[:12]
+    return {"run_id": run_id, "config": config, "written": prov["started"], **ident}
 
 
 def incompatibilities(have, want):
-    """Return the reasons `have` may not be consumed by a stage expecting `want`."""
+    """Reasons `have` may not be consumed by a stage expecting `want`. Empty means compatible.
+
+    Fail-closed: an absent field, an unrecognised metadata shape, or an unknown BLAS on one
+    side but not the other all count as mismatches. Silence here means the two runs share a
+    numerical stack, so the list must be conservative.
+    """
     if not have:
-        return ["the thresholds carry no run metadata (written by an older version?)"]
+        return ["the thresholds carry no run identity (written by an older version?)"]
     out = []
-    for field in ("revision", "python", "numpy", "scipy"):
-        if have.get(field) != want.get(field):
+    for field in IDENTITY_FIELDS:
+        if field not in have:
+            out.append(f"{field}: absent from the threshold file")
+        elif have.get(field) != want.get(field):
             out.append(f"{field}: thresholds {have.get(field)!r} vs this run {want.get(field)!r}")
-    hc, wc = have.get("config") or {}, want.get("config") or {}
-    for key in sorted(set(hc) | set(wc)):
-        if key == "policies":
-            missing = [p for p in (wc.get("policies") or []) if p not in (hc.get("policies") or [])]
-            if missing:
-                out.append(f"config.policies: no threshold for {', '.join(missing)}")
-        elif hc.get(key) != wc.get(key):
-            out.append(f"config.{key}: thresholds {hc.get(key)!r} vs this run {wc.get(key)!r}")
+    if have.get("config_digest") != want.get("config_digest"):
+        out.append(f"config_digest: thresholds {have.get('config_digest')!r} "
+                   f"vs this run {want.get('config_digest')!r}")
+        hc, wc = have.get("config") or {}, want.get("config") or {}
+        for key in sorted(set(hc) | set(wc)):
+            if key == "policies":
+                missing = [p for p in (wc.get("policies") or []) if p not in (hc.get("policies") or [])]
+                extra = [p for p in (hc.get("policies") or []) if p not in (wc.get("policies") or [])]
+                if missing:
+                    out.append(f"  config.policies: no threshold for {', '.join(missing)}")
+                if extra:
+                    out.append(f"  config.policies: thresholds carry unexpected {', '.join(extra)}")
+            elif hc.get(key) != wc.get(key):
+                out.append(f"  config.{key}: thresholds {hc.get(key)!r} vs this run {wc.get(key)!r}")
     return out
+
+
+def blas_is_identified(meta):
+    """False when BLAS could not be determined, so no cross-platform claim may be made."""
+    return bool(meta) and meta.get("blas") not in (None, "unknown", "")
 
 
 def provenance():
