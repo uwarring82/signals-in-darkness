@@ -6,3 +6,9 @@ dependencies:
   - scipy=1.17.1
   - matplotlib=3.10.8
   - pytest=9.0.3
+  - pyyaml=6.0.3
+  - pip
+  # cffconvert is not on conda-forge; it validates CITATION.cff against the CFF 1.2 schema.
+  # Without it that check silently skips, and a skipped check is not a gate.
+  - pip:
+      - cffconvert==2.0.0

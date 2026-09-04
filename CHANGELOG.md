@@ -43,6 +43,9 @@ blockers in the notes below are cleared under a clean-checkout verification.
   It failed on C10 and C24. C10's table is now stored; C24 is demoted to open because no script
   in this repository produces it
   (`notes/2026-09-04-note-09-extremum-bonus-provenance.md`).
+- Test dependencies pinned. Eight checks — CFF validity and the whole CITATION.cff/codemeta
+  agreement guard — skipped silently in the certified environment because PyYAML and
+  cffconvert were never pinned. A check that skips is not a gate.
 
 ## Planned
 

@@ -82,14 +82,34 @@ def test_codemeta_agrees_with_citation_cff(field):
     assert got[0] == got[1], f"{field}: CITATION.cff has {got[0]!r}, codemeta.json has {got[1]!r}"
 
 
-def test_pinned_dependencies_agree_between_environment_and_requirements():
-    """A pin present in one file and absent or different in the other is not reproducible."""
+def _environment_pins():
+    """Every pinned package in environment.yml, from both the conda list and its pip section."""
     yaml = pytest.importorskip("yaml", reason="PyYAML not installed")
     env = yaml.safe_load(_read("environment.yml").decode())
-    conda = dict(d.split("=", 1) for d in env["dependencies"] if isinstance(d, str) and "=" in d)
-    req = dict(line.strip().split("==", 1) for line in _read("requirements.txt").decode().splitlines()
-               if "==" in line)
+    pins, unpinned = {}, []
+    for dep in env["dependencies"]:
+        if isinstance(dep, dict):                      # the pip: sub-list
+            for spec in dep.get("pip", []):
+                name, _, ver = spec.partition("==")
+                if ver:
+                    pins[name.lower()] = ver
+                else:
+                    unpinned.append(spec)
+        elif "=" in dep:
+            name, _, ver = dep.partition("=")
+            pins[name.lower()] = ver
+        elif dep != "pip":                             # bare `pip` is the installer, not a pin
+            unpinned.append(dep)
+    return pins, unpinned
+
+
+def test_pinned_dependencies_agree_between_environment_and_requirements():
+    """A pin present in one file and absent or different in the other is not reproducible."""
+    conda, unpinned = _environment_pins()
+    req = {line.strip().split("==", 1)[0].lower(): line.strip().split("==", 1)[1]
+           for line in _read("requirements.txt").decode().splitlines() if "==" in line}
     assert req, "requirements.txt pins nothing"
+    assert not unpinned, f"unpinned dependencies in environment.yml: {unpinned}"
     for pkg, version in req.items():
         assert pkg in conda, f"{pkg} pinned in requirements.txt but absent from environment.yml"
         assert conda[pkg] == version, f"{pkg}: environment.yml={conda[pkg]}, requirements.txt={version}"
@@ -97,5 +117,15 @@ def test_pinned_dependencies_agree_between_environment_and_requirements():
         if pkg == "python":
             continue
         assert pkg in req, f"{pkg} pinned in environment.yml but absent from requirements.txt"
-    assert all("=" in d for d in env["dependencies"] if isinstance(d, str)), \
-        "every conda dependency must carry a version pin"
+
+
+def test_the_pinned_environment_can_run_every_gate():
+    """The pinned environment must provide what the checks need.
+
+    Eight tests skipped under the certified environment because PyYAML and cffconvert were
+    not pinned, which silently disabled the metadata gate. A check that skips is not a gate,
+    so the dependency it needs belongs in environment.yml.
+    """
+    conda, _ = _environment_pins()
+    for pkg in ("pyyaml", "cffconvert", "pytest"):
+        assert pkg in conda, f"{pkg} is needed by the test suite but not pinned in environment.yml"
