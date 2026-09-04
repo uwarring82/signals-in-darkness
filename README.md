@@ -31,7 +31,14 @@ python sid_fig_policy_delays.py   # rebuilds sid_policy_delays.png from stored o
                                   # refuses to run while its inputs are withdrawn (C18)
 pytest ../../tests
 ```
-`sid_run6s.py` and `sid_run8.py` **recompute by default** and write to `analysis/reproduction/` (git-ignored), then compare what they measured against the published archive in `analysis/outputs/` under the tolerances declared in `analysis/lib/sid_repro.py` — thresholds exactly, means within 3σ. Each prints `computed: N, cached: M` with its seeds, runtime, revision and environment, and exits nonzero if a row falls outside tolerance. Add `--resume` to reuse a partial run; that is the only way to reuse previous state. No run script writes into `analysis/outputs/`.
+**No run script writes into `analysis/outputs/` or `figures/`.** Those hold the published archive and are opened read-only. Every producer writes into `analysis/reproduction/` (git-ignored), including its figures, so a reproduction can never overwrite the record it is being checked against, and nothing archived can silently become a computational input.
+
+Comparison is then explicit:
+
+- `sid_run6s.py` and `sid_run8.py` **recompute by default**, compare in-process under the tolerances declared in `analysis/lib/sid_repro.py` — thresholds exactly, means within 3σ — print `computed: N, cached: M` with seeds, runtime, revision and environment, and exit nonzero on failure. `--resume` is the only way to reuse previous state.
+- `python tools/compare_reproduction.py` compares every other reproduced output against the archive under the per-file tolerances declared in that file, and exits nonzero if any exceeds them.
+
+Nothing is adopted automatically: promoting a reproduced output into the archive is a separate, deliberate commit.
 
 Scripts locate `analysis/lib` relative to their own file, so the tree can be moved or cloned anywhere; nothing needs editing after a checkout. Every reported number maps to a script, seed and output file via `analysis/seeds.md` and `ledgers/status.yaml`.
 

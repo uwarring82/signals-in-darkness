@@ -1,11 +1,17 @@
 import os
 import sys, math, json, time
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+# Producers write into analysis/reproduction/ (git-ignored), never into the published
+# archive. REF_OUTD / REF_FIG are the archive, opened read-only for comparison.
+REF_OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from sid_lib import *
 import matplotlib.pyplot as plt
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
+os.makedirs(OUT, exist_ok=True)
 
 # ---------- exact-r_k spectral rate via sinh series: r_k = C^2 e^{-s^2} sum_m x^{2m+1}/(2m+1)! (a^{2m+1})^k, x = s^2 A ----------
 NF = 1024

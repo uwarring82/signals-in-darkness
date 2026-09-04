@@ -1,5 +1,9 @@
 import os
-OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'outputs')
+# Producers write into analysis/reproduction/ (git-ignored), never into the published
+# archive. REF_OUTD / REF_FIG are the archive, opened read-only for comparison.
+REF_OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+os.makedirs(OUTD, exist_ok=True)
 import os
 """Signals in Darkness v1.0 -- core numerical execution.
 
@@ -20,7 +24,9 @@ import matplotlib.pyplot as plt
 INK, SEA, SIG, STONE, PARCH = "#1a1a1a", "#2c5f7c", "#c0392b", "#6b6b6b", "#f5f0e8"
 plt.rcParams.update({"font.family": "serif", "axes.edgecolor": INK, "text.color": INK,
                      "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
+os.makedirs(OUT, exist_ok=True)
 
 
 def savefig_checked(fig, name, min_bytes=10_000):

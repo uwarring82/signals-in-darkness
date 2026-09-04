@@ -8,7 +8,11 @@ anyway, e.g. to reproduce the historical figure deliberately.
 """
 import os, sys, json, math
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-HERE = os.path.dirname(os.path.abspath(__file__)); OUTD = os.path.join(HERE, "..", "outputs"); FIG = os.path.join(HERE, "..", "..", "figures")
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Reads the published archive by design -- it rebuilds from stored outputs -- but writes the
+# rebuilt figure into analysis/reproduction/figures/, never over the archived one.
+OUTD = os.path.join(HERE, "..", "outputs")
+FIG = os.path.join(HERE, "..", "reproduction", "figures"); os.makedirs(FIG, exist_ok=True)
 PARCH, SEA, SIG, INK, STONE = "#f5f0e8", "#2c5f7c", "#c0392b", "#1a1a1a", "#6b6b6b"
 st = json.load(open(os.path.join(OUTD, "res6_policies.json"))); r8 = json.load(open(os.path.join(OUTD, "res8_switch.json")))
 tccs = [20.0, 5.0, 1.0]

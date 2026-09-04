@@ -1,7 +1,11 @@
 import os
 import sys, math
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+# Producers write into analysis/reproduction/ (git-ignored), never into the published
+# archive. REF_OUTD / REF_FIG are the archive, opened read-only for comparison.
+REF_OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from sid_lib import *
 

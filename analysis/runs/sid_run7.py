@@ -1,13 +1,19 @@
 import os
 import sys, math, json
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+# Producers write into analysis/reproduction/ (git-ignored), never into the published
+# archive. REF_OUTD / REF_FIG are the archive, opened read-only for comparison.
+REF_OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from scipy.special import i0
 from scipy.optimize import brentq, minimize
 from sid_lib import DB, I_ext_exact, PARCH, SEA, SIG, INK, STONE
 import matplotlib.pyplot as plt
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
+os.makedirs(OUT, exist_ok=True)
 
 # ================= A. tau-scan identifiability =================
 T2, td = 10.0, 1.0

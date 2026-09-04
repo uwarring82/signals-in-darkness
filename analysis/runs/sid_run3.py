@@ -1,19 +1,25 @@
 import os
 import sys, math, json
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+# Producers write into analysis/reproduction/ (git-ignored), never into the published
+# archive. REF_OUTD / REF_FIG are the archive, opened read-only for comparison.
+REF_OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "outputs")
+OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from sid_lib import *
 import matplotlib.pyplot as plt
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
+os.makedirs(OUT, exist_ok=True)
 REPRO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
 # sid_run3.py consumes res2_partial.json, which only sid_run2.py produces, and the README's
 # Reproduce block did not run sid_run2.py. The archived copy therefore answered silently, the
 # same failure as the run6s cache. A fresh run is now required unless --from-archive says
 # otherwise, so consuming the archive is a stated choice rather than a default.
-_fresh = os.path.join(REPRO, "res2_partial.json")
+_fresh = os.path.join(OUTD, "res2_partial.json")
 if "--from-archive" in sys.argv:
-    _src = os.path.join(OUTD, "res2_partial.json")
+    _src = os.path.join(REF_OUTD, "res2_partial.json")
     print(f"[input] archived res2_partial.json (explicitly requested)")
 elif os.path.exists(_fresh):
     _src = _fresh
