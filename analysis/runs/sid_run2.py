@@ -8,6 +8,7 @@ OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduct
 os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from sid_lib import *
+import sid_repro
 import matplotlib.pyplot as plt
 
 REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
@@ -138,8 +139,10 @@ res["F2"] = frows
 # Numerical output is written BEFORE any plotting: a figure failure must not be able
 # to destroy the run's data. The archived res2_partial.json had to be reconstructed
 # from stdout precisely because the dump used to sit after a figure that always crashed.
-json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"),
-          default=float, indent=1, allow_nan=False)   # refuse to write non-finite values (rule 6)
+# Atomic: temporary file then os.replace, so an interruption cannot leave a truncated
+# res2_partial.json that still parses. Written before any plotting (see above).
+sid_repro.write_json(os.path.join(OUTD, "res2_partial.json"), res,
+                     default=float, indent=1, allow_nan=False)
 
 # ---------- figure: mid-fringe rate approximations vs tau_c/c ----------
 fig, ax = plt.subplots(figsize=(6.6, 4.3), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)

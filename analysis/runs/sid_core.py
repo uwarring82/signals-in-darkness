@@ -15,7 +15,10 @@ Sections
   E  regime map (C, tau_c/c): analytic crossover, validity overlays, tau-optimised map
   F  oracle CUSUM delay vs log(gamma)/I at both operating points
 """
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib"))
 import numpy as np, math, json, time
+import sid_repro
 from scipy.integrate import dblquad
 import matplotlib
 matplotlib.use("Agg")
@@ -439,6 +442,6 @@ fig.tight_layout(); savefig_checked(fig, "sid_endpoint_check.png"); plt.close(fi
 # run instead of writing a file that conforming parsers reject. Deliberate "undefined"
 # values are None above and serialise as null, matching the convention SCHEMA.md already
 # documents for res2_partial.json.
-json.dump(report, open(os.path.join(OUTD, "res1_core.json"), "w"),
-          default=float, indent=1, allow_nan=False)
+sid_repro.write_json(os.path.join(OUTD, "res1_core.json"), report,
+                     default=float, indent=1, allow_nan=False)
 print("\ndone")

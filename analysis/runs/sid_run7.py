@@ -10,6 +10,7 @@ import numpy as np
 from scipy.special import i0
 from scipy.optimize import brentq, minimize
 from sid_lib import DB, I_ext_exact, PARCH, SEA, SIG, INK, STONE
+import sid_repro
 import matplotlib.pyplot as plt
 REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
@@ -50,7 +51,7 @@ for C0 in (0.4, 0.9):
             rows.append((C0, eta0, tc, I_unc, I_A, I_B, I_ref, dG/(2*eta0*Gam)))
             print(f"C0={C0} eta0={eta0:.2f} tc/td={tc:5.1f}: unconstrained={I_unc:.2e}  classA={I_A:.2e}  classB={I_B:.2e}  "
                   f"best-single-tau={I_ref:.2e}   DeltaGamma/(2 eta0 Gamma)={dG/(2*eta0*Gam):5.2f}")
-json.dump(rows, open(os.path.join(OUTD, "res7A_identifiability.json"), "w"), allow_nan=False)
+sid_repro.write_json(os.path.join(OUTD, "res7A_identifiability.json"), rows, allow_nan=False)
 
 # ================= B. servo regime: four-outcome effective contrast vs kappa =================
 print("\n== B. servo regime: effective contrast of the two channels vs oscillator coherence kappa ==")
@@ -101,7 +102,7 @@ for kappa in (0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, math.inf):
     tab.append((KAPPA_INF if math.isinf(kappa) else kappa, math.sqrt(fi_par), math.sqrt(fi_full),
                 ceff_from_kl(kv_par), ceff_from_kl(kv_full)))
     print(f"kappa={kappa:>5}: slope C_eff parity={math.sqrt(fi_par):.3f} full={math.sqrt(fi_full):.3f} | variance C_eff parity={ceff_from_kl(kv_par):.3f} full={ceff_from_kl(kv_full):.3f}")
-json.dump(tab, open(os.path.join(OUTD, "res7B_servo.json"), "w"), allow_nan=False)
+sid_repro.write_json(os.path.join(OUTD, "res7B_servo.json"), tab, allow_nan=False)
 
 fig, ax = plt.subplots(figsize=(6.2, 4.0), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
 kap = [100 if t[0] == KAPPA_INF else t[0] for t in tab]   # perfect oscillator drawn at 100

@@ -25,10 +25,13 @@ Declared tolerances (see compare_rows):
                 with SIGMA_TOL = 3.
   capped runs   reported, never gated (a cap change is diagnostic, not a verdict).
 """
+import hashlib
 import json
 import os
+import platform
 import subprocess
 import sys
+import tempfile
 import time
 
 SIGMA_TOL = 3.0
@@ -63,8 +66,69 @@ def load_checkpoint(name, resume):
     return json.load(open(p)) if os.path.exists(p) else None
 
 
+def write_json(path, obj, **kw):
+    """Write JSON atomically: a temporary file in the same directory, then os.replace.
+
+    An interrupted write must not leave a half-written file that later parses as valid JSON
+    with truncated content, or that fails to parse at all and is mistaken for a missing run.
+    os.replace is atomic within a filesystem.
+    """
+    d = os.path.dirname(os.path.abspath(path)) or "."
+    os.makedirs(d, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=d, prefix=".tmp-", suffix=".json")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            json.dump(obj, fh, **kw)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+    return path
+
+
 def save_checkpoint(name, state):
-    json.dump(state, open(reproduction_path(name), "w"))
+    write_json(reproduction_path(name), state)
+
+
+# ---- binding a stage's output to the run that produced it ----
+# Calibration thresholds are a required output of the current reproduction, not anonymous
+# reusable state. The delay stage must be able to tell "the cal stage of this run" from
+# "some thresholds someone left on disk", so the checkpoint carries the identity of the run
+# that wrote it and the delay stage refuses anything that does not match.
+
+def run_metadata(config):
+    prov = provenance()
+    ident = hashlib.sha256(json.dumps(
+        {"revision": prov["revision"], "python": prov["python"], "numpy": prov["numpy"],
+         "scipy": prov["scipy"], "config": config}, sort_keys=True, default=str
+    ).encode()).hexdigest()[:12]
+    return {"run_id": ident, "revision": prov["revision"], "python": prov["python"],
+            "numpy": prov["numpy"], "scipy": prov["scipy"], "config": config,
+            "written": prov["started"]}
+
+
+def incompatibilities(have, want):
+    """Return the reasons `have` may not be consumed by a stage expecting `want`."""
+    if not have:
+        return ["the thresholds carry no run metadata (written by an older version?)"]
+    out = []
+    for field in ("revision", "python", "numpy", "scipy"):
+        if have.get(field) != want.get(field):
+            out.append(f"{field}: thresholds {have.get(field)!r} vs this run {want.get(field)!r}")
+    hc, wc = have.get("config") or {}, want.get("config") or {}
+    for key in sorted(set(hc) | set(wc)):
+        if key == "policies":
+            missing = [p for p in (wc.get("policies") or []) if p not in (hc.get("policies") or [])]
+            if missing:
+                out.append(f"config.policies: no threshold for {', '.join(missing)}")
+        elif hc.get(key) != wc.get(key):
+            out.append(f"config.{key}: thresholds {hc.get(key)!r} vs this run {wc.get(key)!r}")
+    return out
 
 
 def provenance():
@@ -81,12 +145,34 @@ def provenance():
             versions[mod] = __import__(mod).__version__
         except Exception:
             versions[mod] = "absent"
+    # Platform is part of the provenance, not a footnote: the same pins on a different
+    # architecture, or under translation, are a different numerical stack.
+    try:
+        blas = numpy_blas()
+    except Exception:
+        blas = "unknown"
     return {
         "revision": rev + ("+dirty" if dirty else ""),
         "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "processor": platform.processor() or "unknown",
+        "blas": blas,
         "started": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         **versions,
     }
+
+
+def numpy_blas():
+    """Name and version of the BLAS numpy was built against, or 'unknown'."""
+    import numpy as _np
+    try:
+        cfg = _np.show_config("dicts") or {}
+        b = (cfg.get("Build Dependencies") or {}).get("blas") or {}
+        name, ver = b.get("name"), b.get("version")
+        return f"{name} {ver}".strip() or "unknown"
+    except Exception:
+        return "unknown"
 
 
 def print_banner(stage, resume, seeds, prov=None):
@@ -94,7 +180,9 @@ def print_banner(stage, resume, seeds, prov=None):
     print(f"# stage        : {stage}")
     print(f"# mode         : {'resume (reuses analysis/reproduction/)' if resume else 'fresh (recomputes everything)'}")
     print(f"# revision     : {prov['revision']}")
-    print(f"# environment  : python {prov['python']}, numpy {prov['numpy']}, scipy {prov['scipy']}")
+    print(f"# environment  : python {prov['python']}, numpy {prov['numpy']}, scipy {prov['scipy']}, "
+          f"matplotlib {prov['matplotlib']}")
+    print(f"# platform     : {prov['platform']} | machine {prov['machine']} | blas {prov['blas']}")
     print(f"# seeds        : {seeds}")
     print(f"# reference    : {os.path.relpath(REFERENCE_DIR, REPO_ROOT)} (read-only)")
     print(f"# writes to    : {os.path.relpath(REPRODUCTION_DIR, REPO_ROOT)}")

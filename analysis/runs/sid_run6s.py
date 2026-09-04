@@ -43,6 +43,15 @@ def log(*a):
     print(f"[{time.time()-T0:6.0f}s]", *a, flush=True)
 
 
+CAL_R, CAL_ITERS = 32, 5
+
+
+def cal_config(policy_names):
+    """The configuration the thresholds depend on. A change here invalidates them."""
+    return {"gamma": GAMMA, "R": CAL_R, "iters": CAL_ITERS,
+            "seeds": CAL_SEEDS, "policies": sorted(policy_names)}
+
+
 def empty_state():
     return {"cal": {}, "delays": {}}
 
@@ -63,16 +72,31 @@ def main(argv):
     state = sid_repro.load_checkpoint(STATE_NAME, resume) or empty_state()
     reference = sid_repro.load_reference(STATE_NAME) or empty_state()
 
-    # The delays stage needs the thresholds the cal stage measured. Those live in this run's
-    # reproduction checkpoint, not in the archive, so reading them is not reuse of previous
-    # state -- it is consuming the previous stage of the same reproduction. --resume governs
-    # whether delay rows already measured are reused; it must not decide whether this stage
-    # can see its own input, or "fresh by default" would make the two-stage path impossible.
-    if arg == "delays" and not state["cal"]:
-        prior = sid_repro.load_checkpoint(STATE_NAME, True) or empty_state()
+    # The delays stage needs the thresholds the cal stage measured. Those are a required
+    # OUTPUT OF THE CURRENT RUN, not anonymous reusable state: they live in this run's
+    # reproduction checkpoint, never in the archive. --resume governs whether delay rows
+    # already measured are reused; it must not decide whether this stage can see its own
+    # input, or "fresh by default" would make the documented two-command path impossible.
+    #
+    # Because that input is read outside --resume, it is bound to the run that produced it.
+    # Thresholds from a different revision, interpreter, library set or policy configuration
+    # are refused rather than silently mixed into a fresh measurement.
+    if arg == "delays" and not state["cal"] and not use_archived_thresholds:
+        prior = sid_repro.load_checkpoint(STATE_NAME, True) or {}
         if prior.get("cal"):
+            want = sid_repro.run_metadata(cal_config(sorted(prior["cal"])))
+            why = sid_repro.incompatibilities(prior.get("meta"), want)
+            if why:
+                print("refusing thresholds that are not this run's cal output:", file=sys.stderr)
+                for reason in why:
+                    print(f"  - {reason}", file=sys.stderr)
+                print("  rerun the cal: stage, or pass --thresholds=archive deliberately.",
+                      file=sys.stderr)
+                return 2
             state["cal"] = prior["cal"]
-            log(f"thresholds taken from this run's cal stage ({len(prior['cal'])} policies)")
+            state["meta"] = prior["meta"]
+            log(f"thresholds from this run's cal stage: run {prior['meta']['run_id']}, "
+                f"{len(prior['cal'])} policies")
     policies, _, _ = build_policies()
     computed = cached = 0
 
@@ -83,8 +107,9 @@ def main(argv):
                 log("resumed", name, state["cal"][name])
                 continue
             bk, sc = policies[name]
-            h, m, se, nc = calibrate(bk, sc, GAMMA, R=32, iters=5)
+            h, m, se, nc = calibrate(bk, sc, GAMMA, R=CAL_R, iters=CAL_ITERS)
             state["cal"][name] = [h, m, se, int(nc)]
+            state["meta"] = sid_repro.run_metadata(cal_config(state["cal"]))
             sid_repro.save_checkpoint(STATE_NAME, state)
             computed += 1
             log(f"{name:32s} h*={h:.3f}  ARL={m:.0f} +- {se:.0f}  (capped runs: {nc}/64)")

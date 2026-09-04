@@ -103,6 +103,96 @@ def test_reported_work_is_backed_by_simulation():
     assert len(stop) == 4
 
 
+def _stub_delay(monkeypatch):
+    calls = []
+
+    def stub(bank, sched, true_tcc, h, R, seed, cap=100_000):
+        calls.append((true_tcc, h))
+        return 1234.0, 56.0, 0
+
+    monkeypatch.setattr(sid_run6s, "delay_of", stub)
+    return calls
+
+
+ALL_POLICIES = ("cal:oracle-mid(tc=20),oracle-mid(tc=5),oracle-mid(tc=1),extremum-only,"
+                "learner-mid(bank),learner-interleave-B10(bank),learner-interleave-B1(bank)")
+
+
+def test_documented_two_command_sequence(isolated_reproduction_dir, counting_calibrate,
+                                         monkeypatch, capsys):
+    """`cal:` then `delays`, exactly as the README documents, with nothing carried in."""
+    delays = _stub_delay(monkeypatch)
+    assert sid_run6s.main(["sid_run6s.py", ALL_POLICIES]) in (0, 1)
+    out = capsys.readouterr().out
+    assert "computed: 7, cached: 0" in out, out
+
+    sid_run6s.main(["sid_run6s.py", "delays"])
+    out = capsys.readouterr().out
+    assert "thresholds from this run's cal stage" in out, out
+    assert "no thresholds available" not in out
+    assert len(delays) == 15, f"expected 15 delay measurements, got {len(delays)}"
+    assert "computed: 15, cached: 0" in out, out
+
+
+def test_delays_refuses_thresholds_from_a_different_run(isolated_reproduction_dir,
+                                                        counting_calibrate, monkeypatch, capsys):
+    """Thresholds are a required output of THIS run, not state someone left on disk."""
+    _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    capsys.readouterr()
+
+    state_path = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(state_path.read_text())
+    assert state["meta"]["run_id"], "cal output carries no run identity"
+    state["meta"]["numpy"] = "0.0.0-from-another-machine"
+    state_path.write_text(json.dumps(state))
+
+    rc = sid_run6s.main(["sid_run6s.py", "delays"])
+    err = capsys.readouterr().err
+    assert rc == 2, "a mismatched threshold file must be refused, not consumed"
+    assert "not this run's cal output" in err, err
+    assert "numpy" in err, err
+
+
+@pytest.mark.parametrize("field,value", [
+    ("revision", "deadbee"),
+    ("python", "2.7.18"),
+])
+def test_delays_refuses_on_each_bound_field(isolated_reproduction_dir, counting_calibrate,
+                                            monkeypatch, capsys, field, value):
+    _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    capsys.readouterr()
+    p = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(p.read_text())
+    state["meta"][field] = value
+    p.write_text(json.dumps(state))
+    assert sid_run6s.main(["sid_run6s.py", "delays"]) == 2
+    assert field in capsys.readouterr().err
+
+
+def test_resume_skips_measured_delay_rows_only(isolated_reproduction_dir, counting_calibrate,
+                                               monkeypatch, capsys):
+    """--resume reuses delay rows already measured; it does not turn cal back into cache."""
+    delays = _stub_delay(monkeypatch)
+    sid_run6s.main(["sid_run6s.py", ALL_POLICIES])
+    sid_run6s.main(["sid_run6s.py", "delays"])
+    capsys.readouterr()
+    assert len(delays) == 15
+
+    # drop one measured row; --resume must recompute exactly that one
+    p = isolated_reproduction_dir / "res6_policies.json"
+    state = json.loads(p.read_text())
+    del state["delays"]["20.0"]["extremum-only"]
+    p.write_text(json.dumps(state))
+
+    delays.clear()
+    sid_run6s.main(["sid_run6s.py", "delays", "--resume"])
+    out = capsys.readouterr().out
+    assert len(delays) == 1, f"--resume recomputed {len(delays)} rows, expected 1"
+    assert "computed: 1, cached: 14" in out, out
+
+
 def test_declared_tolerance_rejects_a_transcribed_threshold():
     """h* must be compared exactly: the two bad archive rows pass a 3-sigma mean test."""
     fresh = {"oracle-mid(tc=20)": [4.671875, 44698.640625, 5208.357712, 4]}
