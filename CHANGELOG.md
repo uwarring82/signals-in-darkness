@@ -5,11 +5,28 @@ listed under Planned and are not claimed as history.
 
 ## Tags
 
+- **`repo-v0.1.0`** — first certified repository release, at `d845a80`. Full analysis path
+  re-run from a clean clone of that commit in the pinned environment, tree unchanged before
+  and after: every stage computed afresh, 164 tests passed with none skipped, site projection
+  current, strict JSON throughout, and six comparable outputs within their declared
+  tolerances. The calibration gate exits nonzero by design, refusing the two rows whose
+  provenance is lost (C17, C18). Certifies one platform — macOS x86_64 under Rosetta 2 on an
+  Apple M1 Pro, BLAS 3.9.0; native arm64 untested. Tags the repository, not a scientific
+  document.
 - **`archive-2026-09-03`** — verbatim import of the handed-over working folder. Byte-identical
   to the folder as received; not a pure move, because the portability rewrite predates the
   import (`SEED_HANDOVER.md`, `cards/history/2026-09-04-repo-seed-v0.2-errata.md`).
 
-## Unreleased
+## Unreleased (after `repo-v0.1.0`)
+
+- Documentation only: runtimes recorded as observed ranges rather than single figures.
+  `sid_run8.py` took between about 4.5 and 41 minutes across three runs of the certified
+  platform, and the full path between about 35 and 72 minutes, with bit-identical results
+  every time. Runtime depends strongly on sustained system load; the cause of the spread has
+  not been isolated and no telemetry was collected. The tag was not moved or recreated for
+  this correction.
+
+## Before `repo-v0.1.0`
 
 Work since the import, none of it tagged. No tag may be pushed until the certification
 blockers in the notes below are cleared under a clean-checkout verification.

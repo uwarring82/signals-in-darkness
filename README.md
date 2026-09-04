@@ -18,7 +18,8 @@ Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in p
 ```
 conda env create -f environment.yml && conda activate sid     # or: pip install -r requirements.txt
 cd analysis/runs
-# whole path ~35 min on one core, measured 4 Sept 2026 in the pinned environment
+# whole path ~35-72 min on one core, observed over three runs of the certified platform.
+# Runtimes vary strongly with sustained system load; see the note under this block.
 python sid_core.py        # sections A–F, ~6 min
 python sid_run2.py        # mid-fringe comparator, ~2.5 min; writes res2_partial.json, which run3 needs
 python sid_run3.py        # spectral comparator, exact-comparator tau-optimised map (~20 s)
@@ -27,7 +28,7 @@ python sid_run5.py        # calibrated-ARL delay comparison (~5 min)
 python sid_run7.py        # identifiability and servo tables (~10 s)
 python sid_run6s.py "cal:oracle-mid(tc=20),oracle-mid(tc=5),oracle-mid(tc=1),extremum-only,learner-mid(bank),learner-interleave-B10(bank),learner-interleave-B1(bank)"   # ~8.5 min
 python sid_run6s.py delays        # ~1 min; uses the thresholds the line above just measured
-python sid_run8.py                # explore-then-switch, ~4.5 min
+python sid_run8.py                # explore-then-switch, ~4.5-41 min (see note below)
 python sid_fig_policy_delays.py   # rebuilds sid_policy_delays.png from stored outputs;
                                   # refuses to run while its inputs are withdrawn (C18)
 pytest ../../tests
@@ -41,7 +42,9 @@ Comparison is then explicit:
 
 Nothing is adopted automatically: promoting a reproduced output into the archive is a separate, deliberate commit.
 
-The whole path has been run in the pinned environment once, on 4 Sept 2026: Apple M1 Pro host, macOS x86_64 **under Rosetta 2**, BLAS 3.9.0. Native arm64 is untested, and identical pins on a different architecture are a different numerical stack. What reproduced, and by how much, is in `notes/2026-09-04-note-07-pinned-certification.md`.
+**Runtimes are indicative, not budgets.** Across three runs of the certified platform, `sid_run8.py` took between about 4.5 and 41 minutes and the full path between about 35 and 72 minutes, while returning bit-identical results each time (its delay rows agree at 0.00 sigma). Runtime depends strongly on sustained system load. The cause of the spread has not been isolated, and no telemetry was collected; the per-script figures above are the shorter end of the observed range.
+
+The whole path has been run in the pinned environment on 4 Sept 2026: Apple M1 Pro host, macOS x86_64 **under Rosetta 2**, BLAS 3.9.0. Native arm64 is untested, and identical pins on a different architecture are a different numerical stack. What reproduced, and by how much, is in `notes/2026-09-04-note-07-pinned-certification.md`.
 
 Scripts locate `analysis/lib` relative to their own file, so the tree can be moved or cloned anywhere; nothing needs editing after a checkout. Every reported number maps to a script, seed and output file via `analysis/seeds.md` and `ledgers/status.yaml`.
 

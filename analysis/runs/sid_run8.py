@@ -8,7 +8,10 @@ Seeds    : calibration bisection 300..304, confirmation 399; delays 500 + int(ta
 Outputs  : analysis/reproduction/res8_switch.json (fresh run; git-ignored).
            The published reference stays at analysis/outputs/res8_switch.json and is
            only read, for comparison.
-Runtime  : ~10 min on one core.
+Runtime  : 4.5 to 41 min on one core, observed across three runs of the certified
+           platform (macOS x86_64 under Rosetta 2). Results were bit-identical in every
+           run; the spread depends strongly on sustained system load and its cause has
+           not been isolated. No telemetry was collected.
 
 Usage:
     python sid_run8.py [--resume]
