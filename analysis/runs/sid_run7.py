@@ -44,7 +44,7 @@ for C0 in (0.4, 0.9):
             rows.append((C0, eta0, tc, I_unc, I_A, I_B, I_ref, dG/(2*eta0*Gam)))
             print(f"C0={C0} eta0={eta0:.2f} tc/td={tc:5.1f}: unconstrained={I_unc:.2e}  classA={I_A:.2e}  classB={I_B:.2e}  "
                   f"best-single-tau={I_ref:.2e}   DeltaGamma/(2 eta0 Gamma)={dG/(2*eta0*Gam):5.2f}")
-json.dump(rows, open(os.path.join(OUTD, "res7A_identifiability.json"), "w"))
+json.dump(rows, open(os.path.join(OUTD, "res7A_identifiability.json"), "w"), allow_nan=False)
 
 # ================= B. servo regime: four-outcome effective contrast vs kappa =================
 print("\n== B. servo regime: effective contrast of the two channels vs oscillator coherence kappa ==")
@@ -88,12 +88,15 @@ tab = []
 for kappa in (0.0, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, math.inf):
     fi_par = max(fisher(kappa, a, b, False) for a, b in grid); fi_full = max(fisher(kappa, a, b, True) for a, b in grid)
     kv_par = max(var_channel(kappa, a, b, ssq, False) for a, b in grid[::3]); kv_full = max(var_channel(kappa, a, b, ssq, True) for a, b in grid[::3])
-    tab.append((kappa, math.sqrt(fi_par), math.sqrt(fi_full), ceff_from_kl(kv_par), ceff_from_kl(kv_full)))
+    # kappa = inf is the perfect-oscillator limit: no finite coherence applies, so it is
+    # stored as null rather than as the JSON-invalid token Infinity. See SCHEMA.md.
+    tab.append((None if math.isinf(kappa) else kappa, math.sqrt(fi_par), math.sqrt(fi_full),
+                ceff_from_kl(kv_par), ceff_from_kl(kv_full)))
     print(f"kappa={kappa:>5}: slope C_eff parity={math.sqrt(fi_par):.3f} full={math.sqrt(fi_full):.3f} | variance C_eff parity={ceff_from_kl(kv_par):.3f} full={ceff_from_kl(kv_full):.3f}")
-json.dump(tab, open(os.path.join(OUTD, "res7B_servo.json"), "w"))
+json.dump(tab, open(os.path.join(OUTD, "res7B_servo.json"), "w"), allow_nan=False)
 
 fig, ax = plt.subplots(figsize=(6.2, 4.0), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
-kap = [t[0] if t[0] != math.inf else 100 for t in tab]
+kap = [100 if t[0] is None else t[0] for t in tab]   # null = perfect oscillator, drawn at 100
 ax.plot(kap, [t[1] for t in tab], "o--", color=STONE, label="slope channel, parity only")
 ax.plot(kap, [t[2] for t in tab], "o-", color=SEA, label="slope channel, four-outcome")
 ax.plot(kap, [t[3] for t in tab], "s--", color=STONE, label="variance channel, parity only")

@@ -1,7 +1,8 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "name": "signals-in-darkness",
+  "name": "Signals in Darkness: operating-point crossover in sequential quantum-clock detection",
+  "alternateName": "signals-in-darkness",
   "description": "Analysis code and evidence record for the operating-point crossover and identifiability results in sequential quantum-clock detection.",
   "version": "0.0.0-seed",
   "dateCreated": "2026-09-02",
@@ -12,20 +13,22 @@
   "softwareRequirements": [
     "numpy 2.4.4",
     "scipy 1.17.1",
-    "matplotlib 3.10.8"
+    "matplotlib 3.10.8",
+    "pytest 9.0.3"
   ],
   "author": [
     {
       "@type": "Person",
       "givenName": "Ulrich",
       "familyName": "Warring",
-      "affiliation": "Albert-Ludwigs-Universit\u00e4t Freiburg"
+      "affiliation": "Physikalisches Institut, Albert-Ludwigs-Universität Freiburg"
     }
   ],
   "keywords": [
-    "quickest detection",
-    "Ramsey",
-    "quantum clock",
+    "quickest change detection",
+    "Ramsey interferometry",
+    "quantum clocks",
+    "correlation spectroscopy",
     "identifiability"
   ],
   "developmentStatus": "concept"

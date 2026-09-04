@@ -1,0 +1,111 @@
+"""Every stored output must be strict JSON, and null must mean only "undefined".
+
+RFC 8259 has no NaN or Infinity. Python's json module emits and accepts them by default,
+which is why res1_core.json (four NaN) and res7B_servo.json (one Infinity) sat in the
+archive as invalid JSON: node's JSON.parse rejects both, while jq happens to be lenient.
+The FAIR matrix promises retrievable, interoperable open formats, so a file only a Python
+reader can load does not satisfy it.
+
+These tests read the raw bytes rather than a parsed object, because json.load() would
+silently accept the very tokens under test.
+"""
+import glob
+import json
+import math
+import os
+
+import pytest
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+OUTPUTS = sorted(glob.glob(os.path.join(ROOT, "analysis", "outputs", "*.json")))
+
+# Documented in analysis/outputs/SCHEMA.md. Every null in the archive must be one of these,
+# written out rather than derived from the file: an expectation computed from the data
+# under test cannot fail (rule 4). EXPECTED_SHAPE pins the row counts these positions assume.
+EXPECTED_NULLS = {
+    # F: mid-fringe delay mean and s.e., undefined at tau_c/c = 20 and 1 where no run
+    # reached the threshold within the cap
+    "res1_core.json": {("F", 0, 8), ("F", 0, 9), ("F", 1, 8), ("F", 1, 9)},
+    # kappa = null is the perfect-oscillator limit: the eighth and last row
+    "res7B_servo.json": {(7, 0)},
+    # B2 columns 3-5 (delta(0), LO, half-sum) were never stored; note 01 carries them
+    "res2_partial.json": {("B2", i, j) for i in range(7) for j in (3, 4, 5)},
+}
+
+EXPECTED_SHAPE = {
+    "res1_core.json": lambda d: len(d["F"]) == 2,
+    "res7B_servo.json": lambda d: len(d) == 8,
+    "res2_partial.json": lambda d: len(d["B2"]) == 7,
+}
+
+
+def _null_positions(obj, path=()):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _null_positions(v, path + (k,))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from _null_positions(v, path + (i,))
+    elif obj is None:
+        yield path
+
+
+def test_outputs_exist():
+    assert OUTPUTS, "no stored outputs found"
+
+
+@pytest.mark.parametrize("path", OUTPUTS, ids=lambda p: os.path.basename(p))
+def test_no_non_finite_tokens_in_the_raw_file(path):
+    raw = open(path, encoding="utf-8").read()
+    for token in ("NaN", "Infinity", "-Infinity"):
+        assert token not in raw, f"{os.path.basename(path)} contains the JSON-invalid token {token}"
+
+
+@pytest.mark.parametrize("path", OUTPUTS, ids=lambda p: os.path.basename(p))
+def test_round_trips_through_a_conforming_serialiser(path):
+    """json.dumps(..., allow_nan=False) is the strictness a conforming parser applies."""
+    obj = json.loads(open(path, encoding="utf-8").read(), parse_constant=_reject)
+    json.dumps(obj, allow_nan=False)
+
+
+def _reject(name):
+    raise AssertionError(f"non-finite constant {name!r} in a stored output")
+
+
+@pytest.mark.parametrize("path", OUTPUTS, ids=lambda p: os.path.basename(p))
+def test_every_null_is_a_documented_undefined_value(path):
+    """A null that SCHEMA.md does not account for is an undeclared hole in the record."""
+    name = os.path.basename(path)
+    obj = json.loads(open(path, encoding="utf-8").read())
+    shape = EXPECTED_SHAPE.get(name)
+    if shape is not None:
+        assert shape(obj), f"{name}: row count changed; the declared null positions no longer apply"
+    found = set(_null_positions(obj))
+    expected = EXPECTED_NULLS.get(name, set())
+    assert found == expected, (
+        f"{name}: nulls {sorted(map(str, found))} but SCHEMA.md declares "
+        f"{sorted(map(str, expected))}")
+
+
+@pytest.mark.parametrize("path", OUTPUTS, ids=lambda p: os.path.basename(p))
+def test_no_parsed_value_is_non_finite(path):
+    obj = json.loads(open(path, encoding="utf-8").read())
+    bad = []
+
+    def walk(x, p=""):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, f"{p}.{k}")
+        elif isinstance(x, list):
+            for i, v in enumerate(x):
+                walk(v, f"{p}[{i}]")
+        elif isinstance(x, float) and not math.isfinite(x):
+            bad.append((p, x))
+
+    walk(obj)
+    assert not bad, f"{os.path.basename(path)}: non-finite values at {bad}"
+
+
+def test_schema_documents_the_representation_rule():
+    text = open(os.path.join(ROOT, "analysis", "outputs", "SCHEMA.md"), encoding="utf-8").read()
+    assert "strict JSON" in text and "null" in text, "SCHEMA.md must state the null convention"

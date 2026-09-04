@@ -131,5 +131,6 @@ ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("$\\tau_c/c$"); ax.set
 ax.set_title(f"Mid-fringe rate approximations, $\\bar C={C}$, $s={s}$ rad", fontsize=10); ax.legend(fontsize=7.5)
 fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check.png"); plt.close(fig)
 
-json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"), default=float, indent=1)
+json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"),
+          default=float, indent=1, allow_nan=False)   # refuse to write non-finite values (rule 6)
 print("done2")

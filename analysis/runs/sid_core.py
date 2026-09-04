@@ -291,6 +291,27 @@ def cusum_mid(C, s, a, h, runs, seed, M=121):
 
 hmm_rate_cache = {}
 gamma = 1e3; h = math.log(gamma)
+
+
+def _mean_se(sample, label):
+    """Mean and standard error of a delay sample.
+
+    Returns (None, None) when no run reached the threshold within the cap: the delay is
+    then undefined, not a number, and is stored as JSON null. Any OTHER non-finite value
+    is a calculation error and stops the run rather than being written to the archive.
+    """
+    if len(sample) == 0:
+        return None, None
+    m = float(sample.mean()); se = float(sample.std()/math.sqrt(len(sample)))
+    if not (math.isfinite(m) and math.isfinite(se)):
+        raise ValueError(f"non-finite {label} delay statistic from {len(sample)} completed runs")
+    return m, se
+
+
+def _fmt(v):
+    return "undefined" if v is None else f"{v:.0f}"
+
+
 F_rows = []
 for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 1.0)]:
     a = math.exp(-1/tcc)
@@ -298,9 +319,10 @@ for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 1.0)]:
     Imid = [row[6] for row in B_rows if row[0] == C and row[1] == s and row[2] == tcc][0]
     hmm_rate_cache[(C, s, a)] = Imid
     de = cusum_ext(C, s, a, h, 60, 11); dm = cusum_mid(C, s, a, h, 40, 12)
-    F_rows.append((C, s, tcc, Iext, Imid, de.mean(), de.std()/math.sqrt(len(de)), h/Iext, dm.mean(), dm.std()/math.sqrt(len(dm)), h/Imid))
-    print(f"C={C} s={s} tc/c={tcc}: extremum delay={de.mean():.0f}+-{de.std()/math.sqrt(len(de)):.0f} (h/I={h/Iext:.0f}) | "
-          f"mid-fringe delay={dm.mean():.0f}+-{dm.std()/math.sqrt(len(dm)):.0f} (h/I={h/Imid:.0f})  [runs {len(de)},{len(dm)}]")
+    de_m, de_se = _mean_se(de, "extremum"); dm_m, dm_se = _mean_se(dm, "mid-fringe")
+    F_rows.append((C, s, tcc, Iext, Imid, de_m, de_se, h/Iext, dm_m, dm_se, h/Imid))
+    print(f"C={C} s={s} tc/c={tcc}: extremum delay={_fmt(de_m)}+-{_fmt(de_se)} (h/I={h/Iext:.0f}) | "
+          f"mid-fringe delay={_fmt(dm_m)}+-{_fmt(dm_se)} (h/I={h/Imid:.0f})  [runs {len(de)},{len(dm)}]")
 report["F"] = F_rows
 
 # endpoint figure
@@ -313,5 +335,11 @@ ax.set_xlabel("Ramsey phase $\\theta$ (deg; 0 = extremum, 90 = mid-fringe)"); ax
 ax.set_yscale("log"); ax.legend(fontsize=7.5); ax.set_title("Endpoint lemma check: exact (solid) vs leading order (dashed)", fontsize=10)
 fig.tight_layout(); fig.savefig(f"{OUT}/sid_endpoint_check.png"); plt.close(fig)
 
-json.dump(report, open(os.path.join(OUTD, "res1_core.json"), "w"), default=float, indent=1)
+# Postcondition (rule 6): the archive must be valid JSON. allow_nan=False refuses to
+# serialise NaN/Infinity, so any non-finite value that is NOT a deliberate null stops the
+# run instead of writing a file that conforming parsers reject. Deliberate "undefined"
+# values are None above and serialise as null, matching the convention SCHEMA.md already
+# documents for res2_partial.json.
+json.dump(report, open(os.path.join(OUTD, "res1_core.json"), "w"),
+          default=float, indent=1, allow_nan=False)
 print("\ndone")

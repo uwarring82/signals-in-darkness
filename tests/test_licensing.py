@@ -54,3 +54,48 @@ def test_citation_cff_validates():
     cffconvert = pytest.importorskip("cffconvert.cli.create_citation",
                                      reason="cffconvert not installed")
     cffconvert.create_citation(os.path.join(ROOT, "CITATION.cff"), None).validate()
+
+
+# ---- CITATION.cff is canonical for the fields both records share ----
+
+def _records():
+    import json
+    yaml = pytest.importorskip("yaml", reason="PyYAML not installed")
+    cff = yaml.safe_load(_read("CITATION.cff").decode())
+    cm = json.loads(_read("codemeta.json").decode())
+    return cff, cm
+
+
+@pytest.mark.parametrize("field", ["title", "affiliation", "keywords", "version",
+                                   "date", "repository"])
+def test_codemeta_agrees_with_citation_cff(field):
+    """Two machine-readable records disagreeing is a parallel source (rule 3)."""
+    cff, cm = _records()
+    got = {
+        "title": (cff["title"], cm["name"]),
+        "affiliation": (cff["authors"][0]["affiliation"], cm["author"][0]["affiliation"]),
+        "keywords": (cff["keywords"], cm["keywords"]),
+        "version": (cff["version"], cm["version"]),
+        "date": (cff["date-released"], cm["datePublished"]),
+        "repository": (cff["repository-code"], cm["codeRepository"]),
+    }[field]
+    assert got[0] == got[1], f"{field}: CITATION.cff has {got[0]!r}, codemeta.json has {got[1]!r}"
+
+
+def test_pinned_dependencies_agree_between_environment_and_requirements():
+    """A pin present in one file and absent or different in the other is not reproducible."""
+    yaml = pytest.importorskip("yaml", reason="PyYAML not installed")
+    env = yaml.safe_load(_read("environment.yml").decode())
+    conda = dict(d.split("=", 1) for d in env["dependencies"] if isinstance(d, str) and "=" in d)
+    req = dict(line.strip().split("==", 1) for line in _read("requirements.txt").decode().splitlines()
+               if "==" in line)
+    assert req, "requirements.txt pins nothing"
+    for pkg, version in req.items():
+        assert pkg in conda, f"{pkg} pinned in requirements.txt but absent from environment.yml"
+        assert conda[pkg] == version, f"{pkg}: environment.yml={conda[pkg]}, requirements.txt={version}"
+    for pkg in conda:
+        if pkg == "python":
+            continue
+        assert pkg in req, f"{pkg} pinned in environment.yml but absent from requirements.txt"
+    assert all("=" in d for d in env["dependencies"] if isinstance(d, str)), \
+        "every conda dependency must carry a version pin"

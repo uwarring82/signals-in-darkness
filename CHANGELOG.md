@@ -1,2 +1,34 @@
 # Changelog
-- 2026-09-03 — seed assembled (pre-commit). Planned tags: `archive-2026-09-03`, `card-v1.0`, `card-v1.1`, `note-03a`.
+
+One line per tag, as the repository seed card requires. Tags that do not yet exist are
+listed under Planned and are not claimed as history.
+
+## Tags
+
+- **`archive-2026-09-03`** — verbatim import of the handed-over working folder. Byte-identical
+  to the folder as received; not a pure move, because the portability rewrite predates the
+  import (`SEED_HANDOVER.md`, `cards/history/2026-09-04-repo-seed-v0.2-errata.md`).
+
+## Unreleased
+
+Work since the import, none of it tagged. No tag may be pushed until the certification
+blockers in the notes below are cleared under a clean-checkout verification.
+
+- Reproduction route repaired: the documented command consumed its own committed output as
+  cache state and recomputed nothing. Fresh by default, explicit `--resume`, archive separated
+  from checkpoints, comparison under declared tolerances, and a regression gate
+  (`notes/2026-09-03-note-04-reproduction-defect.md`).
+- Two archived calibration rows withdrawn as unreproducible, with four delay entries measured
+  at their thresholds; C09, C11 and C12 demoted to open (C17–C20).
+- C01 withdrawn: the extremum expansion's accuracy ranges were stated as contrast-independent
+  and are not (`notes/2026-09-03-note-01a-errata.md`). Replaced by C21.
+- Licensing declared file-scoped in `REUSE.toml`; `CITATION.cff` now validates.
+- Site projection made verifiable (`build_site.py --check`); the previous freshness assertion
+  could not fail.
+- Stored outputs migrated to strict JSON
+  (`notes/2026-09-04-note-05-representation-migration.md`).
+
+## Planned
+
+`card-v1.0`, `card-v1.1`, `note-03a` — retrospective tags for the frozen cards and the errata,
+to be applied during the certification pass, not before.
