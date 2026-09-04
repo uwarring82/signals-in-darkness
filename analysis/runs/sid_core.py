@@ -21,6 +21,23 @@ INK, SEA, SIG, STONE, PARCH = "#1a1a1a", "#2c5f7c", "#c0392b", "#6b6b6b", "#f5f0
 plt.rcParams.update({"font.family": "serif", "axes.edgecolor": INK, "text.color": INK,
                      "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK})
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
+
+
+def savefig_checked(fig, name, min_bytes=10_000):
+    """Write a figure and assert it actually landed (rule 6).
+
+    A figure writer that reports success without checking is how a rebuild can silently
+    produce nothing, or a truncated file, and still print "rebuilt".
+    """
+    path = os.path.join(OUT, name)
+    os.makedirs(OUT, exist_ok=True)
+    fig.savefig(path)
+    assert os.path.exists(path), f"postcondition: {name} was not written"
+    size = os.path.getsize(path)
+    assert size >= min_bytes, f"postcondition: {name} is {size} bytes, expected >= {min_bytes}"
+    print(f"   wrote {name} ({size//1024} kB)")
+    return path
+
 rng = np.random.default_rng(1)
 report = {}
 
@@ -198,27 +215,103 @@ S2g = 1.0/np.expm1(2.0/TT)
 s_ref = 0.5
 Iext_g = CC**2/(8*(1-CC**2)); Imid_g = 0.5*CC**4*S2g   # per s^4
 win_mid = Imid_g > Iext_g
-pert_mid = CC**4*s_ref**4*S2g          # must be << 1
-pert_ext = s_ref**2*CC/(1-CC**2)       # must be << 1
+# ---- validity overlays ----
+# Both overlays drawn before 4 Sept 2026 were wrong, and both flattered the map.
+#
+# Mid-fringe: the figure contoured Cbar^4 s^4 Sigma a_k^2 = 0.3, the v1.0 box that
+# ledgers/status.yaml records as WITHDRAWN under C03 and that note 01 section 2b calls "the
+# wrong parameter". Card v1.1 specifies delta(0) = 2 Sigma r_k with the exact
+# r_k = Cbar^2 e^{-s^2} sinh(s^2 a^k). At Cbar = 0.4, s = 0.5 the withdrawn box put the
+# boundary at tau_c/c = 376; delta(0) = 0.3 puts it at 5.29, i.e. 70x nearer, and only just
+# above the crossover at 4.65 that the same figure draws.
+#
+# Extremum: the figure contoured s^2 Cbar/(1-Cbar^2) = 0.3, the uniform bound withdrawn as
+# C01 (see notes/2026-09-03-note-01a-errata.md). q does not fix the relative error without a
+# contrast range, so the exact error is contoured instead, at declared levels.
+DELTA0_LEVEL = 0.3
+EXT_ERROR_LEVELS = (0.20, 0.50)
+
+
+def delta0(C, tcc, s=s_ref, M=8):
+    """Spectral perturbation delta(0) = 2 sum_{k>=1} r_k for the exact mid-fringe r_k.
+
+    sum_k sinh(x a^k) = sum_m x^(2m+1)/(2m+1)! * a^(2m+1)/(1 - a^(2m+1)), x = s^2, so the
+    sum over lags closes in M terms instead of being truncated. Verified against direct
+    summation to 2.6e-16 relative over C in [0.2, 0.99], tau_c/c in [0.2, 200].
+    """
+    a = np.exp(-1.0/np.asarray(tcc, float))
+    x = s*s
+    tot = np.zeros_like(a, dtype=float)
+    for m in range(M):
+        p = 2*m + 1
+        tot += x**p/math.factorial(p) * a**p/(1 - a**p)
+    return 2*np.asarray(C, float)**2*math.exp(-x)*tot
+
+
+delta0_g = delta0(CC, TT)
+ext_err = I_ext_lo(Cs, s_ref)/I_ext_exact(Cs, s_ref) - 1      # exact, not a bound
+ext_err_min = float(ext_err.min())
+ext_crossings = {}
+for lv in EXT_ERROR_LEVELS:
+    if ext_err_min > lv:
+        ext_crossings[f'{lv}'] = None          # level never attained on this axis
+    else:
+        ext_crossings[f'{lv}'] = float(brentq(
+            lambda c: float(I_ext_lo(c, s_ref)/I_ext_exact(c, s_ref) - 1 - lv), Cs[0], Cs[-1]))
+print(f"   extremum leading-order error at s={s_ref}: {100*ext_err_min:.1f} % at Cbar={Cs[0]:.2f} "
+      f"rising to {100*float(ext_err[-1]):.0f} % at Cbar={Cs[-1]:.3f}")
+for lv, c in ext_crossings.items():
+    print(f"     error {float(lv):.0%}: " + ("not attained anywhere on this map" if c is None
+                                             else f"at Cbar = {c:.4f}"))
 
 fig, ax = plt.subplots(figsize=(7.2, 5.2), dpi=150, facecolor=PARCH)
 ax.set_facecolor(PARCH)
 ax.contourf(CC, TT, win_mid.astype(float), levels=[-0.5, 0.5, 1.5], colors=[PARCH, "#cfdde6"])
 ax.plot(Cs, crossover_tcc(Cs), color=SEA, lw=2, label="crossover  $\\Sigma a_k^2=1/[4\\bar C^2(1-\\bar C^2)]$")
-ax.contour(CC, TT, pert_mid, levels=[0.3], colors=[SIG], linestyles="--", linewidths=1.4)
-ax.contour(CC, TT, pert_ext, levels=[0.3], colors=[SIG], linestyles=":", linewidths=1.4)
+ax.contour(CC, TT, delta0_g, levels=[DELTA0_LEVEL], colors=[SIG], linestyles="--", linewidths=1.4)
+for lv, c in ext_crossings.items():
+    if c is not None:
+        ax.axvline(c, color=SIG, lw=1.2, ls=":")
+        ax.text(c+0.006, 0.3, f"extremum LO error {float(lv):.0%}", color=SIG, fontsize=7,
+                rotation=90, va="bottom")
 ax.axvline(0.5, color=STONE, lw=1.2); ax.axvline(0.405, color=STONE, lw=1.2, ls="-.")
 ax.text(0.505, 60, "parity ceiling $\\bar C=1/2$", color=STONE, fontsize=8, rotation=90, va="top")
 ax.text(0.41, 60, "realistic parity $\\bar C\\simeq0.4$", color=STONE, fontsize=8, rotation=90, va="top")
 ax.text(0.12, 30, "mid-fringe (correlation) wins", color=SEA, fontsize=10)
 ax.text(0.55, 0.45, "extremum (contrast-loss) wins", color=INK, fontsize=10)
-ax.text(0.75, 2.6, "servo-tracked regime $\\rightarrow$", color=STONE, fontsize=8)
-ax.plot([], [], color=SIG, ls="--", label=f"mid-fringe expansion: $\\bar C^4 s^4\\Sigma a_k^2=0.3$ ($s={s_ref}$)")
-ax.plot([], [], color=SIG, ls=":", label=f"extremum expansion: $s^2\\bar C/(1-\\bar C^2)=0.3$ ($s={s_ref}$)")
+ax.plot([], [], color=SIG, ls="--", label=f"mid-fringe validity: $\\delta(0)=2\\Sigma r_k={DELTA0_LEVEL}$ ($s={s_ref}$, card v1.1)")
+ax.plot([], [], color=SIG, ls=":", label=f"extremum: exact LO error (min {100*ext_err_min:.0f}\\% on this map)")
 ax.set_yscale("log"); ax.set_xlabel("effective contrast $\\bar C$"); ax.set_ylabel("correlation time in shot cycles  $\\tau_c/c$")
-ax.set_title("Operating-point regime map (leading order, point-sampled OU)", fontsize=11)
-ax.legend(loc="upper right", fontsize=7.5, framealpha=0.9)
-fig.tight_layout(); fig.savefig(f"{OUT}/sid_regime_map.png"); plt.close(fig)
+ax.set_title("Operating-point regime map (leading order, point-sampled OU)\n"
+             "the crossover is drawn beyond mid-fringe validity wherever it lies above the dashed curve",
+             fontsize=10)
+ax.legend(loc="upper right", fontsize=7, framealpha=0.9)
+fig.tight_layout(); savefig_checked(fig, "sid_regime_map.png"); plt.close(fig)
+
+# ---- store the grids the figure is drawn from (work-plan step 4) ----
+# Only boundaries that fall inside the plotted range are stored; the count of contrasts with
+# no boundary in range is recorded rather than silently dropped.
+boundary, omitted = [], 0
+for C in Cs:
+    f = lambda t: float(delta0(C, t)) - DELTA0_LEVEL
+    if f(tccs[0])*f(tccs[-1]) < 0:
+        boundary.append([float(C), float(brentq(f, tccs[0], tccs[-1]))])
+    else:
+        omitted += 1
+report["E"] = {
+    "s_ref": s_ref,
+    "C_grid": Cs.tolist(),
+    "tcc_grid": tccs.tolist(),
+    "crossover_tcc": crossover_tcc(Cs).tolist(),
+    "delta0_level": DELTA0_LEVEL,
+    "delta0_boundary": boundary,
+    "delta0_boundary_omitted": omitted,
+    "ext_rel_error": ext_err.tolist(),
+    "ext_error_crossings": ext_crossings,
+    "ext_error_min": ext_err_min,
+}
+print(f"   stored E: {len(Cs)} contrasts, delta(0)={DELTA0_LEVEL} boundary at {len(boundary)} of them "
+      f"({omitted} outside the plotted tau_c/c range)")
 
 # tau-optimised map (leading order; amplitude cancels). Units: t_dead = 1, T2 = 10.
 T2, td = 10.0, 1.0
@@ -252,7 +345,7 @@ im = ax[1].pcolormesh(X, Y, np.log10(tau_opt/T2), cmap="cividis", shading="auto"
 ax[1].set_yscale("log"); ax[1].set_xlabel("$\\bar C_0$"); ax[1].set_title("optimal $\\log_{10}(\\tau/T_2)$ of winning channel", fontsize=10)
 fig.colorbar(im, ax=ax[1])
 fig.suptitle(f"$\\tau$-optimised regime map, $T_2 = 10\\,t_{{\\rm dead}}$, exponential contrast, leading order (amplitude-free)", fontsize=10)
-fig.tight_layout(); fig.savefig(f"{OUT}/sid_regime_map_tau_optimised.png"); plt.close(fig)
+fig.tight_layout(); savefig_checked(fig, "sid_regime_map_tau_optimised.png"); plt.close(fig)
 print("tau-optimised map: fraction of grid where mid-fringe wins =", win.mean().round(3))
 print("tau_opt/T2 range (winner):", (tau_opt/T2).min().round(3), (tau_opt/T2).max().round(3))
 
@@ -333,7 +426,7 @@ for (key, (th, ex, lo)), col in zip(C_rows.items(), [SEA, SIG, INK]):
     ax.plot(np.degrees(th), lo, "--", color=col, alpha=0.6)
 ax.set_xlabel("Ramsey phase $\\theta$ (deg; 0 = extremum, 90 = mid-fringe)"); ax.set_ylabel("information per shot (nats)")
 ax.set_yscale("log"); ax.legend(fontsize=7.5); ax.set_title("Endpoint lemma check: exact (solid) vs leading order (dashed)", fontsize=10)
-fig.tight_layout(); fig.savefig(f"{OUT}/sid_endpoint_check.png"); plt.close(fig)
+fig.tight_layout(); savefig_checked(fig, "sid_endpoint_check.png"); plt.close(fig)
 
 # Postcondition (rule 6): the archive must be valid JSON. allow_nan=False refuses to
 # serialise NaN/Infinity, so any non-finite value that is NOT a deliberate null stops the

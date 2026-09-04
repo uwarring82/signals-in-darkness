@@ -6,7 +6,23 @@ import numpy as np
 from sid_lib import *
 import matplotlib.pyplot as plt
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
-res2 = json.load(open(os.path.join(OUTD, "res2_partial.json")))
+REPRO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction")
+# sid_run3.py consumes res2_partial.json, which only sid_run2.py produces, and the README's
+# Reproduce block did not run sid_run2.py. The archived copy therefore answered silently, the
+# same failure as the run6s cache. A fresh run is now required unless --from-archive says
+# otherwise, so consuming the archive is a stated choice rather than a default.
+_fresh = os.path.join(REPRO, "res2_partial.json")
+if "--from-archive" in sys.argv:
+    _src = os.path.join(OUTD, "res2_partial.json")
+    print(f"[input] archived res2_partial.json (explicitly requested)")
+elif os.path.exists(_fresh):
+    _src = _fresh
+    print(f"[input] fresh res2_partial.json from analysis/reproduction/")
+else:
+    sys.exit("sid_run3.py needs res2_partial.json.\n"
+             "  Run `python sid_run2.py` first, or pass --from-archive to read the committed\n"
+             "  copy in analysis/outputs/ deliberately.")
+res2 = json.load(open(_src))
 
 def gp_rate_num(rk, nf=4096):
     K = len(rk); f = (np.arange(nf)+0.5)/nf
@@ -64,6 +80,7 @@ ax.axhline(0.5*C*C*s*s, color=SEA, lw=0.8, ls="-.", label=r"frozen-offset limit 
 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel(r"$\tau_c/c$"); ax.set_ylabel("information per shot (nats)")
 ax.set_title(fr"Mid-fringe rate approximations, $\bar C={C}$, $s={s}$ rad", fontsize=10); ax.legend(fontsize=7.5)
 fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check.png"); plt.close(fig)
+assert os.path.getsize(f"{OUT}/sid_midfringe_rate_check.png") > 10_000, "figure not written"
 print("rate-check values (tcc, LO, halfsum, GP, HMM):")
 for t, l, h_, g, m in zip(tcc_grid, lo_v, hs_v, gp_v, hmm_v): print(f"  {t:4d}  {l:.2e}  {h_:.2e}  {g:.2e}  {m:.2e}")
 

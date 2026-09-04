@@ -129,7 +129,11 @@ ax.axhline(I_ext_exact(C, s), color=INK, lw=1, label="extremum, exact $D_{\\rm B
 ax.axhline(0.5*C*C*s*s, color=SEA, lw=0.8, ls="-.", label="frozen-offset limit $\\bar C^2 s^2/2$")
 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("$\\tau_c/c$"); ax.set_ylabel("information per shot (nats)")
 ax.set_title(f"Mid-fringe rate approximations, $\\bar C={C}$, $s={s}$ rad", fontsize=10); ax.legend(fontsize=7.5)
-fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check.png"); plt.close(fig)
+# Renamed 4 Sept 2026: this and sid_run3.py both wrote sid_midfringe_rate_check.png with
+# different curves (numeric GP comparator here, closed-form geometric fit there), so the
+# archived figure depended on which script ran last. See figures/README.md.
+fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check_gp_numeric.png"); plt.close(fig)
+assert os.path.getsize(f"{OUT}/sid_midfringe_rate_check_gp_numeric.png") > 10_000, "figure not written"
 
 json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"),
           default=float, indent=1, allow_nan=False)   # refuse to write non-finite values (rule 6)

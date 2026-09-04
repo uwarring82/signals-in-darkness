@@ -18,20 +18,26 @@ Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in p
 ```
 conda env create -f environment.yml && conda activate sid     # or: pip install -r requirements.txt
 cd analysis/runs
-python sid_core.py        # sections A–F, ~5 min on one core; writes figures to figures/
+python sid_core.py        # sections A–F, ~10 min on one core; writes figures to figures/
+python sid_run2.py        # mid-fringe comparator; produces res2_partial.json, which run3 needs
 python sid_run3.py        # spectral comparator, exact-comparator tau-optimised map
+python sid_run4.py        # geometric-fit vs sinh-series check; sid_check2_geomfit_vs_series.png
 python sid_run5.py        # calibrated-ARL delay comparison (~4 min)
 python sid_run7.py        # identifiability and servo tables (~2 min)
 python sid_run6s.py "cal:oracle-mid(tc=20),oracle-mid(tc=5),oracle-mid(tc=1),extremum-only,learner-mid(bank),learner-interleave-B10(bank),learner-interleave-B1(bank)"   # ~8 min
 python sid_run6s.py delays        # ~25 min; uses the thresholds the line above just measured
 python sid_run8.py                # explore-then-switch, ~10 min
+python sid_fig_policy_delays.py   # rebuilds sid_policy_delays.png from stored outputs;
+                                  # refuses to run while its inputs are withdrawn (C18)
 pytest ../../tests
 ```
 `sid_run6s.py` and `sid_run8.py` **recompute by default** and write to `analysis/reproduction/` (git-ignored), then compare what they measured against the published archive in `analysis/outputs/` under the tolerances declared in `analysis/lib/sid_repro.py` — thresholds exactly, means within 3σ. Each prints `computed: N, cached: M` with its seeds, runtime, revision and environment, and exits nonzero if a row falls outside tolerance. Add `--resume` to reuse a partial run; that is the only way to reuse previous state. No run script writes into `analysis/outputs/`.
 
 Scripts locate `analysis/lib` relative to their own file, so the tree can be moved or cloned anywhere; nothing needs editing after a checkout. Every reported number maps to a script, seed and output file via `analysis/seeds.md` and `ledgers/status.yaml`.
 
-**Two rows of the note 03 §2 calibration table do not reproduce** and are withdrawn, along with four delay entries measured at their thresholds (claims C17–C20). Before that was found, this route consumed its own committed output as cache and recomputed nothing. See `notes/2026-09-03-note-04-reproduction-defect.md`; `tests/test_reproduction_route.py` is the gate that keeps it from recurring.
+`sid_run3.py` requires the `res2_partial.json` that `sid_run2.py` writes; it reads the committed archive only under an explicit `--from-archive`. Every figure writer asserts that its file landed and is not truncated.
+
+**Two rows of the note 03 §2 calibration table do not reproduce** and are withdrawn, along with four delay entries measured at their thresholds (claims C17–C20). **The regime map's validity overlays were withdrawn on 4 Sept 2026** and rebuilt (C22, C23): under the correct criterion the leading-order crossover is inside its own validity region only for C̄ ≈ 0.2–0.5. See `notes/2026-09-04-note-06-regime-map-overlays.md`. Before that was found, this route consumed its own committed output as cache and recomputed nothing. See `notes/2026-09-03-note-04-reproduction-defect.md`; `tests/test_reproduction_route.py` is the gate that keeps it from recurring.
 
 ## Cite
 See `CITATION.cff`. Two licences apply, by file:

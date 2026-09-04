@@ -159,3 +159,19 @@
   seed_ref: none (deterministic)
   output: analysis/outputs/res1_core.json (A2)
   supersedes: C01
+- id: C22
+  statement: Validity overlays on the principal regime map as published before 4 Sept 2026. The mid-fringe overlay drew the v1.0 box withdrawn under C03 (boundary at tau_c/c = 376 at Cbar=0.4, s=0.5, against 5.29 for the card v1.1 criterion delta(0) = 0.3), and the extremum overlay drew the uniform bound withdrawn under C01. Both errors overstated the region where the leading-order expansion is valid.
+  status: withdrawn
+  note: notes/2026-09-04-note-06-regime-map-overlays.md#1
+  run: analysis/runs/sid_core.py (section E)
+  seed_ref: none (deterministic)
+  output: figure figures/sid_regime_map.png (version before 4 Sept 2026)
+  errata: notes/2026-09-04-note-06-regime-map-overlays.md
+- id: C23
+  statement: Leading-order validity of the crossover curve on the regime map at s=0.5. Under the card v1.1 criterion delta(0) = 0.3 the crossover lies inside its own validity region only for Cbar of about 0.2 to 0.5 (19.69 vs 14.00 at 0.2; 5.29 vs 4.65 at 0.4; 3.55 vs 3.57 at 0.5, on the boundary) and beyond it at 0.7, 0.9 and 0.995. Separately, the exact extremum leading-order error at s=0.5 is nowhere better than 13.2 percent on this map, reaching 20 percent at Cbar=0.6705 and 50 percent at Cbar=0.9110, so the 6 percent level is not attained anywhere on it. The exact-comparator map carrying C08 is unaffected.
+  status: result
+  note: notes/2026-09-04-note-06-regime-map-overlays.md#1
+  run: analysis/runs/sid_core.py (section E)
+  seed_ref: none (deterministic)
+  output: analysis/outputs/res1_core.json (E); figure figures/sid_regime_map.png
+  supersedes: C22
