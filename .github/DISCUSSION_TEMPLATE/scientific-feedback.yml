@@ -1,0 +1,32 @@
+title: "Scientific feedback"
+labels: [discussion]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For interpretation, alternative models, applications and theoretical objections.
+        Failed reproductions, suspected numerical errors, reference corrections and
+        documentation defects go to Issues instead.
+  - type: input
+    id: claim
+    attributes:
+      label: Claim id or run identifier
+      description: e.g. C08, or analysis/runs/sid_run3.py. Use `none` if this is general.
+    validations:
+      required: true
+  - type: textarea
+    id: reasoning
+    attributes:
+      label: Reasoning or evidence
+    validations:
+      required: true
+  - type: dropdown
+    id: reproduced
+    attributes:
+      label: Did you reproduce anything?
+      options:
+        - "No"
+        - "Partially"
+        - "Yes — describe above"
+    validations:
+      required: true

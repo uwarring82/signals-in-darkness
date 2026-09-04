@@ -277,10 +277,10 @@ for lv, c in ext_crossings.items():
 ax.axvline(0.5, color=STONE, lw=1.2); ax.axvline(0.405, color=STONE, lw=1.2, ls="-.")
 ax.text(0.505, 60, "parity ceiling $\\bar C=1/2$", color=STONE, fontsize=8, rotation=90, va="top")
 ax.text(0.41, 60, "realistic parity $\\bar C\\simeq0.4$", color=STONE, fontsize=8, rotation=90, va="top")
-ax.text(0.12, 30, "mid-fringe (correlation) wins", color=SEA, fontsize=10)
-ax.text(0.55, 0.45, "extremum (contrast-loss) wins", color=INK, fontsize=10)
+ax.text(0.09, 120, "mid-fringe (correlation) wins", color=SEA, fontsize=10)
+ax.text(0.24, 0.35, "extremum (contrast-loss) wins", color=INK, fontsize=10)
 ax.plot([], [], color=SIG, ls="--", label=f"mid-fringe validity: $\\delta(0)=2\\Sigma r_k={DELTA0_LEVEL}$ ($s={s_ref}$, card v1.1)")
-ax.plot([], [], color=SIG, ls=":", label=f"extremum: exact LO error (min {100*ext_err_min:.0f}\\% on this map)")
+ax.plot([], [], color=SIG, ls=":", label=f"extremum: exact LO error (min {100*ext_err_min:.0f}% on this map)")
 ax.set_yscale("log"); ax.set_xlabel("effective contrast $\\bar C$"); ax.set_ylabel("correlation time in shot cycles  $\\tau_c/c$")
 ax.set_title("Operating-point regime map (leading order, point-sampled OU)\n"
              "the crossover is drawn beyond mid-fringe validity wherever it lies above the dashed curve",
