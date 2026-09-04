@@ -27,6 +27,14 @@ blockers in the notes below are cleared under a clean-checkout verification.
   could not fail.
 - Stored outputs migrated to strict JSON
   (`notes/2026-09-04-note-05-representation-migration.md`).
+- The principal regime map's validity overlays withdrawn and rebuilt: both drew criteria the
+  ledger had already withdrawn (`notes/2026-09-04-note-06-regime-map-overlays.md`).
+- Producers separated from the archive: every run script writes to `analysis/reproduction/`,
+  and calibration thresholds are bound to the numerical stack that produced them.
+- First reproduction of the whole analysis path in the pinned environment. Two defects only
+  that path could expose, `res2_partial.json` adopted from a real run for the first time, and
+  C17/C18 confirmed independently
+  (`notes/2026-09-04-note-07-pinned-certification.md`).
 
 ## Planned
 

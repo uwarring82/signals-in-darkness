@@ -40,6 +40,8 @@ Comparison is then explicit:
 
 Nothing is adopted automatically: promoting a reproduced output into the archive is a separate, deliberate commit.
 
+The whole path has been run in the pinned environment once, on 4 Sept 2026: Apple M1 Pro host, macOS x86_64 **under Rosetta 2**, BLAS 3.9.0. Native arm64 is untested, and identical pins on a different architecture are a different numerical stack. What reproduced, and by how much, is in `notes/2026-09-04-note-07-pinned-certification.md`.
+
 Scripts locate `analysis/lib` relative to their own file, so the tree can be moved or cloned anywhere; nothing needs editing after a checkout. Every reported number maps to a script, seed and output file via `analysis/seeds.md` and `ledgers/status.yaml`.
 
 `sid_run3.py` requires the `res2_partial.json` that `sid_run2.py` writes; it reads the committed archive only under an explicit `--from-archive`. Every figure writer asserts that its file landed and is not truncated.
