@@ -1,9 +1,9 @@
 cff-version: 1.2.0
-message: "If you use this repository, cite it as below. A DOI will be added at the first public release."
+message: "If you use this repository, cite it as below. No DOI is assigned to release repo-v0.1.0; repository archiving is deferred."
 title: "Signals in Darkness: operating-point crossover in sequential quantum-clock detection"
 type: software
-version: "0.0.0-seed"
-date-released: "2026-09-03"
+version: "0.1.0"
+date-released: "2026-09-04"
 authors:
   - family-names: Warring
     given-names: Ulrich

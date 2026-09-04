@@ -4,7 +4,7 @@ Binding acceptance test: every public result must be discoverable by identifier,
 
 | Principle | Implementation |
 |---|---|
-| Findable | `CITATION.cff`, `codemeta.json`, tags per frozen card/note, claim ids in `ledgers/status.yaml`, Zenodo concept DOI + per-release DOI from first public release |
+| Findable | `CITATION.cff`, `codemeta.json`, versioned GitHub releases, tags per frozen card/note, and claim ids in `ledgers/status.yaml`. Repository archiving and DOI assignment are deferred after `repo-v0.1.0`. |
 | Accessible | Public repository; open formats only (md, yaml, json, csv, png/svg, py); release archives |
 | Interoperable | Output schemas and units in `analysis/outputs/SCHEMA.md`; stable claim/run identifiers; relative links |
 | Reusable | SPDX licences (Apache-2.0 code, CC-BY-4.0 content); `environment.yml` lock; `analysis/seeds.md`; provenance chain claim → run → seed → output; `tests/`; errata links |

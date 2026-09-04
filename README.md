@@ -53,7 +53,8 @@ Scripts locate `analysis/lib` relative to their own file, so the tree can be mov
 **Two rows of the note 03 §2 calibration table do not reproduce** and are withdrawn, along with four delay entries measured at their thresholds (claims C17–C20). **The regime map's validity overlays were withdrawn on 4 Sept 2026** and rebuilt (C22, C23): under the correct criterion the leading-order crossover is inside its own validity region only for C̄ ≈ 0.2–0.5. See `notes/2026-09-04-note-06-regime-map-overlays.md`. Before that was found, this route consumed its own committed output as cache and recomputed nothing. See `notes/2026-09-03-note-04-reproduction-defect.md`; `tests/test_reproduction_route.py` is the gate that keeps it from recurring.
 
 ## Cite
-See `CITATION.cff`. Two licences apply, by file:
+See `CITATION.cff`. Release `repo-v0.1.0` has no DOI; repository archiving is deferred to
+a later release. Two licences apply, by file:
 
 - **Apache-2.0** — `analysis/lib/`, `analysis/runs/`, `tests/`, `tools/` and repository metadata (default; follows `iontrap-dynamics` if that repository fixes a different licence).
 - **CC BY 4.0** — cards, notes, labbook, ledgers, figures, references, docs and the recorded outputs in `analysis/outputs/`.

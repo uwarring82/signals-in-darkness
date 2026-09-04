@@ -19,6 +19,9 @@ listed under Planned and are not claimed as history.
 
 ## Unreleased (after `repo-v0.1.0`)
 
+- Publication metadata updated for the GitHub-only release: repository archiving and DOI
+  assignment are deferred, and the citation records now identify version 0.1.0. The certified
+  tag remains at `d845a80`.
 - Documentation only: runtimes recorded as observed ranges rather than single figures.
   `sid_run8.py` took between about 4.5 and 41 minutes across three runs of the certified
   platform, and the full path between about 35 and 72 minutes, with bit-identical results
