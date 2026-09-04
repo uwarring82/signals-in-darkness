@@ -136,6 +136,30 @@ for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 5.0), (0.4, 0.5, 1.0)]:
           f"mid delay={dm.mean():6.0f}+-{dm.std()/math.sqrt(len(dm)):4.0f} (h/I_HMM={h/Imid:6.0f})  detected {len(dm)}/40")
 res["F2"] = frows
 
+# ---------- extremum-stream correlation excess (independent check of note 03 section 1) ----------
+# Note 03 section 1 reports a dark-fringe excess of the exact extremum rate over the marginal
+# Bernoulli divergence, at 3.84e6 shots per point (64 x 60 000). NO SCRIPT IN THIS REPOSITORY
+# PRODUCED THAT TABLE -- no other hmm_rate call uses theta = pi -- and its seeds were never
+# recorded, so the published rows cannot be reproduced, only the method. This block is an
+# INDEPENDENT CHECK at the same design with seeds 0..63 recorded, not a reproduction of the
+# published values. See claim C24 and notes/2026-09-04-note-09-extremum-bonus-provenance.md.
+print("\n== extremum-stream correlation excess (independent check, seeds 0-63) ==")
+bonus = []
+for C_, s_, tcc_ in [(0.9, 0.3, 5.0), (0.9, 0.3, 20.0), (0.4, 0.5, 20.0)]:
+    a_ = math.exp(-1/tcc_)
+    v = np.array([hmm_rate(C_, s_, math.pi, a_, N=60_000, seed=k) for k in range(64)])
+    m_, se_ = float(v.mean()), float(v.std(ddof=1)/math.sqrt(len(v)))
+    db = float(I_ext_exact(C_, s_))
+    bonus.append([C_, s_, tcc_, m_, se_, db, 100*(m_/db - 1), 100*se_/db])
+    print(f"C={C_} s={s_} tc/c={tcc_:4.1f}: exact={m_:.4e}+-{se_:.1e}  D_Bern={db:.4e}  "
+          f"excess={100*(m_/db-1):+.2f} +- {100*se_/db:.2f} %")
+res["extremum_bonus"] = bonus
+res["extremum_bonus_fields"] = ["C", "s", "tau_c/c", "exact_rate_mean", "exact_rate_se",
+                                "marginal_D_Bern", "excess_percent", "excess_se_percent"]
+res["extremum_bonus_design"] = {"theta": "pi (dark fringe)", "N_per_seed": 60000,
+                                "seeds": "0..63", "shots_per_point": 3840000,
+                                "independent_check_of": "notes/2026-09-02-note-03.md#1"}
+
 # Numerical output is written BEFORE any plotting: a figure failure must not be able
 # to destroy the run's data. The archived res2_partial.json had to be reconstructed
 # from stdout precisely because the dump used to sit after a figure that always crashed.

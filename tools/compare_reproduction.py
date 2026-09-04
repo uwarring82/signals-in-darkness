@@ -31,6 +31,7 @@ TOLERANCES = {
     'res2_partial.json': 1e-9,
     'res7B_servo.json': 1e-9,
     'res3_comparator.json': 1e-9,
+    'res5_calibration.json': 1e-9,
     # res7A's class-B rows come from an L-BFGS-B infimum, whose convergence point moves with
     # the scipy version; 1e-6 is the optimiser's reach, not a numerical disagreement.
     'res7A_identifiability.json': 1e-6,

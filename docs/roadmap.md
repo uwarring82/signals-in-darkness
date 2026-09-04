@@ -1,6 +1,6 @@
 # Roadmap
 
-Generated 2026-09-04T09:05:46+00:00 from ledgers/roadmap.yaml. Do not edit.
+Generated 2026-09-04T09:25:31+00:00 from ledgers/roadmap.yaml. Do not edit.
 
 | id | title | state | gates_freeze |
 |---|---|---|---|

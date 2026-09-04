@@ -37,13 +37,17 @@ EXPECTED_NULLS = {
     # absent rather than unmeasured. Claim C05 states exactly this.
     "res3_comparator.json": {("comparator_crossover", 18, 3), ("comparator_crossover", 18, 4),
                              ("comparator_crossover", 19, 3), ("comparator_crossover", 19, 4)},
+    # the extremum policy has no correlation time, so its tau_c/c cell is not applicable
+    "res5_calibration.json": {("calibration", 0, 1)},
 }
 
 EXPECTED_SHAPE = {
     "res1_core.json": lambda d: len(d["F"]) == 2,
     "res7B_servo.json": lambda d: len(d) == 8,
     "res2_partial.json": lambda d: (len(d["B2"]) == 7 and len(d["B2"][0]) == 10
-                                    and set(d) == {"B2", "C2", "F2", "crossover"}),
+                                    and set(d) == {"B2", "C2", "F2", "crossover", "extremum_bonus",
+                                                   "extremum_bonus_fields", "extremum_bonus_design"}),
+    "res5_calibration.json": lambda d: len(d["calibration"]) == 4 and len(d["delays"]) == 3,
     "res3_comparator.json": lambda d: (len(d["comparator_crossover"]) == 20
                                        and len(d["comparator_crossover"][0]) == 6),
 }

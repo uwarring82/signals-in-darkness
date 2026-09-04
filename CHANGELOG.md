@@ -35,6 +35,14 @@ blockers in the notes below are cleared under a clean-checkout verification.
   that path could expose, `res2_partial.json` adopted from a real run for the first time, and
   C17/C18 confirmed independently
   (`notes/2026-09-04-note-07-pinned-certification.md`).
+- Comparator crossover and tau-optimised thresholds persisted (C05, C08); the two crossover
+  estimators reconciled rather than ranked
+  (`notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md`). C06's output pointer corrected.
+- Ledger invariant added and enforced: `result` and `pilot` claims require an existing
+  machine-readable output; `open` and `withdrawn` may carry a documented provenance exception.
+  It failed on C10 and C24. C10's table is now stored; C24 is demoted to open because no script
+  in this repository produces it
+  (`notes/2026-09-04-note-09-extremum-bonus-provenance.md`).
 
 ## Planned
 

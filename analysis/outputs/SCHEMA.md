@@ -38,6 +38,7 @@ which stack produced it, and that the whole archive reproduces within the criter
 | `res1_core.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 (3 Sept 2026) | 1.7e-12, tolerance 1e-9 |
 | `res2_partial.json` | **pinned**: python 3.12.14 / numpy 2.4.4 / scipy 1.17.1 (4 Sept 2026) | 0 (it is that run's output) |
 | `res3_comparator.json` | **pinned**: python 3.12.14 / numpy 2.4.4 / scipy 1.17.1 (4 Sept 2026) | 0 (it is that run's output) |
+| `res5_calibration.json` | **pinned**: python 3.12.14 / numpy 2.4.4 / scipy 1.17.1 (4 Sept 2026) | 0 (it is that run's output) |
 | `res6_policies.json` | pre-import; provenance of two calibration rows lost (C17, C18) | five of seven cal rows and eleven of fifteen delay rows bitwise; the rest are the withdrawn entries |
 | `res7A_identifiability.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 | 6.0e-8, tolerance 1e-6 |
 | `res7B_servo.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 | 1.4e-16 |
@@ -63,6 +64,12 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
   - `B2` — 7 rows of [C, s, tau_c/c, I_mid_lo, half_sum_rk2, I_gp, I_hmm, delta0, frozen_limit, I_ext_exact]; nats per shot.
   - `crossover` — {"C,s": [tau_c/c grid, I_hmm at each, I_ext_exact, crossover tau_c/c]} from the HMM grid. This is `sid_run2.py`'s own crossover estimate and is NOT the comparator crossover of claim C05, which comes from `sid_run3.py` and is stored in `res3_comparator.json`. The two estimators agree; see notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md.
   - `C2` — [thetas_rad, exact_rate, standard_error] over 7 Ramsey phases; the endpoint profile behind note 01 section 4.
+  - `extremum_bonus` — 3 rows of [C, s, tau_c/c, exact_rate_mean, exact_rate_se,
+    marginal_D_Bern, excess_percent, excess_se_percent] at theta = pi with seeds 0-63, plus
+    `extremum_bonus_fields` and `extremum_bonus_design`. An INDEPENDENT CHECK of note 03
+    section 1, not a reproduction of it: no script in this repository produced that table and
+    its seeds were never recorded. See claim C24 and
+    notes/2026-09-04-note-09-extremum-bonus-provenance.md.
   - `F2` — 3 rows of [C, s, tau_c/c, I_ext, I_mid, delay_ext_mean, delay_ext_se, h/I_ext, delay_mid_mean, delay_mid_se, h/I_mid, runs_detected]; shots, at gamma = 1e3, h = ln(1e3). Claim C25.
 
   *Provenance, 4 Sept 2026.* Earlier copies of this file held only `B2`, with 7 fields per row and
@@ -91,6 +98,14 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
     half-sum of r_k^2, GP closed form, HMM), with the HMM seed and N.
   - `tau_optimised_threshold` — [C0, minimum tau_c/t_dead at which mid-fringe wins]; `null`
     would mean never. Claim C08. With `tau_optimised_grid` and `tau_optimised_win_fraction`.
+- `res5_calibration.json` — written by `sid_run5.py`; claim C10, printed only until 4 Sept 2026.
+  `calibration`: 4 rows of [policy, tau_c/c (`null` for the extremum, which has no correlation
+  time), h_star, ARL_mean, ARL_se, exp_h_star, slack_ARL_over_exp_h] — the martingale bound
+  e^h against the measured ARL, whose ratio is the claim's looseness. `delays`: 3 rows of
+  [tau_c/c, delay_ext_mean, delay_ext_se, h_star/I_ext, delay_mid_mean, delay_mid_se,
+  h_star/I_series, delay_ratio, rate_ratio]. `seeds` records the bisection, confirmation and
+  delay seeds. The calibration block is written before the delay measurements, so a failure
+  there cannot destroy it.
 - `res6_policies.json` — {"cal": {policy: [h_star, ARL, ARL_se, capped_runs]}, "delays": {tau_c: {policy: [mean, se, capped]}}}. Units: shots.
 - `res8_switch.json` — {B: [h_star, ARL, {tau_c: [mean, se]}]}.
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.
