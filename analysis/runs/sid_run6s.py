@@ -9,8 +9,8 @@ Seeds    : calibration bisection seeds 100..104, confirmation seed 199;
 Outputs  : analysis/reproduction/res6_policies.json (fresh run; git-ignored).
            The published reference stays at analysis/outputs/res6_policies.json and
            is NEVER written by this script -- it is only read, to compare against.
-Runtime  : calibration ~8 min, delays ~25 min on one core (measured 2026-09-03,
-           python 3.11 / numpy 2.2).
+Runtime  : calibration ~8.5 min, delays ~1 min on one core (measured 2026-09-04 in the
+           pinned environment: python 3.12.14, numpy 2.4.4, macOS x86_64 under Rosetta 2).
 
 Usage:
     python sid_run6s.py "cal:<policy>,<policy>,..."   # calibrate, fresh by default

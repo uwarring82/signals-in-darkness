@@ -1,6 +1,6 @@
 # Signals in Darkness — operating-point crossover in sequential quantum-clock detection
 
-**Status (3 Sept 2026):** card v1.1 frozen; card v2.0 seed open; repository seed committed and tagged `archive-2026-09-03`. The reproduction acceptance criterion is **not yet met** — see `notes/2026-09-03-note-04-reproduction-defect.md` and claims C17–C20.
+**Status (4 Sept 2026):** card v1.1 frozen; card v2.0 seed open; repository imported and tagged `archive-2026-09-03`. The whole analysis path has been run once in the pinned environment (`notes/2026-09-04-note-07-pinned-certification.md`); claims C09, C11, C12, C19 and C20 remain **open**, and C01, C15, C17, C18 and C22 are withdrawn.
 This README carries no thesis line until card v2.0 is frozen.
 
 ## Results hierarchy (from notes/2026-09-03-note-03a-errata.md)
@@ -18,15 +18,16 @@ Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in p
 ```
 conda env create -f environment.yml && conda activate sid     # or: pip install -r requirements.txt
 cd analysis/runs
-python sid_core.py        # sections A–F, ~10 min on one core; writes figures to figures/
-python sid_run2.py        # mid-fringe comparator; produces res2_partial.json, which run3 needs
-python sid_run3.py        # spectral comparator, exact-comparator tau-optimised map
-python sid_run4.py        # geometric-fit vs sinh-series check; sid_check2_geomfit_vs_series.png
-python sid_run5.py        # calibrated-ARL delay comparison (~4 min)
-python sid_run7.py        # identifiability and servo tables (~2 min)
-python sid_run6s.py "cal:oracle-mid(tc=20),oracle-mid(tc=5),oracle-mid(tc=1),extremum-only,learner-mid(bank),learner-interleave-B10(bank),learner-interleave-B1(bank)"   # ~8 min
-python sid_run6s.py delays        # ~25 min; uses the thresholds the line above just measured
-python sid_run8.py                # explore-then-switch, ~10 min
+# whole path ~35 min on one core, measured 4 Sept 2026 in the pinned environment
+python sid_core.py        # sections A–F, ~6 min
+python sid_run2.py        # mid-fringe comparator, ~2.5 min; writes res2_partial.json, which run3 needs
+python sid_run3.py        # spectral comparator, exact-comparator tau-optimised map (~20 s)
+python sid_run4.py        # geometric-fit vs sinh-series check (~7 min)
+python sid_run5.py        # calibrated-ARL delay comparison (~5 min)
+python sid_run7.py        # identifiability and servo tables (~10 s)
+python sid_run6s.py "cal:oracle-mid(tc=20),oracle-mid(tc=5),oracle-mid(tc=1),extremum-only,learner-mid(bank),learner-interleave-B10(bank),learner-interleave-B1(bank)"   # ~8.5 min
+python sid_run6s.py delays        # ~1 min; uses the thresholds the line above just measured
+python sid_run8.py                # explore-then-switch, ~4.5 min
 python sid_fig_policy_delays.py   # rebuilds sid_policy_delays.png from stored outputs;
                                   # refuses to run while its inputs are withdrawn (C18)
 pytest ../../tests
