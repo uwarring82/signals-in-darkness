@@ -1,6 +1,6 @@
 # Current status
 
-Generated 2026-09-04T08:49:04+00:00 from ledgers/status.yaml. Do not edit.
+Generated 2026-09-04T09:05:46+00:00 from ledgers/status.yaml. Do not edit.
 
 | id | status | statement | note | errata / supersedes |
 |---|---|---|---|---|
@@ -9,7 +9,7 @@ Generated 2026-09-04T08:49:04+00:00 from ledgers/status.yaml. Do not edit.
 | C03 | result | Mid-fringe leading-order expansion valid only when the spectral perturbation delta(0)=2 sum r_k << 1; v1.0 box C^4 s^4 sum a_k^2 << 1 withdrawn | notes/2026-09-02-note-01.md#2b | cards/v1.0-frozen.md (mid-fringe validity box) |
 | C04 | result | Gaussian spectral comparator with exact r_k reproduces the grid-converged latent-AR(1) binary rate within Monte-Carlo error (SE ~7 % at 1e5 shots) in all tested cases | notes/2026-09-02-note-02.md (checks 2, 3a) |  |
 | C05 | result | Crossover in tau_c/c is amplitude-dependent beyond leading order (C=0.4: 4.65 at s->0, 5.46 at s=0.3, 7.24 at s=0.5); absent at C=0.99 for s>=0.5 | notes/2026-09-02-note-01.md#3 |  |
-| C06 | result | Endpoint lemma — interior critical point is a minimum; reference-detector profiles consistent with flatness within ~5 % over theta in [60,90] deg near the crossover | notes/2026-09-02-note-01.md#4; note-02 check 3a |  |
+| C06 | result | Endpoint lemma — interior critical point is a minimum; reference-detector profiles consistent with flatness within ~5 % over theta in [60,90] deg near the crossover | notes/2026-09-02-note-01.md#4; note-02 check 3a | output pointer corrected 2026-09-04. The claim cited res1_core.json (C) alone, which is a different computation - sid_core section C, single seed, N=6e4, 15-degree grid - and does not contain the three-seed N=2.5e5 profile note 01 section 4 reports. That profile was unstored until sid_run2.py ran to completion; it is key C2 of res2_partial.json. All seven values and all seven standard errors reproduce at the note's precision, the interior minimum is confirmed at 20 degrees with both endpoints above it, and the 60-90 degree spread is 1.5 % against the claimed ~5 %. The claim is supported; only the pointer was wrong. |
 | C07 | result | Filtered-OU closed forms for s_tau^2 and a_k match numerical integration | notes/2026-09-02-note-01.md#5 |  |
 | C08 | result | tau-optimised physical map (T2=10 t_dead, g sigma_x T2 = 0.5 rad): mid-fringe wins only for tau_c/t_dead >~ 210 (C0=0.4), 140 (0.5), 75 (0.7), 45 (0.9) | notes/2026-09-02-note-01.md#6 |  |
 | C09 | open | Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20, consistent with the comparator crossover 7.2; delay advantage compressed 1.5-3x relative to rate ratio | notes/2026-09-02-note-02.md (check 3b); note-03 §2 | notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - the tau_c/c=20 comparison divides by the withdrawn C18 benchmark entry) |

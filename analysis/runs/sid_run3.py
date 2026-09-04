@@ -8,6 +8,7 @@ OUTD = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduct
 os.makedirs(OUTD, exist_ok=True)
 import numpy as np
 from sid_lib import *
+import sid_repro
 import matplotlib.pyplot as plt
 REF_FIG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figures")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproduction", "figures")
@@ -55,18 +56,43 @@ def I_mid_gp(C, s, tcc):
     a = math.exp(-1/tcc); r1 = rk_exact(C, s, a)
     return gp_rate_geom(r1/a, a)
 
+# This is the COMPARATOR crossover: the first tau_c/c at which the Gaussian-process
+# closed form exceeds the exact extremum divergence. It is a different estimator from the
+# HMM-grid crossover stored under key "crossover" in res2_partial.json, which interpolates
+# Monte-Carlo HMM rates on a coarse grid. Neither supersedes the other; see
+# notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md, which measures the HMM
+# estimator's seed-to-seed spread and finds the two consistent.
 print("\n== crossover tau_c/c: leading order vs GP comparator, fixed s ==")
+S_GRID = [0.1, 0.3, 0.5, 1.0]
+crossover_rows = []
 for C in [0.4, 0.5, 0.7, 0.9, 0.99]:
     lo = 2/math.log1p(4*C*C*(1-C*C))
     line = f"C={C:4.2f}: LO={lo:6.2f}"
-    for s in [0.1, 0.3, 0.5, 1.0]:
+    for s in S_GRID:
         Ie = I_ext_exact(C, s)
         grid = np.logspace(-0.5, 3, 400)
         Im = np.array([I_mid_gp(C, s, t) for t in grid])
         idx = np.where(Im > Ie)[0]
-        xc = grid[idx[0]] if len(idx) else float("inf")
-        line += f"  s={s}: {xc:6.2f}"
+        # As published: the first grid point above the extremum rate. The log grid steps by
+        # 2.04 %, so this is biased high by up to that much; the log-interpolated value is
+        # stored alongside rather than replacing it, so the published numbers still reproduce.
+        xc = float(grid[idx[0]]) if len(idx) else None
+        xc_interp = None
+        if len(idx) and idx[0] > 0:
+            i = int(idx[0])
+            x0, x1, y0, y1 = grid[i-1], grid[i], Im[i-1], Im[i]
+            xc_interp = float(math.exp(math.log(x0) + (math.log(Ie)-math.log(y0)) *
+                                       (math.log(x1)-math.log(x0))/(math.log(y1)-math.log(y0))))
+        crossover_rows.append([C, s, lo, xc, xc_interp, float(Ie)])
+        line += f"  s={s}: {xc:6.2f}" if xc is not None else f"  s={s}:    inf"
     print(line)
+res3 = {"comparator_crossover": crossover_rows,
+        "comparator_crossover_fields": ["C", "s", "crossover_leading_order",
+                                        "crossover_comparator_as_published",
+                                        "crossover_comparator_log_interpolated",
+                                        "I_ext_exact"],
+        "grid": {"logspace": [-0.5, 3, 400], "step_factor": float(np.logspace(-0.5, 3, 400)[1] /
+                                                                  np.logspace(-0.5, 3, 400)[0])}}
 
 # ---------- figure: rate check (fixed) ----------
 fig, ax = plt.subplots(figsize=(6.6, 4.3), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
@@ -89,6 +115,9 @@ fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check.png"); plt.clos
 assert os.path.getsize(f"{OUT}/sid_midfringe_rate_check.png") > 10_000, "figure not written"
 print("rate-check values (tcc, LO, halfsum, GP, HMM):")
 for t, l, h_, g, m in zip(tcc_grid, lo_v, hs_v, gp_v, hmm_v): print(f"  {t:4d}  {l:.2e}  {h_:.2e}  {g:.2e}  {m:.2e}")
+res3["rate_check"] = {"tcc": tcc_grid.tolist(), "leading_order": [float(x) for x in lo_v],
+                      "half_sum_rk2": [float(x) for x in hs_v], "gp_closed_form": [float(x) for x in gp_v],
+                      "hmm": [float(x) for x in hmm_v], "C": C, "s": s, "hmm_seed": 7, "hmm_N": 100000}
 
 # ---------- exact-comparator tau-optimised map, fixed amplitude scale ----------
 # units: t_dead = 1, T2 = 10; g*sigma_x chosen so that s_tau = 0.5 rad at tau = T2 in the tau << tau_c limit.
@@ -124,8 +153,18 @@ ax[2].set_title(r"$s_\tau$ (rad) at the winner's $\tau$", fontsize=9); fig.color
 fig.suptitle(r"Exact-comparator $\tau$-optimised map: $T_2=10\,t_{\rm dead}$, $g\sigma_x T_2 = 0.5$ rad, exp. contrast decay, GP mid-fringe rate", fontsize=9)
 fig.tight_layout(); fig.savefig(f"{OUT}/sid_regime_map_tau_optimised_exact.png"); plt.close(fig)
 print("\nexact-comparator tau-optimised map: mid-fringe wins on", round(win.mean(), 3), "of grid")
-# where does mid-fringe start winning, per contrast column
+# where does mid-fringe start winning, per contrast column -- claim C08
+tau_opt = []
 for j in [np.argmin(abs(C0s-c_)) for c_ in [0.2, 0.4, 0.5, 0.7, 0.9, 0.99]]:
     idx = np.where(win[:, j] > 0)[0]
+    thr = float(tcs[idx[0]]) if len(idx) else None
+    tau_opt.append([float(C0s[j]), thr])
     print(f"  C0={C0s[j]:.2f}: mid-fringe wins for tau_c/t_dead >= {tcs[idx[0]]:.1f}" if len(idx) else f"  C0={C0s[j]:.2f}: never")
+res3["tau_optimised_threshold"] = tau_opt
+res3["tau_optimised_threshold_fields"] = ["C0", "min tau_c/t_dead at which mid-fringe wins (null = never)"]
+res3["tau_optimised_win_fraction"] = float(win.mean())
+res3["tau_optimised_grid"] = {"C0": C0s.tolist(), "tau_c_over_t_dead": tcs.tolist(),
+                              "T2_over_t_dead": T2, "g_sigma_x_T2": 0.5}
+sid_repro.write_json(os.path.join(OUTD, "res3_comparator.json"), res3,
+                     default=float, indent=1, allow_nan=False)
 print("done3")

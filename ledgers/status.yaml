@@ -36,14 +36,16 @@
   note: notes/2026-09-02-note-01.md#3
   run: analysis/runs/sid_run3.py
   seed_ref: none (comparator); HMM check seeds.md#run2
-  output: printed table (to be stored as csv — [unreproduced-from-file])
+  output: analysis/outputs/res3_comparator.json (comparator_crossover)
+  reproduced: 2026-09-04, pinned environment. The comparator crossover is now stored, both as published (first grid point above I_ext) and log-interpolated, with the grid step factor so the up-to-2.04 % upward bias is quantified. It is a different estimator from the HMM-grid crossover in res2_partial.json (6.29 at Cbar=0.4, s=0.5); over eight seeds that HMM estimator has mean 7.140 and sd 1.177, placing the published 7.24 at +0.08 sd, so the two agree and neither supersedes the other. See notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md. Scientific status unchanged.
 - id: C06
   statement: Endpoint lemma — interior critical point is a minimum; reference-detector profiles consistent with flatness within ~5 % over theta in [60,90] deg near the crossover
   status: result
   note: notes/2026-09-02-note-01.md#4; note-02 check 3a
   run: analysis/runs/sid_core.py (C), sid_run2.py (C2)
   seed_ref: seeds.md#core, seeds.md#run2
-  output: analysis/outputs/res1_core.json (C); figure figures/sid_endpoint_check.png
+  output: analysis/outputs/res2_partial.json (C2) for the note 01 section 4 profile; analysis/outputs/res1_core.json (C) for the coarser sid_core scan; figure figures/sid_endpoint_check.png
+  errata: output pointer corrected 2026-09-04. The claim cited res1_core.json (C) alone, which is a different computation - sid_core section C, single seed, N=6e4, 15-degree grid - and does not contain the three-seed N=2.5e5 profile note 01 section 4 reports. That profile was unstored until sid_run2.py ran to completion; it is key C2 of res2_partial.json. All seven values and all seven standard errors reproduce at the note's precision, the interior minimum is confirmed at 20 degrees with both endpoints above it, and the 60-90 degree spread is 1.5 % against the claimed ~5 %. The claim is supported; only the pointer was wrong.
 - id: C07
   statement: Filtered-OU closed forms for s_tau^2 and a_k match numerical integration
   status: result
@@ -57,7 +59,8 @@
   note: notes/2026-09-02-note-01.md#6
   run: analysis/runs/sid_run3.py
   seed_ref: none (deterministic)
-  output: figure figures/sid_regime_map_tau_optimised_exact.png (grid values not stored — [unreproduced-from-file])
+  output: analysis/outputs/res3_comparator.json (tau_optimised_threshold); figure figures/sid_regime_map_tau_optimised_exact.png
+  reproduced: 2026-09-04, pinned environment. The per-contrast thresholds at which mid-fringe wins after tau optimisation are stored, with the C0 and tau_c/t_dead grids and the win fraction. Scientific status unchanged.
 - id: C09
   statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20, consistent with the comparator crossover 7.2; delay advantage compressed 1.5-3x relative to rate ratio
   status: open

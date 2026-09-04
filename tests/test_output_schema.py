@@ -32,6 +32,11 @@ EXPECTED_NULLS = {
     # res2_partial.json has no nulls since the 4 Sept 2026 adoption: it is now the direct
     # output of sid_run2.py rather than a hand reconstruction with three unstored columns.
     "res2_partial.json": set(),
+    # the last two comparator rows are C = 0.99 at s = 0.5 and 1.0, where no crossover exists:
+    # the mid-fringe rate never overtakes the extremum on the grid, so the value is genuinely
+    # absent rather than unmeasured. Claim C05 states exactly this.
+    "res3_comparator.json": {("comparator_crossover", 18, 3), ("comparator_crossover", 18, 4),
+                             ("comparator_crossover", 19, 3), ("comparator_crossover", 19, 4)},
 }
 
 EXPECTED_SHAPE = {
@@ -39,6 +44,8 @@ EXPECTED_SHAPE = {
     "res7B_servo.json": lambda d: len(d) == 8,
     "res2_partial.json": lambda d: (len(d["B2"]) == 7 and len(d["B2"][0]) == 10
                                     and set(d) == {"B2", "C2", "F2", "crossover"}),
+    "res3_comparator.json": lambda d: (len(d["comparator_crossover"]) == 20
+                                       and len(d["comparator_crossover"][0]) == 6),
 }
 
 

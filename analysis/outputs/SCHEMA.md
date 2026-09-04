@@ -24,6 +24,28 @@ sentinel `"positive-infinity"`, both written by the producers rather than by edi
 archive. No finite value changed meaning; the former artifacts remain in git history.
 Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
 
+## Producing stack
+
+The archive is deliberately **mixed-provenance**. Files are not regenerated to make it
+homogeneous: that would replace valid historical outputs with values differing only in the
+twelfth significant figure, for no scientific gain. What matters is that each artifact says
+which stack produced it, and that the whole archive reproduces within the criteria declared in
+`tools/compare_reproduction.py` under the pinned environment. It does; see
+`notes/2026-09-04-note-07-pinned-certification.md`.
+
+| file | produced by | reproduces under the pinned stack |
+|---|---|---|
+| `res1_core.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 (3 Sept 2026) | 1.7e-12, tolerance 1e-9 |
+| `res2_partial.json` | **pinned**: python 3.12.14 / numpy 2.4.4 / scipy 1.17.1 (4 Sept 2026) | 0 (it is that run's output) |
+| `res3_comparator.json` | **pinned**: python 3.12.14 / numpy 2.4.4 / scipy 1.17.1 (4 Sept 2026) | 0 (it is that run's output) |
+| `res6_policies.json` | pre-import; provenance of two calibration rows lost (C17, C18) | five of seven cal rows and eleven of fifteen delay rows bitwise; the rest are the withdrawn entries |
+| `res7A_identifiability.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 | 6.0e-8, tolerance 1e-6 |
+| `res7B_servo.json` | python 3.11.11 / numpy 2.2.4 / scipy 1.15.2 | 1.4e-16 |
+| `res8_switch.json` | pre-import | compared by its producer |
+
+The pinned stack is python 3.12.14, numpy 2.4.4, scipy 1.17.1, matplotlib 3.10.8, BLAS 3.9.0,
+on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is untested.
+
 ## Files
 - `res1_core.json` — dict with keys A (list of [C, s, I_exact, I_lo, ratio, validity_param]), A2 (list of [C, err_at_q0.06, err_at_q0.17, q_for_6pc, q_for_20pc, k]; see notes/2026-09-03-note-01a-errata.md and claim C21), B (list of [C, s, tcc, S2, I_lo, I_halfsum_exact_rk, I_hmm, pert_param, I_ext]), C (dict "C,s,tcc" -> [thetas_rad, exact, lo]), D (list of [tau, tc, c, s2_closed, s2_num, a1_closed, a1_num]), E (regime-map grids; see below), F (list of [C, s, tcc, I_ext, I_mid, delay_ext_mean, delay_ext_se, h_over_I_ext, delay_mid_mean, delay_mid_se, h_over_I_mid]; units shots). In F, `delay_mid_mean` and `delay_mid_se` are `null` where no mid-fringe run reached the threshold within the cap, so the delay is undefined — this is the case at tau_c/c = 20 and 1. See seeds.md.
 - `res1_core.json` key **E** — the grids behind `figures/sid_regime_map.png`, so its curves can be
@@ -39,7 +61,7 @@ Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
   notes/2026-09-04-note-06-regime-map-overlays.md.
 - `res2_partial.json` — written by `sid_run2.py`. Four keys:
   - `B2` — 7 rows of [C, s, tau_c/c, I_mid_lo, half_sum_rk2, I_gp, I_hmm, delta0, frozen_limit, I_ext_exact]; nats per shot.
-  - `crossover` — {"C,s": [tau_c/c grid, I_hmm at each, I_ext_exact, crossover tau_c/c]} from the HMM grid. This is `sid_run2.py`'s own crossover estimate and is NOT the comparator crossover of claim C05, which comes from `sid_run3.py` and remains unstored.
+  - `crossover` — {"C,s": [tau_c/c grid, I_hmm at each, I_ext_exact, crossover tau_c/c]} from the HMM grid. This is `sid_run2.py`'s own crossover estimate and is NOT the comparator crossover of claim C05, which comes from `sid_run3.py` and is stored in `res3_comparator.json`. The two estimators agree; see notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md.
   - `C2` — [thetas_rad, exact_rate, standard_error] over 7 Ramsey phases; the endpoint profile behind note 01 section 4.
   - `F2` — 3 rows of [C, s, tau_c/c, I_ext, I_mid, delay_ext_mean, delay_ext_se, h/I_ext, delay_mid_mean, delay_mid_se, h/I_mid, runs_detected]; shots, at gamma = 1e3, h = ln(1e3). Claim C25.
 
@@ -54,6 +76,21 @@ Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
   it was stored at. Columns 3-5, columns 7-9 and the keys `crossover`, `C2` and `F2` are newly
   archived — they were never previously stored and are not reproductions of archived values.
   See notes/2026-09-04-note-07-pinned-certification.md.
+- `res3_comparator.json` — written by `sid_run3.py`; the comparator results that were printed
+  only until 4 Sept 2026. Keys:
+  - `comparator_crossover` — 20 rows of [C, s, crossover_leading_order,
+    crossover_comparator_as_published, crossover_comparator_log_interpolated, I_ext_exact].
+    Claim C05. `as_published` is the first grid point above I_ext, the estimator the note used;
+    it is biased high by up to one log-grid step (factor in `grid.step_factor`, 2.04 %), and the
+    log-interpolated value is stored beside it rather than replacing it. Both are `null` at
+    C = 0.99, s >= 0.5, where no crossover exists — the claim states exactly that, so the null
+    means "does not exist", not "not measured". This is the COMPARATOR crossover; the HMM-grid
+    crossover under key `crossover` of `res2_partial.json` is a different estimator, and
+    notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md shows the two agree.
+  - `rate_check` — the curves behind `figures/sid_midfringe_rate_check.png` (leading order,
+    half-sum of r_k^2, GP closed form, HMM), with the HMM seed and N.
+  - `tau_optimised_threshold` — [C0, minimum tau_c/t_dead at which mid-fringe wins]; `null`
+    would mean never. Claim C08. With `tau_optimised_grid` and `tau_optimised_win_fraction`.
 - `res6_policies.json` — {"cal": {policy: [h_star, ARL, ARL_se, capped_runs]}, "delays": {tau_c: {policy: [mean, se, capped]}}}. Units: shots.
 - `res8_switch.json` — {B: [h_star, ARL, {tau_c: [mean, se]}]}.
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.
