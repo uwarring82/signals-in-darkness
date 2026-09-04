@@ -135,6 +135,12 @@ for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 5.0), (0.4, 0.5, 1.0)]:
           f"mid delay={dm.mean():6.0f}+-{dm.std()/math.sqrt(len(dm)):4.0f} (h/I_HMM={h/Imid:6.0f})  detected {len(dm)}/40")
 res["F2"] = frows
 
+# Numerical output is written BEFORE any plotting: a figure failure must not be able
+# to destroy the run's data. The archived res2_partial.json had to be reconstructed
+# from stdout precisely because the dump used to sit after a figure that always crashed.
+json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"),
+          default=float, indent=1, allow_nan=False)   # refuse to write non-finite values (rule 6)
+
 # ---------- figure: mid-fringe rate approximations vs tau_c/c ----------
 fig, ax = plt.subplots(figsize=(6.6, 4.3), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
 C, s = 0.4, 0.5
@@ -144,8 +150,8 @@ for tcc in tcc_grid:
     a = math.exp(-1/tcc); ak = a**np.arange(1, 4000); rk = rk_exact(C, s, ak)
     lo_v.append(I_mid_lo(C, s, S2_point(tcc))); hs_v.append(0.5*np.sum(rk**2)); gp_v.append(gp_rate(rk)[0])
     hmm_v.append(hmm_rate(C, s, math.pi/2, a, N=100_000, seed=7, M=101))
-ax.plot(tcc_grid, lo_v, "--", color=STONE, label="leading order $\\tfrac12\\bar C^4 s^4 \\Sigma a_k^2$")
-ax.plot(tcc_grid, hs_v, ":", color=STONE, label="$\\tfrac12\\Sigma r_k^2$ with exact $r_k$")
+ax.plot(tcc_grid, lo_v, "--", color=STONE, label="leading order $\\frac{1}{2}\\bar C^4 s^4 \\Sigma a_k^2$")
+ax.plot(tcc_grid, hs_v, ":", color=STONE, label="$\\frac{1}{2}\\Sigma r_k^2$ with exact $r_k$")
 ax.plot(tcc_grid, gp_v, "-", color=SEA, label="Gaussian-process comparator")
 ax.plot(tcc_grid, hmm_v, "o", color=SIG, label="exact latent-AR(1) binary HMM")
 ax.axhline(I_ext_exact(C, s), color=INK, lw=1, label="extremum, exact $D_{\\rm Bern}$")
@@ -158,6 +164,4 @@ ax.set_title(f"Mid-fringe rate approximations, $\\bar C={C}$, $s={s}$ rad", font
 fig.tight_layout(); fig.savefig(f"{OUT}/sid_midfringe_rate_check_gp_numeric.png"); plt.close(fig)
 assert os.path.getsize(f"{OUT}/sid_midfringe_rate_check_gp_numeric.png") > 10_000, "figure not written"
 
-json.dump(res, open(os.path.join(OUTD, "res2_partial.json"), "w"),
-          default=float, indent=1, allow_nan=False)   # refuse to write non-finite values (rule 6)
 print("done2")

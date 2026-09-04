@@ -62,6 +62,17 @@ def main(argv):
 
     state = sid_repro.load_checkpoint(STATE_NAME, resume) or empty_state()
     reference = sid_repro.load_reference(STATE_NAME) or empty_state()
+
+    # The delays stage needs the thresholds the cal stage measured. Those live in this run's
+    # reproduction checkpoint, not in the archive, so reading them is not reuse of previous
+    # state -- it is consuming the previous stage of the same reproduction. --resume governs
+    # whether delay rows already measured are reused; it must not decide whether this stage
+    # can see its own input, or "fresh by default" would make the two-stage path impossible.
+    if arg == "delays" and not state["cal"]:
+        prior = sid_repro.load_checkpoint(STATE_NAME, True) or empty_state()
+        if prior.get("cal"):
+            state["cal"] = prior["cal"]
+            log(f"thresholds taken from this run's cal stage ({len(prior['cal'])} policies)")
     policies, _, _ = build_policies()
     computed = cached = 0
 
@@ -104,6 +115,12 @@ def main(argv):
                 computed += 1
                 log(f"tc/c={true_tcc:4.0f}  {name:32s} delay={m:7.0f} +- {se:5.0f}  (capped {nc})")
         for true_tcc, row in state["delays"].items():
+            needed = [f"oracle-mid(tc={int(float(true_tcc))})", "extremum-only",
+                      "learner-mid(bank)", "learner-interleave-B10(bank)", "learner-interleave-B1(bank)"]
+            missing = [n for n in needed if n not in row]
+            if missing:
+                log(f"tc/c={float(true_tcc):4.0f} summary skipped, no delay for: {', '.join(missing)}")
+                continue
             orc = min(row[f"oracle-mid(tc={int(float(true_tcc))})"][0], row["extremum-only"][0])
             line = f"tc/c={float(true_tcc):4.0f} oracle={orc:6.0f} |"
             for name in ("extremum-only", "learner-mid(bank)",
