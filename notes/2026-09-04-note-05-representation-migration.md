@@ -26,10 +26,18 @@ taken over an empty sample. The delay is *undefined* — not a number, not zero,
 that could be filled in. Stored as `null`.
 
 **`res7B_servo.json`, last row, column 0** (κ). The perfect-oscillator limit κ → ∞ is a
-deliberate member of the coherence grid, not an error. No finite coherence applies to it, so it
-is also *not applicable* in the column's units, and is stored as `null`. `sid_run7.py` draws it
-at 100 on the symlog axis, as before. The alternative — a magic large number — would have been a
-sentinel indistinguishable from data.
+deliberate member of the coherence grid, not an error. It is stored as the explicit sentinel
+string `"positive-infinity"`. `sid_run7.py` draws it at 100 on the symlog axis, as before. A
+magic large number would have been a sentinel indistinguishable from data.
+
+*Corrected later the same day.* This entry first stored κ → ∞ as `null`, on the reading that no
+finite coherence applies to it. That conflated two different things. `null` must mean undefined,
+missing, or not applicable — a value that does not exist. An infinite limit is a value the
+calculation *deliberately visited* and reported a result at; writing it as `null` erases the
+distinction between "we looked and there is nothing" and "we evaluated the limiting case".
+`null` is now reserved for the former, and known limiting cases carry a declared sentinel that a
+consumer must test for explicitly. The finite values are bitwise unchanged across the correction;
+only column 0 of the last row differs.
 
 Everything else that is non-finite is now an error. `_mean_se` in `sid_core.py` raises on any
 non-finite statistic computed from a non-empty sample, and every writer serialises with
@@ -50,11 +58,11 @@ Verification:
   rerun reproduces it exactly; only the four undefined entries changed representation. The
   "Mean of empty slice" warnings the old code emitted are gone, and section F now prints
   `mid-fringe delay=undefined+-undefined ... [runs 60,0]`, which states the fact the NaN hid.
-- `res7B_servo.json` — exactly one `null`, at the declared position (row 7, column 0). Finite
-  values agree with the previous archive to a maximum relative deviation of **6.9 × 10⁻¹³**, not
-  bitwise. That archive predates the environment available here, so a producer rerun cannot
-  reproduce it exactly; the deviation is the same order as the reproduction agreement already
-  recorded for this file and is reported rather than asserted away.
+- `res7B_servo.json` — no nulls; the last row's κ carries `"positive-infinity"`. Finite values
+  agree with the pre-migration archive to a maximum relative deviation of **6.9 × 10⁻¹³**, not
+  bitwise: that archive predates the environment available here, so a producer rerun cannot
+  reproduce it exactly, and the deviation is reported rather than asserted away. Against the
+  intermediate null-valued version, every other value is bitwise identical.
 
 ## 4. Record
 

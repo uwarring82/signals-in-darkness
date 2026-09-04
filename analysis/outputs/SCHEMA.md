@@ -3,15 +3,24 @@
 ## Representation (all files)
 
 Every stored output is **strict JSON**: no `NaN`, `Infinity` or `-Infinity` tokens, which
-RFC 8259 does not permit and conforming parsers reject. `null` means *undefined or not
-applicable* and nothing else — a quantity that was not measured, or a limit at which the
-column's unit does not apply. Any other non-finite result is a calculation error and stops
-the producing run rather than being written (`allow_nan=False` on every writer).
-`tests/test_output_schema.py` enforces this on every `analysis/outputs/*.json`.
+RFC 8259 does not permit and conforming parsers reject. Any non-finite result that is not one
+of the two declared cases below is a calculation error and stops the producing run rather than
+being written (`allow_nan=False` on every writer). `tests/test_output_schema.py` enforces this
+on every `analysis/outputs/*.json`.
+
+Two distinct things must not be conflated:
+
+- **`null` means undefined, missing, or not applicable** — a quantity that was not measured,
+  or one for which no value exists. Nothing else.
+- **A known limiting case carries an explicit sentinel string**, currently
+  `"positive-infinity"`. An infinite limit is a *value the calculation deliberately visited*,
+  not an absence, and writing it as `null` would erase that distinction. Consumers must test
+  for the sentinel explicitly.
 
 *Representation migration, 4 Sept 2026.* `res1_core.json` previously stored four `NaN`
-tokens and `res7B_servo.json` one `Infinity`; both files were therefore invalid JSON. They
-now carry `null` in those positions, written by the producers rather than by editing the
+tokens and `res7B_servo.json` one `Infinity`; both files were therefore invalid JSON. The
+four undefined delay entries now carry `null`, and the infinite coherence carries the
+sentinel `"positive-infinity"`, both written by the producers rather than by editing the
 archive. No finite value changed meaning; the former artifacts remain in git history.
 Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
 
@@ -32,5 +41,5 @@ Recorded in `notes/2026-09-04-note-05-representation-migration.md`.
 - `res6_policies.json` — {"cal": {policy: [h_star, ARL, ARL_se, capped_runs]}, "delays": {tau_c: {policy: [mean, se, capped]}}}. Units: shots.
 - `res8_switch.json` — {B: [h_star, ARL, {tau_c: [mean, se]}]}.
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.
-- `res7B_servo.json` — rows [kappa, Ceff_slope_parity, Ceff_slope_full, Ceff_var_parity, Ceff_var_full]; C1=C2=0.9; variance channel at s=0.3. `kappa = null` is the perfect-oscillator limit (kappa -> infinity), where no finite coherence applies; it is the last row, and `sid_run7.py` draws it at 100 on the symlog axis.
+- `res7B_servo.json` — rows [kappa, Ceff_slope_parity, Ceff_slope_full, Ceff_var_parity, Ceff_var_full]; C1=C2=0.9; variance channel at s=0.3. `kappa = "positive-infinity"` is the perfect-oscillator limit, the last row: a known limiting case the calculation deliberately visits, carried as the declared sentinel string rather than as null (which would claim the value is absent) or as the JSON-invalid token Infinity. `sid_run7.py` draws it at 100 on the symlog axis.
 Missing as files (printed only): crossover table (C05), calibration slack table (C10), bonus table (C15) — flagged [unreproduced-from-file] in the ledger; step 2 of the work plan stores them.

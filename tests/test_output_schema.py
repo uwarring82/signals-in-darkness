@@ -26,8 +26,9 @@ EXPECTED_NULLS = {
     # F: mid-fringe delay mean and s.e., undefined at tau_c/c = 20 and 1 where no run
     # reached the threshold within the cap
     "res1_core.json": {("F", 0, 8), ("F", 0, 9), ("F", 1, 8), ("F", 1, 9)},
-    # kappa = null is the perfect-oscillator limit: the eighth and last row
-    "res7B_servo.json": {(7, 0)},
+    # res7B_servo.json has no nulls: its infinite coherence is a known limiting case and
+    # carries the sentinel string instead (see test_known_limiting_case_uses_the_sentinel)
+    "res7B_servo.json": set(),
     # B2 columns 3-5 (delta(0), LO, half-sum) were never stored; note 01 carries them
     "res2_partial.json": {("B2", i, j) for i in range(7) for j in (3, 4, 5)},
 }
@@ -104,6 +105,29 @@ def test_no_parsed_value_is_non_finite(path):
 
     walk(obj)
     assert not bad, f"{os.path.basename(path)}: non-finite values at {bad}"
+
+
+def test_known_limiting_case_uses_the_sentinel_not_null():
+    """kappa -> infinity is a value the calculation visited, not an absent one.
+
+    null would claim the perfect-oscillator row has no coherence value; the sentinel says it
+    has one and names it. The distinction is the whole point of the convention, so it is
+    asserted on the column rather than left to prose.
+    """
+    rows = json.loads(open(os.path.join(ROOT, "analysis", "outputs", "res7B_servo.json"),
+                           encoding="utf-8").read())
+    assert len(rows) == 8
+    kappas = [r[0] for r in rows]
+    assert kappas[-1] == "positive-infinity", kappas[-1]
+    assert all(isinstance(k, (int, float)) for k in kappas[:-1]), kappas[:-1]
+    assert kappas[:-1] == sorted(kappas[:-1]), "finite coherences should be ascending"
+    assert None not in kappas, "an infinite limit must not be written as null"
+
+
+def test_schema_documents_the_sentinel_and_the_null_rule_separately():
+    text = open(os.path.join(ROOT, "analysis", "outputs", "SCHEMA.md"), encoding="utf-8").read()
+    assert "positive-infinity" in text
+    assert "undefined, missing, or not applicable" in text
 
 
 def test_schema_documents_the_representation_rule():
