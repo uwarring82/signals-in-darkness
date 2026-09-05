@@ -141,20 +141,22 @@
   errata: notes/2026-09-03-note-04-reproduction-defect.md#3
 - id: C19
   statement: Explore-then-switch outputs in res8_switch.json - unresolved provenance. sid_run8.py wrote its output to the current working directory rather than to analysis/outputs/, so the archived copy cannot have been written in place by a run performed as documented. Nothing contradicts the values; they are unverified until independently regenerated and compared.
-  status: open
-  note: notes/2026-09-03-note-04-reproduction-defect.md#4
+  status: result
+  note: notes/2026-09-03-note-04-reproduction-defect.md#4; notes/2026-09-05-note-10-certification-closure.md
   run: analysis/runs/sid_run8.py
   seed_ref: seeds.md#run8
   output: analysis/outputs/res8_switch.json
   errata: notes/2026-09-03-note-04-reproduction-defect.md#4
+  reproduced: 2026-09-04, pinned environment, certified as repo-v0.1.0. Closed from open to result 2026-09-05. The archived values were independently regenerated FROM COMPUTATION rather than from cache - sid_run8.py reported computed 2, cached 0, writing into analysis/reproduction/ and never reading the archive - and all six delay rows agreed at 0.00 sigma (switch@300 gives 1546.3, 2002.8, 3644.0 at tau_c/c = 20, 5, 1; switch@1000 gives 1147.2, 2219.7, 5756.7). The values are confirmed. The creation path of the ORIGINAL file remains unknown and is not recovered by this: it was written by a run whose working directory was never recorded.
 - id: C20
   statement: The documented reproduction route at tag archive-2026-09-03 consumed committed cache state - sid_run6s.py used its own published output as checkpoint, so a clean clone recomputed nothing and reprinted the archive in 0 s against a true cost of 7.7 min. The binding reproduction acceptance criterion of cards/repo-seed-v0.2.md fails at that tag. Interface repaired in the commit carrying note 04; the criterion stays open until a clean-checkout rerun of the whole affected chain under a pinned environment.
-  status: open
-  note: notes/2026-09-03-note-04-reproduction-defect.md#1
+  status: result
+  note: notes/2026-09-03-note-04-reproduction-defect.md#1; notes/2026-09-05-note-10-certification-closure.md
   run: analysis/runs/sid_run6s.py; gate tests/test_reproduction_route.py
   seed_ref: seeds.md#run6
-  output: none (route defect)
+  output: analysis/outputs/res6_policies.json; release asset repo-v0.1.0-certification.log
   errata: notes/2026-09-03-note-04-reproduction-defect.md#5
+  reproduced: 2026-09-04, pinned environment, certified as repo-v0.1.0. Closed from open to result 2026-09-05. The repaired route completed from a clean checkout of d845a80 with every stage computed afresh (computed 7, 15 and 2; cached 0 throughout), 164 tests passing and none skipped, site projection current, strict JSON throughout, and six comparable outputs inside their declared tolerances. It also rejected correctly: the calibration stage exited nonzero on the exact-threshold test for the two rows whose provenance is lost (C17, C18) while the other five reproduced at 0.00 sigma, under a different interpreter and numpy major version from the one that first found the defect. All closure conditions in note 04 section 5 are met.
 - id: C21
   statement: Contrast dependence of the extremum leading-order accuracy. At q = s^2 Cbar/(1-Cbar^2) = 0.06 the leading-order overestimate is 10.1 % at Cbar=0.3, 7.3 % at 0.4, 5.6 % at 0.5, 3.6 % at 0.7 and 2.4 % at 0.9; at q = 0.17 it is 30.5, 21.6, 16.3, 10.3 and 6.8 %. At the reference contrast Cbar=0.4, 6 % accuracy holds only for q <= 0.0497 and 20 % only for q <= 0.1583. The mechanism is the first omitted term, I_exact/I_LO = 1 - k s^2 + O(s^4) with k = 1/2 + Cbar^2/(3(1-Cbar^2)), confirmed against the closed form at 60-digit precision. Replaces the contrast-independent ranges withdrawn as C01; the exact divergence and its asymptotic expansion are unaffected.
   status: result

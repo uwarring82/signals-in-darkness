@@ -19,6 +19,13 @@ listed under Planned and are not claimed as history.
 
 ## Unreleased (after `repo-v0.1.0`)
 
+- C19 and C20 closed from `open` to `result`. Both carried closure conditions written before the
+  pinned certification existed, and the certified run satisfied them: `res8_switch.json` was
+  regenerated from computation rather than cache and agreed at 0.00 sigma, and the repaired route
+  completed from a clean checkout while correctly rejecting the two unreproducible calibration
+  rows (`notes/2026-09-05-note-10-certification-closure.md`). The original defect note is
+  unaltered.
+
 - Publication metadata updated for the GitHub-only release: repository archiving and DOI
   assignment are deferred, and the citation records now identify version 0.1.0. The certified
   tag remains at `d845a80`.

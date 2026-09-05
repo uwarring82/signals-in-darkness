@@ -1,6 +1,6 @@
 # Signals in Darkness — operating-point crossover in sequential quantum-clock detection
 
-**Status (4 Sept 2026):** card v1.1 frozen; card v2.0 seed open; repository imported and tagged `archive-2026-09-03`. The whole analysis path has been run once in the pinned environment (`notes/2026-09-04-note-07-pinned-certification.md`); claims C09, C11, C12, C19 and C20 remain **open**, and C01, C15, C17, C18 and C22 are withdrawn.
+**Status (5 Sept 2026):** card v1.1 frozen; card v2.0 seed open; repository released as [`repo-v0.1.0`](https://github.com/uwarring82/signals-in-darkness/releases/tag/repo-v0.1.0), certified at commit `d845a80` by a clean-checkout run of the whole analysis path in the pinned environment. C19 and C20 closed on that evidence (`notes/2026-09-05-note-10-certification-closure.md`). **C09, C11, C12 and C24 remain open**; C01, C15, C16, C17, C18 and C22 are withdrawn. No DOI is claimed for this release.
 This README carries no thesis line until card v2.0 is frozen.
 
 ## Results hierarchy (from notes/2026-09-03-note-03a-errata.md)
