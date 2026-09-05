@@ -136,6 +136,83 @@ def _canonical_numbers(text):
     return out
 
 
+def _pins(path):
+    out = {}
+    for line in (open(os.path.join(ROOT, path), encoding="utf-8").read().splitlines()):
+        line = line.split("#", 1)[0].strip()
+        if "==" in line:
+            name, _, ver = line.partition("==")
+            out[name.strip().lower()] = ver.strip()
+    return out
+
+
+def test_shared_numerical_pins_match_the_root_environment():
+    """A notebook must produce the numbers the certified environment would.
+
+    The tutorial environment is standalone, so nothing forces its numpy/scipy/matplotlib to
+    agree with the root pins except this test.
+    """
+    root, tut = _pins("requirements.txt"), _pins("tutorials/requirements.txt")
+    shared = ("numpy", "scipy", "matplotlib")
+    for pkg in shared:
+        assert pkg in tut, f"tutorials/requirements.txt does not pin {pkg}"
+        assert pkg in root, f"requirements.txt does not pin {pkg}"
+        assert tut[pkg] == root[pkg], \
+            f"{pkg}: tutorial pins {tut[pkg]}, certified environment pins {root[pkg]}"
+    for pkg in tut:
+        if pkg in root and pkg not in shared:
+            assert tut[pkg] == root[pkg], \
+                f"{pkg} appears in both files at different versions: {tut[pkg]} vs {root[pkg]}"
+
+
+def test_tutorial_environment_excludes_the_certification_only_packages():
+    """cffconvert must not be installed alongside the tutorial toolchain.
+
+    jupyterlab pulls jsonschema >= 4, violating cffconvert's jsonschema<4 constraint. Keeping
+    cffconvert out of this file is what makes the two environments independently installable.
+    """
+    tut = _pins("tutorials/requirements.txt")
+    for pkg in ("cffconvert", "pytest"):
+        assert pkg not in tut, \
+            f"{pkg} belongs to the certified environment and must not be a tutorial dependency"
+
+
+def test_no_tutorial_instruction_installs_into_the_certified_environment():
+    """The documented route must not corrupt `sid`.
+
+    An earlier revision told readers to `conda activate sid` and then pip install the tutorial
+    requirements, which reproduces exactly the dependency conflict the separation exists to
+    avoid -- and breaks the CITATION.cff validation gate.
+    """
+    # The defect is installing the TUTORIAL requirements into `sid`, not activating `sid`,
+    # which the root README does correctly for the analysis path. So look for the two things
+    # occurring together within one instruction block.
+    names_sid = re.compile(r"\bsid\b(?!-)")
+    for rel in ("tutorials/README.md", "tutorials/requirements.txt",
+                "cards/tutorial-v0.1.md", "README.md"):
+        path = os.path.join(ROOT, rel)
+        if not os.path.exists(path):
+            continue
+        text = open(path, encoding="utf-8").read()
+        # instruction blocks: fenced code, or the comment header of a requirements file
+        blocks = re.findall(r"```[a-z]*\n(.*?)```", text, flags=re.S)
+        blocks += ["\n".join(l.lstrip("# ") for l in text.splitlines() if l.startswith("#"))]
+        for block in blocks:
+            # Only COMMAND lines count. Prose warning against installing into `sid` mentions
+            # both, and must not be mistaken for an instruction to do it.
+            commands = [l for l in block.splitlines()
+                        if re.search(r"\b(conda|pip install|pip\s+install)\b", l)]
+            installs = [l for l in commands if "tutorials/requirements.txt" in l]
+            if not installs:
+                continue
+            offender = next((l for l in commands if names_sid.search(l)), None)
+            assert not offender, (
+                f"{rel}: an instruction block installs tutorials/requirements.txt while "
+                f"referring to the certified environment `sid`. Tutorial tooling belongs in a "
+                f"standalone environment; installing it into `sid` pulls jsonschema >= 4 and "
+                f"breaks the CITATION.cff validation gate.\n  command: {offender.strip()!r}")
+
+
 def test_there_is_at_least_one_notebook():
     assert NOTEBOOKS, "tutorials/ contains no notebook"
 

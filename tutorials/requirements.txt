@@ -1,13 +1,26 @@
-# Tutorial authoring and execution only. DELIBERATELY SEPARATE from the certified numerical
-# environment: environment.yml pins what the analysis path and its gates need, and nothing
-# here may enter it. The notebooks themselves import only numpy, scipy, matplotlib and
-# analysis/lib, all of which come from the certified environment -- these packages are for
-# opening, editing and re-executing the notebooks, not for computing any number in them.
+# Tutorial environment — STANDALONE. Create it fresh; never install this into the certified
+# environment `sid`. Doing so pulls jsonschema >= 4, which violates cffconvert's jsonschema<4
+# constraint and breaks the CITATION.cff validation gate that `sid` exists to run:
 #
-#   conda activate sid && pip install -r tutorials/requirements.txt
+#   conda create -n sid-tutorial -c conda-forge python=3.12.14 pip
+#   conda activate sid-tutorial
+#   python -m pip install -r tutorials/requirements.txt
+#   python -m pip check
 #
-# tests/test_tutorials.py needs NONE of this: it executes the code cells directly, so the
-# notebook contract is gated by the certified environment alone.
+# The numerical packages below are the SHARED pins: they must equal those in the repository
+# root requirements.txt, so a notebook executed here produces the numbers the certified
+# environment would. tests/test_tutorials.py asserts that equality.
+#
+# cffconvert and pytest are deliberately absent. They belong to the certified environment;
+# tests/test_tutorials.py runs there and needs none of the authoring tools below, because it
+# executes the notebook's code cells directly rather than through a Jupyter kernel.
+
+# shared numerical pins — must match the repository root requirements.txt
+numpy==2.4.4
+scipy==1.17.1
+matplotlib==3.10.8
+
+# authoring and execution tools — tutorial environment only
 jupyterlab==4.6.3
 nbformat==5.11.1
 nbclient==0.11.0

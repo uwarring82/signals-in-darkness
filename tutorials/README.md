@@ -21,10 +21,18 @@ The notebooks are committed **with their outputs**, so they can be read on GitHu
 installed. To re-execute:
 
 ```
-conda env create -f environment.yml && conda activate sid
-pip install -r tutorials/requirements.txt
+conda create -n sid-tutorial -c conda-forge python=3.12.14 pip
+conda activate sid-tutorial
+python -m pip install -r tutorials/requirements.txt
+python -m pip check
 jupyter lab tutorials/
 ```
+
+**Create this environment fresh; do not install it into `sid`.** The tutorial toolchain pulls
+`jsonschema >= 4`, which violates `cffconvert`'s `jsonschema<4` constraint and breaks the
+`CITATION.cff` validation gate that the certified environment exists to run. The numerical
+packages are pinned identically in both, so a notebook executed here produces the numbers the
+certified environment would; `tests/test_tutorials.py` asserts that those shared pins agree.
 
 ## Contract
 
