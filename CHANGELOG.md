@@ -88,8 +88,10 @@ Work between the import and the first certified release.
   in this repository produces it
   (`notes/2026-09-04-note-09-extremum-bonus-provenance.md`).
 - Test dependencies pinned. Eight checks — CFF validity and the whole CITATION.cff/codemeta
-  agreement guard — skipped silently in the certified environment because PyYAML and
-  cffconvert were never pinned. A check that skips is not a gate.
+  agreement guard — skipped silently in the **pre-certification run of `b42b424`**, a candidate
+  that was never tagged, because PyYAML and cffconvert were not yet pinned. This commit pinned
+  them, so the released certification at `d845a80` ran with zero skips. A check that skips is
+  not a gate.
 
 ## Planned
 
