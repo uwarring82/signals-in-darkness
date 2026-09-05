@@ -31,9 +31,9 @@
   seed_ref: seeds.md#run3, seeds.md#run4
   output: analysis/outputs/res2_partial.json; figure figures/sid_midfringe_rate_check.png
 - id: C05
-  statement: Crossover in tau_c/c is amplitude-dependent beyond leading order (C=0.4: 4.65 at s->0, 5.46 at s=0.3, 7.24 at s=0.5); absent at C=0.99 for s>=0.5
+  statement: For the stated binary-link/OU model and exact correlation-rate comparator, the sequential-information crossover between the established contrast-loss and pair-correlation responses occurs at tau_c/c=4.65 as s->0, 5.46 at s=0.3 and 7.24 at s=0.5 for Cbar=0.4; at Cbar=0.99 no crossover exists for s>=0.5. The operating-point dependence of the Ramsey moments is prior art; the claimed result is the detection-theoretic boundary and its quantitative motion with amplitude.
   status: result
-  note: notes/2026-09-02-note-01.md#3
+  note: notes/2026-09-02-note-01.md#3; notes/2026-09-05-note-11-prior-art-audit.md#5
   run: analysis/runs/sid_run3.py
   seed_ref: none (comparator); HMM check seeds.md#run2
   output: analysis/outputs/res3_comparator.json (comparator_crossover)

@@ -1,6 +1,10 @@
 # v2.0 gating runs (cards/v2.0-seed.md)
-- id: A
-  title: Prior-art audit — Sakuldee & Cywinski 2019/2020 in full text, citers, Fisher-information operating-point analyses
+- id: A1
+  title: Operating-point and sequential-detection prior-art audit — C05 mechanism re-scoped; quantitative detection-theoretic boundary not found by targeted search
+  state: complete
+  gates_freeze: true
+- id: A2
+  title: C23 noise-physics provenance — Gaussian dephasing functional, cumulant/filter-function validity, and prior binary-information error boundaries
   state: open
   gates_freeze: true
 - id: B
