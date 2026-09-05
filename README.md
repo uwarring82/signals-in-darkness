@@ -11,6 +11,15 @@ This README carries no thesis line until card v2.0 is frozen.
 
 Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in plain-language material is a projection of that ledger.
 
+## Start here
+
+New to the problem? [`tutorials/00_how_many_coin_tosses.ipynb`](tutorials/00_how_many_coin_tosses.ipynb)
+begins with a coin and an elementary question — how many tosses to detect a change in its bias? —
+and arrives at the project's own machinery without changing mathematical language. A single-shot
+quantum measurement *is* a Bernoulli observation, so the coin is not an analogy. The notebooks are
+committed with their outputs and read on GitHub without installing anything; see
+[`tutorials/`](tutorials/README.md).
+
 ## Layout
 `cards/` preregistered and frozen task cards · `notes/` dated execution notes (append-only) · `labbook/` curated public entries · `ledgers/` machine-readable status, milestones, roadmap · `analysis/` library, run scripts, stored outputs, seeds · `tests/` · `figures/` · `references/` bibliography and verification ledger · `docs/` site source · `tools/` site generator.
 

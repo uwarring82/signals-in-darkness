@@ -1,0 +1,15 @@
+# Tutorial authoring and execution only. DELIBERATELY SEPARATE from the certified numerical
+# environment: environment.yml pins what the analysis path and its gates need, and nothing
+# here may enter it. The notebooks themselves import only numpy, scipy, matplotlib and
+# analysis/lib, all of which come from the certified environment -- these packages are for
+# opening, editing and re-executing the notebooks, not for computing any number in them.
+#
+#   conda activate sid && pip install -r tutorials/requirements.txt
+#
+# tests/test_tutorials.py needs NONE of this: it executes the code cells directly, so the
+# notebook contract is gated by the certified environment alone.
+jupyterlab==4.6.3
+nbformat==5.11.1
+nbclient==0.11.0
+ipykernel==7.3.0
+ipython==9.17.1

@@ -17,7 +17,17 @@ listed under Planned and are not claimed as history.
   to the folder as received; not a pure move, because the portability rewrite predates the
   import (`SEED_HANDOVER.md`, `cards/history/2026-09-04-repo-seed-v0.2-errata.md`).
 
-## Unreleased (after `repo-v0.1.0`)
+## Unreleased (after `repo-v0.1.0`) — `repo-v0.2.0` workstream
+
+- Tutorial sequence opened under its own card, `cards/tutorial-v0.1.md`, which is outside the
+  stopping rule of the repository seed card. Notebook 00 implemented: an elementary coin-toss
+  question carried through the exact fixed-sample test, a calibrated CUSUM, and the observation
+  that "does the starting probability matter?" has opposite answers under a fixed absolute change
+  and a fixed log-odds change. Notebooks are pedagogical views, never sources of evidence; the
+  contract is enforced by `tests/test_tutorials.py` in the certified environment.
+- Version set to 0.2.0 **before** certification, so the tagged commit will declare its own
+  version — the one avoidable defect of `repo-v0.1.0`, whose `CITATION.cff` still reads
+  `0.0.0-seed`.
 
 - C19 and C20 closed from `open` to `result`. Both carried closure conditions written before the
   pinned certification existed, and the certified run satisfied them: `res8_switch.json` was

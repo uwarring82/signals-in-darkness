@@ -1,0 +1,43 @@
+# Tutorials
+
+Pedagogical views of the project, in the order a reader should meet them. **They are never a
+source of scientific evidence**: every number is computed live from `analysis/lib`, the same
+tested code the research runs use, and every conclusion carries a status label.
+
+| notebook | question | status |
+|---|---|---|
+| `00_how_many_coin_tosses.ipynb` | How many tosses to detect a change in a coin's bias? | available |
+| `01_when_the_coin_has_memory.ipynb` | What changes when the bias is an AR(1) process? | planned |
+| `02_from_coin_to_quantum_sensor.ipynb` | The binary link, contrast, and the two operating points | planned |
+| `03_detection_is_not_identification.ipynb` | Why detecting a change is not interpreting it | planned |
+
+A single-shot quantum measurement **is** a Bernoulli observation, so the coin is not an analogy.
+The mathematical language does not change between notebook 00 and notebook 03; only the meaning
+of the probability does.
+
+## Reading them
+
+The notebooks are committed **with their outputs**, so they can be read on GitHub with nothing
+installed. To re-execute:
+
+```
+conda env create -f environment.yml && conda activate sid
+pip install -r tutorials/requirements.txt
+jupyter lab tutorials/
+```
+
+## Contract
+
+Enforced by `tests/test_tutorials.py`, which runs in the certified environment and needs none of
+the packages above:
+
+- research formulas are **imported** from `analysis/lib`, never restated;
+- every random result has a named seed;
+- nothing is written into `analysis/outputs/` or `figures/`;
+- every conclusion is labelled `textbook`, or `result` / `pilot` / `open` / `withdrawn` with a
+  claim id — `textbook` marks a standard statistical fact that is *not* a claim of this project;
+- each notebook executes top to bottom in a temporary directory, in well under a minute,
+  leaving no files behind.
+
+Governed by `cards/tutorial-v0.1.md`, which is outside the stopping rule of
+`cards/repo-seed-v0.2.md`.

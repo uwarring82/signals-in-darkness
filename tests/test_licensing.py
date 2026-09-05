@@ -41,6 +41,23 @@ def test_reuse_declares_both_licences_and_parses():
         assert expected in covered, expected
 
 
+def test_every_top_level_directory_is_covered_by_reuse():
+    """A new directory must not silently arrive without a declared licence.
+
+    tutorials/ and LICENSES/ were both unaccounted for when tutorials/ was added; a path-by-path
+    reading of REUSE.toml would not have noticed, because everything it does list is correct.
+    """
+    tomllib = pytest.importorskip("tomllib", reason="python < 3.11 and tomli absent")
+    with open(os.path.join(ROOT, "REUSE.toml"), "rb") as fh:
+        data = tomllib.load(fh)
+    covered = [p for a in data["annotations"] for p in a["path"]]
+    tops = sorted(d for d in os.listdir(ROOT)
+                  if os.path.isdir(os.path.join(ROOT, d)) and not d.startswith("."))
+    missing = [d for d in tops
+               if not any(c == d or c.startswith(d + "/") for c in covered)]
+    assert not missing, f"top-level directories with no REUSE declaration: {missing}"
+
+
 def test_citation_cff_carries_no_placeholder_and_no_license_field():
     """A stubbed orcid invalidates the whole CFF record; a license field would misstate it."""
     text = _read("CITATION.cff").decode()
