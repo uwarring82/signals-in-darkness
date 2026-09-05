@@ -28,3 +28,9 @@ Rules: load-bearing references need full text; "identifier" means the DOI/arXiv 
 | Wudarski2023PRL | 10.1103/PhysRevLett.131.230201; arXiv:2304.05241 | 2026-09-05 (owner + independent check) | full arXiv manuscript; separate journal supplement not verified | no | ok for bibliographic identity; the audit's claimed supplement equation and quotation are unverified and not relied upon |
 | Wilkinson2016 | 10.1038/sdata.2016.18 | 2026-09-03 | identifier | no | ok |
 | Barker2022 | 10.1038/s41597-022-01710-x | 2026-09-03 | identifier | no | ok |
+| Hohenberg2015 | 10.1016/j.physrep.2015.01.001; arXiv:1410.7285 | 2026-09-05 (owner, PDF) | full text, Sec. V.B pp. 17-18 | **yes** | ok — the Ginzburg-style self-consistency test and its parameter-dependent validity region; cited directly as C23's methodological precedent |
+| Levanyuk1959 | Sov. Phys. JETP 9, 571 | — | **second-hand only**, as cited in Hohenberg2015 | no | original not read; not relied upon |
+| Ginzburg1960 | Sov. Phys. Solid State 2, 1824 | — | **second-hand only**, as cited in Hohenberg2015 | no | original not read; not relied upon |
+| Klauder1962 | 10.1103/PhysRev.125.912 | 2026-09-05 (audit) | full text | no | ok for echo-function structure **only** — their Gaussian means Gaussian frequency *diffusion* and is explicitly non-stationary; **not** the source of the second-cumulant stationary-noise result |
+| Fink2013 | 10.1103/PhysRevLett.110.010403 | 2026-09-05 (audit) | full text, Eq. (2) | no | ok — two-exponential correlator structure; never evaluated at mid-fringe, no contrast prefactor |
+| RojasArias2025 | arXiv:2509.22073 | 2026-09-05 (audit) | full text, Eqs. (4)-(5) | no | ok — independent corroboration of the C02 correlator at arbitrary readout phase with explicit visibility prefactor |

@@ -9,7 +9,7 @@
   output: analysis/outputs/res1_core.json (A)
   errata: notes/2026-09-03-note-01a-errata.md (the 6 % and 20 % ranges were stated as contrast-independent and are not - at q=0.06 the error is 7.3 % at Cbar=0.4 and 10.1 % at 0.3; the section A grid began at Cbar=0.5 and never tested the reference contrast. The exact divergence and its asymptotic expansion are unaffected.)
 - id: C02
-  statement: Exact mid-fringe lag correlation r_k = C^2 e^{-s^2} sinh(s^2 a_k); leading-order rate carries factor e^{-2 s^2}
+  statement: Exact mid-fringe lag correlation r_k = C^2 e^{-s^2} sinh(s^2 a_k); leading-order rate carries factor e^{-2 s^2}. PRIOR ART - this correlator is Wudarski et al. 2023 (Phys. Rev. Applied 19, 064066) Eq. 29 at phi_R = pi/2 under f_0 = s^2, f_k = s^2 a_k and the covariance-to-correlation normalisation, verified numerically to 3.1e-15; their Eq. 34 gives a_k. The project's contribution is its use inside the spectral information-rate comparator and the sequential crossover, not the formula.
   status: result
   note: notes/2026-09-02-note-01.md#2a
   run: analysis/runs/sid_run2.py, sid_run3.py
@@ -24,7 +24,7 @@
   output: analysis/outputs/res2_partial.json
   supersedes: cards/v1.0-frozen.md (mid-fringe validity box)
 - id: C04
-  statement: Gaussian spectral comparator with exact r_k reproduces the grid-converged latent-AR(1) binary rate within Monte-Carlo error (SE ~7 % at 1e5 shots) in all tested cases
+  statement: Gaussian spectral comparator with exact r_k reproduces the grid-converged POINT-SAMPLED latent-AR(1) binary reference within Monte-Carlo error (SE ~7 % at 1e5 shots) in all tested cases. Scope narrowed 2026-09-05: the committed HMM simulates the phase itself as AR(1), which is exact only in the point-sampling limit F(u) -> 1; the finite-window integrated phase is ARMA(1,1), and the comparator has not been validated against an exact ARMA(1,1) latent likelihood (roadmap F). See notes/2026-09-05-note-12-a2-noise-physics-provenance.md
   status: result
   note: notes/2026-09-02-note-02.md (checks 2, 3a)
   run: analysis/runs/sid_run3.py, sid_run4.py
