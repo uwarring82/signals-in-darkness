@@ -5,6 +5,14 @@ listed under Planned and are not claimed as history.
 
 ## Tags
 
+- **`repo-v0.2.0`** — tutorial workstream and certification closure. Opens the tutorial
+  sequence under `cards/tutorial-v0.1.md` with notebook 00, whose contract is enforced in the
+  certified environment; closes C19 and C20 on the `repo-v0.1.0` certification evidence, and
+  rewrites their ledger statements so the status page no longer shows `result` beside text
+  saying "unresolved"; and repairs a licensing declaration added during this workstream that
+  annotated `LICENSES/`, which REUSE 3.2 excludes — the annotation was inert and broke the
+  identifier check under the pins. Version set before certification, so this tagged commit
+  declares its own version. No DOI; archiving remains deferred.
 - **`repo-v0.1.0`** — first certified repository release, at `d845a80`. Full analysis path
   re-run from a clean clone of that commit in the pinned environment, tree unchanged before
   and after: every stage computed afresh, 164 tests passed with none skipped, site projection
@@ -17,7 +25,7 @@ listed under Planned and are not claimed as history.
   to the folder as received; not a pure move, because the portability rewrite predates the
   import (`SEED_HANDOVER.md`, `cards/history/2026-09-04-repo-seed-v0.2-errata.md`).
 
-## Unreleased (after `repo-v0.1.0`) — `repo-v0.2.0` workstream
+## Released in `repo-v0.2.0`
 
 - Tutorial sequence opened under its own card, `cards/tutorial-v0.1.md`, which is outside the
   stopping rule of the repository seed card. Notebook 00 implemented: an elementary coin-toss
@@ -46,10 +54,9 @@ listed under Planned and are not claimed as history.
   not been isolated and no telemetry was collected. The tag was not moved or recreated for
   this correction.
 
-## Before `repo-v0.1.0`
+## Released in `repo-v0.1.0`
 
-Work since the import, none of it tagged. No tag may be pushed until the certification
-blockers in the notes below are cleared under a clean-checkout verification.
+Work between the import and the first certified release.
 
 - Reproduction route repaired: the documented command consumed its own committed output as
   cache state and recomputed nothing. Fresh by default, explicit `--resume`, archive separated
