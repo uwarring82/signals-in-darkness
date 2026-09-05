@@ -51,11 +51,16 @@ def test_every_top_level_directory_is_covered_by_reuse():
     with open(os.path.join(ROOT, "REUSE.toml"), "rb") as fh:
         data = tomllib.load(fh)
     covered = [p for a in data["annotations"] for p in a["path"]]
+    # REUSE 3.2 excludes the licence files under LICENSES/ from covered files, so an
+    # annotation resolving to them is ignored. It must be exempted, not declared.
+    EXEMPT = {"LICENSES"}
     tops = sorted(d for d in os.listdir(ROOT)
                   if os.path.isdir(os.path.join(ROOT, d)) and not d.startswith("."))
-    missing = [d for d in tops
-               if not any(c == d or c.startswith(d + "/") for c in covered)]
+    missing = [d for d in tops if d not in EXEMPT
+               and not any(c == d or c.startswith(d + "/") for c in covered)]
     assert not missing, f"top-level directories with no REUSE declaration: {missing}"
+    assert not any(c.startswith("LICENSES/") for c in covered), \
+        "LICENSES/ must not be annotated: REUSE excludes licence files, so the annotation is inert"
 
 
 def test_citation_cff_carries_no_placeholder_and_no_license_field():

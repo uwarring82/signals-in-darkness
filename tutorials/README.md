@@ -34,10 +34,13 @@ the packages above:
 - research formulas are **imported** from `analysis/lib`, never restated;
 - every random result has a named seed;
 - nothing is written into `analysis/outputs/` or `figures/`;
-- every conclusion is labelled `textbook`, or `result` / `pilot` / `open` / `withdrawn` with a
-  claim id — `textbook` marks a standard statistical fact that is *not* a claim of this project;
-- each notebook executes top to bottom in a temporary directory, in well under a minute,
-  leaving no files behind.
+- every quoted conclusion opens with `**worked example**` — computed here for teaching, not a
+  claim of this project — or `**C·· — status**`, whose id and status are checked against
+  `ledgers/status.yaml`;
+- cells are plain Python: no magics, no shell escapes;
+- each notebook executes top to bottom in a temporary directory in well under a minute, leaves
+  no files behind, changes nothing under `analysis/outputs/` or `figures/` (hashed before and
+  after), and its committed numbers match a fresh run to four significant figures.
 
 Governed by `cards/tutorial-v0.1.md`, which is outside the stopping rule of
 `cards/repo-seed-v0.2.md`.

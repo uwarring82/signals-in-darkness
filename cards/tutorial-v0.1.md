@@ -42,12 +42,23 @@ reader to cite an illustration as a finding. Both are forbidden.
 2. **Deterministic.** Every random result has a named seed defined in the notebook.
 3. **Fast.** Each notebook executes top to bottom in well under a minute.
 4. **Read-only against the archive.** Nothing writes into `analysis/outputs/` or `figures/`.
-5. **Every conclusion labelled.** `result` / `pilot` / `open` / `withdrawn` with a claim id when
-   the statement is a claim of this project; `textbook` when it is a standard statistical fact.
-   The fifth label is deliberate: calling a textbook result `result` would place it in the
-   project's claim vocabulary, which is the conflation `ledgers/status.yaml` exists to prevent.
-6. **Executed in the tests.** `tests/test_tutorials.py` runs each notebook's code cells in a
-   temporary directory and asserts it leaves nothing behind.
+5. **Every conclusion labelled, in two distinct namespaces.** Each quoted conclusion opens with
+   either `**worked example**` or `**C·· — status**`.
+   - `worked example` — computed here for teaching using standard methods. **Not** a claim of
+     this project. The label is not `textbook`: numbers like "213 tosses" or "delay 174" are not
+     textbook facts, they are tutorial-local calculations, and calling them `result` would place
+     them in the project's claim vocabulary — the conflation `ledgers/status.yaml` exists to
+     prevent.
+   - `C·· — status` — a ledger claim and its current status, both checked against
+     `ledgers/status.yaml` by the tests. A tutorial number that merely *resembles* a claim does
+     not inherit its standing; the two are stated as separate conclusions.
+6. **Plain Python cells, executed in the tests.** No line or cell magics and no shell escapes:
+   `tests/test_tutorials.py` runs the code cells directly, without a Jupyter kernel, in a
+   temporary directory. It hashes `analysis/outputs/` and `figures/` before and after to prove
+   nothing was written, asserts nothing is left behind, and compares the freshly produced numbers
+   with those committed in the notebook — to four significant figures, so a different interpreter
+   does not fail on a last digit while a stale committed output does. Lines prefixed `[env]` are
+   provenance and are excluded from that comparison.
 7. **Dependencies separate.** Authoring tools live in `tutorials/requirements.txt` and may not
    enter `environment.yml`. The contract tests deliberately need none of them, so the gate runs
    in the certified environment.

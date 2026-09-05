@@ -140,7 +140,7 @@
   output: analysis/outputs/res6_policies.json (delays); figure figures/sid_policy_delays.png
   errata: notes/2026-09-03-note-04-reproduction-defect.md#3
 - id: C19
-  statement: Explore-then-switch outputs in res8_switch.json - unresolved provenance. sid_run8.py wrote its output to the current working directory rather than to analysis/outputs/, so the archived copy cannot have been written in place by a run performed as documented. Nothing contradicts the values; they are unverified until independently regenerated and compared.
+  statement: Explore-then-switch outputs in res8_switch.json are correct and reproducible. Independently regenerated from computation under the pinned environment certified as repo-v0.1.0, all six delay rows agreeing with the archive at 0.00 sigma. The creation path of the original file remains unknown - sid_run8.py wrote to the current working directory rather than to analysis/outputs/, so the archived copy cannot have been written in place by a run performed as documented - and that gap is not closed by this: the values are confirmed, their original provenance is not.
   status: result
   note: notes/2026-09-03-note-04-reproduction-defect.md#4; notes/2026-09-05-note-10-certification-closure.md
   run: analysis/runs/sid_run8.py
@@ -149,7 +149,7 @@
   errata: notes/2026-09-03-note-04-reproduction-defect.md#4
   reproduced: 2026-09-04, pinned environment, certified as repo-v0.1.0. Closed from open to result 2026-09-05. The archived values were independently regenerated FROM COMPUTATION rather than from cache - sid_run8.py reported computed 2, cached 0, writing into analysis/reproduction/ and never reading the archive - and all six delay rows agreed at 0.00 sigma (switch@300 gives 1546.3, 2002.8, 3644.0 at tau_c/c = 20, 5, 1; switch@1000 gives 1147.2, 2219.7, 5756.7). The values are confirmed. The creation path of the ORIGINAL file remains unknown and is not recovered by this: it was written by a run whose working directory was never recorded.
 - id: C20
-  statement: The documented reproduction route at tag archive-2026-09-03 consumed committed cache state - sid_run6s.py used its own published output as checkpoint, so a clean clone recomputed nothing and reprinted the archive in 0 s against a true cost of 7.7 min. The binding reproduction acceptance criterion of cards/repo-seed-v0.2.md fails at that tag. Interface repaired in the commit carrying note 04; the criterion stays open until a clean-checkout rerun of the whole affected chain under a pinned environment.
+  statement: The documented reproduction route computes afresh and its gate rejects correctly. At tag archive-2026-09-03 it consumed committed cache state - sid_run6s.py used its own published output as checkpoint, so a clean clone recomputed nothing and reprinted the archive in 0 s against a true cost of 7.7 min - and the binding reproduction acceptance criterion of cards/repo-seed-v0.2.md failed there. The repaired route was rerun from a clean checkout under the pinned environment certified as repo-v0.1.0, computing every stage afresh, and refused the two calibration rows whose provenance is lost while the other five reproduced at 0.00 sigma. All closure conditions in note 04 section 5 are met.
   status: result
   note: notes/2026-09-03-note-04-reproduction-defect.md#1; notes/2026-09-05-note-10-certification-closure.md
   run: analysis/runs/sid_run6s.py; gate tests/test_reproduction_route.py

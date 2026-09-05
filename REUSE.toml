@@ -50,15 +50,6 @@ SPDX-FileCopyrightText = "2026 Ulrich Warring"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 # ---- packaging and repository metadata ----
-# LICENSES/ holds the licence texts themselves. REUSE reads that directory as the licence
-# store rather than as licensed content, but it is declared so no path in the tree is unaccounted
-# for -- tests/test_licensing.py asserts every top-level directory is covered.
-[[annotations]]
-path = ["LICENSES/**"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "the respective licence stewards (Apache Software Foundation; Creative Commons)"
-SPDX-License-Identifier = "CC0-1.0"
-
 [[annotations]]
 path = [
   "CITATION.cff",
