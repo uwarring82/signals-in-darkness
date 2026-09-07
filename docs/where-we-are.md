@@ -16,13 +16,13 @@ is computed here. For the technical record see the [status table](status.md), th
 
 <div class="status-grid compact" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">14</strong><span>supported results</span>
+    <strong data-status-count="result">18</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
   </a>
   <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="open">4</strong><span>open claims</span>
+    <strong data-status-count="open">1</strong><span>open claim</span>
   </a>
   <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="withdrawn">7</strong><span>withdrawn claims</span>
@@ -69,6 +69,16 @@ range and not the rest. **This is a limit on the closed form, not on C05's exact
 unaffected.** The kind of self-consistency test involved is not a new idea; it is the move
 Ginzburg-style validity criteria make in phase-transition theory, and the project cites that
 precedent rather than claiming it.
+
+**C27 — and the best policy depends on where you stand.** Given a false-alarm budget, which
+detection strategy raises the alarm soonest in its *worst* case is not a fixed answer. At the first
+operating point the simple fixed choice — always read at the dark extremum — wins, and no hedging
+schedule beats it. At a second point it loses badly, and four of five hedges beat it, the best by
+nearly a factor of two. What makes this more than a numerical curiosity is the cleanest pair in it:
+two strategies calibrated to the *same* accuracy, 1.9× apart. A caution the record insists on: every
+schedule tested was **fixed in advance**. None of them watches the data and decides what to do next.
+So this says that committing to a robust schedule pays where a single fixed choice does not — it
+does not say that learning-on-the-fly works, which remains untested.
 
 **C26 — detecting a change is not the same as explaining it.** Suppose contrast is falling. That
 could be new frequency noise, or it could be that the qubit's coherence time has simply got worse.
@@ -131,10 +141,11 @@ is not quite the simple process the simulator assumes. F is not expected to move
 number, but it has not been run, so that expectation is not a guarantee; what it certainly gates is
 how strongly the manuscript may word one claim.
 
-**Open claims.** **C09** places the delay crossover between two correlation times but rests partly on
-withdrawn calibration. **C11** and **C12** concern whether adaptive strategies help; the honest
-current answer is that no tested strategy showed a resolved advantage, at one operating point, which
-is why B exists. **C24** concerns a small extra correlation effect in the extremum stream. Its proposed ceiling of
+**Open claims.** Only one remains. **C09**, **C11** and **C12** were open because every ratio they
+quoted divided by a benchmark that had been withdrawn — not because anyone doubted them. Re-running
+the whole pilot chain on its own fresh thresholds removed that dependency, and all three are now
+supported, with corrected numbers, because replacing a withdrawn benchmark changes what it
+normalises. **C24** concerns a small extra correlation effect in the extremum stream. Its proposed ceiling of
 6 %, in the high-contrast long-correlation corner only, is **not yet established** — the claim is
 open, so the effect is at present unbounded rather than bounded. **C14** remains `pilot`: it holds in a
 simplified servo model only.

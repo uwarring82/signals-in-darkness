@@ -113,9 +113,12 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
   keeps the unsuffixed names so its reproduction path is unchanged. Two operating points
   sharing one file would reintroduce at the filesystem level exactly the confusion roadmap G
   removed in memory, so the separation is enforced by `sid_policies.state_name_for()` rather
-  than by convention. A non-pilot run has no archived counterpart, so it must be asked for
-  with `--no-reference`; it *establishes* its numbers and verifies nothing, and says so in its
-  own output rather than reporting "0 pass, 0 FAIL" and exiting 0.
+  than by convention. A run whose operating point has no archived counterpart must be asked for
+  with `--no-reference`: it *establishes* its numbers and verifies nothing, and says so in its
+  own output rather than reporting "0 pass, 0 FAIL" and exiting 0. Roadmap B published
+  `res6_policies_stress.json` and `res8_switch_stress.json` on 7 Sept 2026, so the stress point
+  now HAS a reference and later stress runs are compared against it in the ordinary way; the
+  flag was needed only for the run that created it.
 - `res8_switch.json` — **two shapes, deliberately.** The *published archive* is the legacy flat map
   `{B: [h_star, ARL, {tau_c: [mean, se]}]}`, written before roadmap G and carrying no run identity.
   *Reproduction checkpoints written after G* are `{"switch": {B: [...]}, "meta": {...}}`, where `meta`

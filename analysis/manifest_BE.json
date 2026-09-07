@@ -287,11 +287,13 @@
     },
     {
       "step": 4,
-      "do": "Calibrate every B policy afresh, especially tau_c/c = 20. No archived C17/C18 threshold may enter."
+      "do": "Calibrate every B policy afresh, especially tau_c/c = 20. No archived C17/C18 threshold may enter.",
+      "status": "done 2026-09-07 - all seven stress policies calibrated afresh; no archived C17/C18 threshold entered, and the run required --no-reference so it could not be mistaken for a verification"
     },
     {
       "step": 5,
-      "do": "Use the exact comparator for interpretation at tau_c/c = 5 and 20; the leading-order rate is invalid there."
+      "do": "Use the exact comparator for interpretation at tau_c/c = 5 and 20; the leading-order rate is invalid there.",
+      "status": "done 2026-09-07 - delta(0) at the stress point is 0.0239/0.1858/0.8025 at tau_c/c = 1/5/20, so tau_c/c = 20 is outside leading-order validity and interpretation there uses the exact comparator (I_ext 3.196e-4; exact HMM mid-fringe 1.442e-3 at tau_c/c=20, 4.277e-4 at 5, 2.678e-5 at 1)"
     }
   ],
   "decisions_resolved": [
@@ -335,5 +337,16 @@
     },
     "optimizer_record": "all three starts with their solutions, convergence status, objective value, iteration count, and which minimum was selected",
     "regression": "the 24 overlapping historical rows must reproduce res7A within 6e-8"
+  },
+  "B_result": {
+    "status": "complete 2026-09-07",
+    "headline": "the hedge ordering inverts between operating points; see claim C27",
+    "clean_anchor": "switch@1000 vs fixed-extremum at the stress point, both +13 % off the ARL target, 1.91x apart",
+    "scope": "every schedule tested is precommitted; sched(n) cannot consult the posterior. Action scheduling, not online learning.",
+    "recorded_deviation": "learner-interleave-B1 calibrates to +31.8 % at the stress point, outside the +-30 % envelope; the bias runs against the hedge",
+    "artifacts": [
+      "analysis/outputs/res6_policies_stress.json",
+      "analysis/outputs/res8_switch_stress.json"
+    ]
   }
 }

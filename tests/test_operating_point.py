@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(ROOT, "analysis", "runs"))
 
 import sid_policies as P
 import sid_repro
+from sid_policies import state_name_for  # noqa: F401
 
 
 def _src(relpath):
@@ -396,13 +397,46 @@ def test_drivers_refuse_an_unknown_flag_rather_than_defaulting_to_the_pilot():
 
 def test_a_run_without_an_archived_reference_must_be_asked_for():
     """Otherwise it prints the tolerance header, lists NO-REFERENCE for every row, summarises
-    '0 pass, 0 FAIL' and exits 0 -- indistinguishable from a run that compared and agreed."""
+    '0 pass, 0 FAIL' and exits 0 -- indistinguishable from a run that compared and agreed.
+
+    The stress point HAS an archive since roadmap B published one, so the archive is moved
+    aside for the length of this test and restored afterwards. Asserting the refusal only
+    when the file happens to be missing would make the guard untestable the moment it was
+    first used, which is the shape of a check that quietly stops checking.
+    """
+    import shutil
     import subprocess
-    r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "runs", "sid_run6s.py"),
-                        "cal:extremum-only", "--operating-point=stress"],
-                       capture_output=True, text=True, timeout=120)
-    assert r.returncode == 2, f"a stress run without --no-reference was allowed (exit {r.returncode})"
-    assert "ESTABLISH" in r.stderr and "not verify" in r.stderr
+    import tempfile
+
+    archive = os.path.join(ROOT, "analysis", "outputs", "res6_policies_stress.json")
+    stash = None
+    if os.path.exists(archive):
+        stash = tempfile.NamedTemporaryFile(delete=False, suffix=".json").name
+        shutil.move(archive, stash)
+    try:
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "runs", "sid_run6s.py"),
+                            "cal:extremum-only", "--operating-point=stress"],
+                           capture_output=True, text=True, timeout=120)
+        assert r.returncode == 2, (
+            f"a run with no archived reference was allowed without --no-reference "
+            f"(exit {r.returncode})")
+        assert "ESTABLISH" in r.stderr and "not verify" in r.stderr
+    finally:
+        if stash:
+            shutil.move(stash, archive)
+    assert os.path.exists(archive), "the stress archive was not restored"
+
+
+def test_a_published_operating_point_is_compared_rather_than_established():
+    """The other half: once an archive exists, the run must compare against it rather than
+    still claiming it establishes anything."""
+    assert os.path.exists(os.path.join(ROOT, "analysis", "outputs", "res6_policies_stress.json")), (
+        "roadmap B's stress artifact is not published, so nothing verifies future stress runs")
+    doc = json.load(open(os.path.join(ROOT, "analysis", "outputs", "res6_policies_stress.json"),
+                         encoding="utf-8"))
+    assert doc["meta"]["config"]["operating_point"] == P.STRESS.as_dict()
+    assert not doc["meta"]["revision"].endswith("+dirty"), (
+        "the published stress artifact was produced from an uncommitted tree")
 
 
 def test_main_reads_the_operating_point_from_its_own_argv():
@@ -413,5 +447,7 @@ def test_main_reads_the_operating_point_from_its_own_argv():
     assert "operating_point_from_argv(sys.argv)" not in src, (
         "the operating point is bound from module-level sys.argv again")
     assert "operating_point_from_argv(argv)" in src
-    # asking for stress without --no-reference is refused, which proves argv was honoured
-    assert sid_run6s.main(["x", "cal:extremum-only", "--operating-point=stress"]) == 2
+    # an unknown flag is refused by main() itself, which proves it parsed the argv it was given
+    assert sid_run6s.main(["x", "cal:extremum-only", "--operating-point", "stress"]) == 2
+    # and the state name it derives follows the operating point it was handed
+    assert sid_run6s.state_name_for("res6_policies.json", "stress") == "res6_policies_stress.json"

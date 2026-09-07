@@ -8,8 +8,8 @@
   state: complete
   gates_freeze: true
 - id: B
-  title: Second operating point C_eff=0.5, s=0.3 at the parity ceiling, labelled an upper-bound stress test (D2, 7 Sept 2026; replaces C=0.8, which would have made this gate depend on D) — benchmark, hedges, tau_c in {1,5,20}, tightened ARL. Blocked by G. Exact comparator for interpretation at tau_c/c = 5 and 20.
-  state: open
+  title: Second operating point C_eff=0.5, s=0.3 at the parity ceiling, an upper-bound stress test - COMPLETE 7 Sept 2026. The hedge ordering INVERTS: fixed-extremum best at the pilot (1.44, no hedge beats it), worst-case 2.88 at the stress point where four of five hedges beat it (switch@1000 1.51). Cleanest anchor: switch@1000 vs fixed-extremum, both +13 % off the ARL target, 1.91x apart. Pilot chain re-run on fresh thresholds first (15/15 delays, 6/6 switch reproduce) to remove the withdrawn C18 benchmark, which repaired C09/C11/C12 to result. New claim C27. Every schedule is precommitted: this is action SCHEDULING, not online learning (roadmap C).
+  state: complete
   gates_freeze: true
 - id: C
   title: Posterior-driven action selection vs true oracle over the same action set
