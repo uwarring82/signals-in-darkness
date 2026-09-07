@@ -1,0 +1,125 @@
+{
+  "artifact": "roadmap G preservation evidence",
+  "what_it_shows": "Making the operating point an explicit immutable object changed no number. The five valid pilot calibration rows reproduce the archive under exact threshold equality; the two rows withdrawn as C17 still fail, which is required, and they are excluded from the preservation claim by name rather than by outcome.",
+  "recorded_at_revision": "b927e6e9bed89022673dff3547ff540820e97ae3",
+  "tree_clean_at_recording": false,
+  "uncommitted_when_recorded": [
+    "analysis/G_preservation_evidence.json",
+    "tests/test_operating_point.py",
+    "tools/record_preservation_evidence.py"
+  ],
+  "note_on_cleanliness": "The CALIBRATION revision is the one that matters and is asserted clean. The recording tree may hold this tool and its test, which cannot be committed before the artifact they gate exists; those files are listed rather than silently allowed.",
+  "calibration_run": {
+    "run_id": "d2a1960161d7",
+    "revision": "b927e6e",
+    "python": "3.9.7",
+    "numpy": "1.23.5",
+    "scipy": "1.10.0",
+    "matplotlib": "3.7.1",
+    "machine": "x86_64",
+    "platform": "macOS-26.6.2-x86_64-i386-64bit",
+    "blas": "unknown",
+    "written": "2026-09-07T14:40:06+0200"
+  },
+  "operating_point": {
+    "C_eff": 0.4,
+    "s": 0.5
+  },
+  "comparison": "h* by exact equality; ARL means reported with their combined-sigma distance",
+  "preserved_rows": [
+    "oracle-mid(tc=5)",
+    "oracle-mid(tc=1)",
+    "extremum-only",
+    "learner-mid(bank)",
+    "learner-interleave-B1(bank)"
+  ],
+  "withdrawn_rows_excluded_by_name": [
+    "oracle-mid(tc=20)",
+    "learner-interleave-B10(bank)"
+  ],
+  "counts": {
+    "preserved_exact": 5,
+    "preserved_total": 5,
+    "withdrawn_failing": 2,
+    "withdrawn_total": 2
+  },
+  "rows": [
+    {
+      "policy": "oracle-mid(tc=5)",
+      "class": "preserved",
+      "h_fresh": 3.421875,
+      "h_archive": 3.421875,
+      "h_exact_match": true,
+      "arl_fresh": 38283.15625,
+      "arl_archive": 38283.15625,
+      "arl_sigma": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "policy": "oracle-mid(tc=1)",
+      "class": "preserved",
+      "h_fresh": 1.546875,
+      "h_archive": 1.546875,
+      "h_exact_match": true,
+      "arl_fresh": 28853.828125,
+      "arl_archive": 28853.828125,
+      "arl_sigma": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "policy": "extremum-only",
+      "class": "preserved",
+      "h_fresh": 3.734375,
+      "h_archive": 3.734375,
+      "h_exact_match": true,
+      "arl_fresh": 32314.0,
+      "arl_archive": 32314.0,
+      "arl_sigma": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "policy": "learner-mid(bank)",
+      "class": "preserved",
+      "h_fresh": 3.421875,
+      "h_archive": 3.421875,
+      "h_exact_match": true,
+      "arl_fresh": 27697.625,
+      "arl_archive": 27697.625,
+      "arl_sigma": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "policy": "learner-interleave-B1(bank)",
+      "class": "preserved",
+      "h_fresh": 3.421875,
+      "h_archive": 3.421875,
+      "h_exact_match": true,
+      "arl_fresh": 31881.265625,
+      "arl_archive": 31881.265625,
+      "arl_sigma": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "policy": "oracle-mid(tc=20)",
+      "class": "withdrawn-C17",
+      "h_fresh": 4.671875,
+      "h_archive": 4.359,
+      "h_exact_match": false,
+      "arl_fresh": 44698.640625,
+      "arl_archive": 33852,
+      "arl_sigma": 1.7447841455861919,
+      "verdict": "FAIL (expected for withdrawn rows)"
+    },
+    {
+      "policy": "learner-interleave-B10(bank)",
+      "class": "withdrawn-C17",
+      "h_fresh": 3.734375,
+      "h_archive": 3.55,
+      "h_exact_match": false,
+      "arl_fresh": 47313.0625,
+      "arl_archive": 34014.96875,
+      "arl_sigma": 2.5773597539998323,
+      "verdict": "FAIL (expected for withdrawn rows)"
+    }
+  ]
+}

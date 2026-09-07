@@ -91,3 +91,55 @@ own terms. What changed is that the same failure cannot happen again silently.
 
 Next is **B**, at C_eff = 0.5, s = 0.3, labelled an upper-bound stress test at the parity ceiling,
 with every policy calibrated afresh and no archived C17/C18 threshold entering.
+
+---
+
+## Repair pass, appended 7 September 2026 (same day, after review)
+
+The note above declared G complete. **It was not.** Four defects survived the first pass; three
+were in code and one was in the tests that were supposed to catch them.
+
+**1. The shared simulator was fixed; the explore-then-switch path was not.** `sid_run8.py` had its
+`from sid_policies import C, s` removed — and then rebound the same names one line below as
+`C, s = OP.C_eff, OP.s`. `run_batch_age` drew its post-change process from those module names while
+its filter (`bank.e1`) and null (`bank.p0`) came from `bank.op`. A bank built at C_eff = 0.5,
+s = 0.3 would therefore have been simulated against the pilot's C_eff = 0.4, s = 0.5 process, with
+nothing anywhere to detect the mismatch. **Freezing `OP` does not freeze a binding derived from it.**
+Both the null and non-null paths now read `C, s` from `bank.op` inside the function.
+
+**2. `sid_run8`'s checkpoint had no identity at all** — no operating point, no config digest, no
+compatibility check — so a checkpoint written at one operating point could be resumed at another.
+That is precisely the defect G exists to eliminate, left intact in the second driver. It now has
+`run_config()`, stores `{"switch": …, "meta": run_metadata(…)}`, and refuses a mismatched resume by
+name. Pre-G flat checkpoints carrying no identity are refused rather than silently resumed.
+
+**3. The acceptance tests forbade *importing* `C` and `s` but not *rebinding* them**, which is
+exactly why they passed over defect 1. They now walk the module AST of both drivers and reject any
+module-level assignment to those names, and they exercise `run_batch_age` at two operating points on
+both paths.
+
+**4. The policy figure** draws `res6_policies` and `res8_switch` on one axis but was titled from
+`res6` alone. It now reads both, refuses to combine unequal operating points, and names the source
+when only one file records it.
+
+### The evidence is now committed, and the gate does not skip
+
+The original preservation test skipped when the git-ignored reproduction file was absent — which is
+always, on a fresh clone — so G's central numerical claim lived only in a terminal transcript and
+was bound to no commit. `analysis/G_preservation_evidence.json` now holds the comparison, produced
+by `tools/record_preservation_evidence.py`, and the test asserts it unconditionally.
+
+The first attempt to produce it recorded **`b927e6e+dirty`**, because the tests were being edited
+while the calibration ran. That is the same provenance failure G exists to remove, committed live
+during the work to remove it. The run was discarded and repeated from a stashed-clean tree.
+
+One rule was deliberately narrowed rather than enforced as first written. The recorder refuses
+outright if the **calibration** ran dirty — that is the load-bearing constraint, since numbers from
+an uncommitted tree name no revision. The tree at *recording* time is weaker: this tool and the test
+it feeds cannot be committed before the artifact they gate exists. So the artifact **records** which
+files were uncommitted when it was written rather than refusing, and a test asserts every path it
+names actually exists — the first version of that parsing used `stdout.strip()`, which removed the
+leading space of the first porcelain line and cut a character off the filename.
+
+Clean-tree calibration at `b927e6e`, run `d2a1960161d7`, python 3.9.7 / numpy 1.23.5: five valid
+rows exact, two C17-withdrawn rows failing as required. **G is complete as of this repair pass.**

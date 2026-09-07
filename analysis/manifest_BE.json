@@ -283,7 +283,7 @@
     {
       "step": 3,
       "do": "Prove the refactor preserves all five reproducible pilot calibration rows before adding the second point.",
-      "status": "done 2026-09-07 — fresh calibration of all seven pilot policies: the five valid rows reproduce at 0.00 sigma with EXACT threshold equality, and the two C17-withdrawn rows fail as they must (oracle-mid(tc=20) 4.671875 vs archived 4.359; learner-interleave-B10(bank) 3.734375 vs 3.55). Run on python 3.9.7/numpy 1.23.5, not the pinned stack, so the refactor is inert across two stacks."
+      "status": "done 2026-09-07, evidence committed at analysis/G_preservation_evidence.json. Clean-tree calibration at b927e6e (python 3.9.7/numpy 1.23.5, not the pinned stack): the five valid rows exact, the two C17-withdrawn rows failing as required. The gate is mandatory and does not skip on a fresh clone."
     },
     {
       "step": 4,

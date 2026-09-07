@@ -258,9 +258,73 @@ PRESERVED_ROWS = ("oracle-mid(tc=5)", "oracle-mid(tc=1)", "extremum-only",
                   "learner-mid(bank)", "learner-interleave-B1(bank)")
 
 
-def test_the_preservation_claim_excludes_exactly_the_withdrawn_rows():
-    """C17 withdrew two calibration rows. They are excluded from the preservation claim by
-    name, not by whether they happen to reproduce."""
+EVIDENCE = os.path.join(ROOT, "analysis", "G_preservation_evidence.json")
+
+
+def _evidence():
+    assert os.path.exists(EVIDENCE), (
+        "analysis/G_preservation_evidence.json is missing. Run the cal: stage of "
+        "sid_run6s.py from a clean tree, then tools/record_preservation_evidence.py.")
+    with open(EVIDENCE, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def test_the_preservation_evidence_is_committed_and_not_merely_local():
+    """G's central condition must be checkable from a clean checkout.
+
+    The first version of this test skipped when the git-ignored reproduction file was
+    absent -- which is always, on a fresh clone -- so the evidence existed only in a
+    terminal transcript and was not bound to any commit. A gate that cannot run is not a
+    gate; that is the first entry on this repository's own lessons list.
+    """
+    doc = _evidence()
+    assert doc["recorded_at_revision"], "the evidence names no revision"
+    run = doc["calibration_run"]
+    assert run["revision"] and not run["revision"].endswith("+dirty"), (
+        f"the calibration was run from a dirty tree: {run['revision']!r}")
+    assert doc["operating_point"] == P.PILOT.as_dict()
+    # every path the evidence names as uncommitted must be a real path. The first version of
+    # the recorder used stdout.strip(), which removed the leading space of the first porcelain
+    # line and cut a character off that filename.
+    for path in doc.get("uncommitted_when_recorded", []):
+        assert os.path.exists(os.path.join(ROOT, path)), (
+            f"the evidence names {path!r} as uncommitted, and no such path exists; the "
+            f"porcelain parsing is mangling filenames")
+
+
+def test_the_five_valid_pilot_rows_reproduced_exactly_after_the_refactor():
+    """G's acceptance condition, asserted from the committed artifact -- no skip."""
+    doc = _evidence()
+    assert tuple(doc["preserved_rows"]) == PRESERVED_ROWS
+    assert tuple(doc["withdrawn_rows_excluded_by_name"]) == WITHDRAWN_ROWS
+    c = doc["counts"]
+    assert c["preserved_exact"] == c["preserved_total"] == 5, (
+        f"only {c['preserved_exact']} of {c['preserved_total']} valid rows reproduced exactly; "
+        f"the operating-point refactor must be numerically inert")
+    assert c["withdrawn_failing"] == c["withdrawn_total"] == 2, (
+        "the two C17-withdrawn rows no longer fail; a gate that cannot reject is not a gate")
+    for row in doc["rows"]:
+        if row["class"] == "preserved":
+            assert row["h_exact_match"], f"{row['policy']}: {row['h_fresh']} vs {row['h_archive']}"
+        else:
+            assert not row["h_exact_match"], f"{row['policy']} unexpectedly matches the archive"
+
+
+def test_the_live_reproduction_agrees_with_the_committed_evidence():
+    """When a fresh calibration is present it must not contradict the artifact."""
+    fresh_path = os.path.join(ROOT, "analysis", "reproduction", "res6_policies.json")
+    if not os.path.exists(fresh_path):
+        pytest.skip("no local calibration; the committed evidence is the gate")
+    fresh = json.load(open(fresh_path, encoding="utf-8"))["cal"]
+    doc = _evidence()
+    for row in doc["rows"]:
+        if row["policy"] in fresh:
+            assert fresh[row["policy"]][0] == row["h_fresh"], (
+                f"{row['policy']}: local calibration disagrees with the committed evidence")
+
+
+def test_the_preservation_claim_excludes_exactly_the_withdrawn_rows_in_the_ledger():
+    """C17 withdrew two calibration rows. They are excluded by name, not by outcome."""
     txt = open(os.path.join(ROOT, "ledgers", "status.yaml"), encoding="utf-8").read()
     c17 = txt.split("- id: C17")[1].split("- id:")[0]
     assert "withdrawn" in c17
@@ -270,23 +334,3 @@ def test_the_preservation_claim_excludes_exactly_the_withdrawn_rows():
                          encoding="utf-8"))
     assert set(ref["cal"]) == set(WITHDRAWN_ROWS) | set(PRESERVED_ROWS), (
         "the archived calibration no longer holds exactly the seven pilot policies")
-
-
-@pytest.mark.skipif(
-    not os.path.exists(os.path.join(ROOT, "analysis", "reproduction", "res6_policies.json")),
-    reason="no fresh calibration present; run sid_run6s.py cal:... to check preservation")
-def test_the_five_valid_pilot_rows_reproduce_exactly_after_the_refactor():
-    """G's central acceptance condition. Thresholds are compared by EXACT equality, which is
-    the gate sid_repro already applies -- a refactor that changed the numbers at all would
-    show up here rather than hiding inside a tolerance."""
-    ref = json.load(open(os.path.join(ROOT, "analysis", "outputs", "res6_policies.json"),
-                         encoding="utf-8"))["cal"]
-    fresh = json.load(open(os.path.join(ROOT, "analysis", "reproduction", "res6_policies.json"),
-                           encoding="utf-8"))["cal"]
-    missing = [r for r in PRESERVED_ROWS if r not in fresh]
-    if missing:
-        pytest.skip(f"fresh calibration does not yet cover {missing}")
-    for row in PRESERVED_ROWS:
-        assert fresh[row][0] == ref[row][0], (
-            f"{row}: threshold {fresh[row][0]!r} after the refactor, {ref[row][0]!r} in the "
-            f"archive. The operating-point refactor must be numerically inert.")

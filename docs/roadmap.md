@@ -1,6 +1,6 @@
 # Roadmap
 
-Generated 2026-09-07T11:09:31+00:00 from ledgers/roadmap.yaml. Do not edit.
+Generated 2026-09-07T12:42:56+00:00 from ledgers/roadmap.yaml. Do not edit.
 
 | id | title | state | gates_freeze |
 |---|---|---|---|
@@ -11,4 +11,4 @@ Generated 2026-09-07T11:09:31+00:00 from ledgers/roadmap.yaml. Do not edit.
 | D | Correlated oscillator residual (AR(1) phase) in the four-outcome likelihood — size effect on C_eff | open | false |
 | E | Identifiability in dimensionless form - COMPLETE 7 Sept 2026. res9_identifiability_T2.json, 36 rows over C_0 in {0.4,0.5,0.9} x eta_0 in {0.02,0.05,0.10} x tau_c/T2 in {0.05,0.2,1,5}, per-shot, no dead time, regime-labelled in the output. C13 WITHDRAWN (false exact-zero assertion) and superseded by C26. I_B is a best-of-candidates estimate over three named starts plus a deterministic 121x121 grid and polish; the grid supplies the selected minimum on 11 of 36 rows and beats every named start on 5. Regression: 0 breaches, 0 review_required, 2 allowlisted under-converged reference rows. See notes/2026-09-07-note-16-E-closure.md | complete | true |
 | F | Model-consistency — validate the binary comparator against an exact ARMA(1,1) latent likelihood at a few finite-window points. The committed HMM is AR(1) in the phase, exact only for point sampling; the finite-window integrated phase is ARMA(1,1). Not a prior-art gate; resolve before the v2.0 manuscript freezes. | open | false |
-| G | Operating-point provenance repair - COMPLETE 7 Sept 2026. Immutable OperatingPoint(C_eff, s) required explicitly by Bank and build_policies; simulator reads it from the bank; module-level C and s removed; serialised into checkpoint identity so reuse under a different operating point is refused by name (verified end to end, exit 2). The five valid pilot calibration rows reproduce at 0.00 sigma with exact threshold equality; C17's two withdrawn rows are excluded by name and still fail. tests/test_operating_point.py is the acceptance boundary. | complete | false |
+| G | Operating-point provenance repair - COMPLETE 7 Sept 2026, after one repair pass. Immutable OperatingPoint(C_eff, s) required explicitly by Bank and build_policies; BOTH simulators (run_batch and run_batch_age) read it from the bank; module-level C and s neither imported nor rebound, enforced by AST inspection; both drivers carry a serialised configuration identity and refuse checkpoint reuse across operating points by name, verified end to end at exit 2. Evidence is committed at analysis/G_preservation_evidence.json from a clean-tree calibration at b927e6e: five valid pilot rows exact, C17's two withdrawn rows excluded by name and still failing. The gate does not skip. | complete | false |
