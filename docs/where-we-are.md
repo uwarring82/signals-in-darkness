@@ -17,8 +17,9 @@ A quantum sensor is read out one bit at a time. Between measurements its phase d
 drift carries information about the environment you are trying to sense. You get to choose *where on
 the interference fringe you read it out*, and the choice determines what you can hear: at a **dark
 extremum** each bit reports how much contrast has been lost, while at **mid-fringe** each bit is a
-coin flip whose *ordering* carries most of the signal — its long-run average is fixed at one half no
-matter what the sensor is doing, though the *spread* of the count still leaks a little. The question
+coin flip whose *ordering* carries most of the signal — in the symmetric, zero-mean model studied
+here its long-run average is fixed at one half no matter what the sensor is doing, though the
+*spread* of the count still leaks a little. The question
 this project asks is not which readout gives a better single measurement. It is: **when you must
 raise an alarm as fast as possible, and you are held to the same false-alarm rate either way, which
 readout detects the change sooner — and where exactly does the answer flip?**
@@ -99,12 +100,16 @@ contribution to what it does with it.
 ## What remains open
 
 **Roadmap items.** **G** replaces a mutable global variable holding the operating point with an
-explicit configuration — housekeeping, but it must land before a second operating point can be added
-safely. **B** then runs that second operating point, as a deliberate upper-bound stress test rather
-than a realistic setting. **F** checks the comparator against an exact treatment of a subtlety in the
-noise model: the phase accumulated over a finite measurement window is not quite the simple process
-the simulator assumes. F does not disturb any published number; it gates how strongly the manuscript
-may word one claim.
+explicit, serialised configuration. This is **provenance-critical**, not housekeeping: while the
+operating point lives in a mutable global, a stored result does not carry the parameters it was
+computed at, and a checkpoint cannot refuse to be reused under the wrong ones. Two claims have
+already been withdrawn over calibration whose provenance could not be established, and G is what
+stops that recurring. **B** then adds a second operating point — a deliberate upper-bound stress
+test at the parity ceiling, not a realistic setting. **F** checks the comparator against an exact
+treatment of a subtlety in the noise model: the phase accumulated over a finite measurement window
+is not quite the simple process the simulator assumes. F is not expected to move any published
+number, but it has not been run, so that expectation is not a guarantee; what it certainly gates is
+how strongly the manuscript may word one claim.
 
 **Open claims.** **C09** places the delay crossover between two correlation times but rests partly on
 withdrawn calibration. **C11** and **C12** concern whether adaptive strategies help; the honest
@@ -125,8 +130,11 @@ simplified servo model only.
   superconducting qubit or NV centre. The model is a binary readout with a hidden drifting phase.
   Mapping it onto a real apparatus requires calibration work this project has not done.
 - **Experimental demonstration.** Nothing here has been run on hardware.
-- **Two of the three principal results rest on one operating point.** That is the gap B closes, and
-  it is the reason the project does not yet claim generality.
+- **Generality across operating points.** The policy and delay comparisons rest on a single
+  operating point. B narrows this specifically: it adds one further point inside the same
+  parity regime, for the finite-γ policy and delay comparison. That is a second data point, not a
+  demonstration of generality, and it does not touch the identifiability result or the physical map,
+  which are established on their own terms.
 
 ---
 
