@@ -29,7 +29,7 @@ rows = []
 for C, s, tcc in [(0.4, 0.5, 1.0), (0.4, 0.5, 5.0), (0.4, 0.5, 20.0), (0.4, 0.5, 60.0), (0.4, 0.2, 60.0), (0.9, 0.3, 5.0), (0.4, 1.0, 20.0)]:
     a = math.exp(-1/tcc); ks = np.arange(1, 3000); ak = a**ks
     rk = rk_exact(C, s, ak)
-    lo = I_mid_lo(C, s, S2_point(tcc)); hs = 0.5*np.sum(rk**2); gp, Smax = gp_rate(rk)
+    lo = I_mid_strict(C, s, S2_point(tcc)); hs = 0.5*np.sum(rk**2); gp, Smax = gp_rate(rk)
     hmm = hmm_rate(C, s, math.pi/2, a, N=150_000, seed=3)
     delta0 = 2*np.sum(rk)             # spectral perturbation at f=0
     frozen = 0.5*C*C*s*s              # frozen-offset (tracking) limit ~ C^2 s^2 /2
@@ -175,7 +175,7 @@ tcc_grid = np.array([1, 2, 3, 5, 8, 12, 20, 35, 60, 100])
 lo_v, hs_v, gp_v, hmm_v = [], [], [], []
 for tcc in tcc_grid:
     a = math.exp(-1/tcc); ak = a**np.arange(1, 4000); rk = rk_exact(C, s, ak)
-    lo_v.append(I_mid_lo(C, s, S2_point(tcc))); hs_v.append(0.5*np.sum(rk**2)); gp_v.append(gp_rate(rk)[0])
+    lo_v.append(I_mid_strict(C, s, S2_point(tcc))); hs_v.append(0.5*np.sum(rk**2)); gp_v.append(gp_rate(rk)[0])
     hmm_v.append(hmm_rate(C, s, math.pi/2, a, N=100_000, seed=7, M=101))
 ax.plot(tcc_grid, lo_v, "--", color=STONE, label="leading order $\\frac{1}{2}\\bar C^4 s^4 \\Sigma a_k^2$")
 ax.plot(tcc_grid, hs_v, ":", color=STONE, label="$\\frac{1}{2}\\Sigma r_k^2$ with exact $r_k$")

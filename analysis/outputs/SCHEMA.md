@@ -48,7 +48,7 @@ The pinned stack is python 3.12.14, numpy 2.4.4, scipy 1.17.1, matplotlib 3.10.8
 on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is untested.
 
 ## Files
-- `res1_core.json` — dict with keys A (list of [C, s, I_exact, I_lo, ratio, validity_param]), A2 (list of [C, err_at_q0.06, err_at_q0.17, q_for_6pc, q_for_20pc, k]; see notes/2026-09-03-note-01a-errata.md and claim C21), B (list of [C, s, tcc, S2, I_lo, I_halfsum_exact_rk, I_hmm, pert_param, I_ext]), C (dict "C,s,tcc" -> [thetas_rad, exact, lo]), D (list of [tau, tc, c, s2_closed, s2_num, a1_closed, a1_num]), E (regime-map grids; see below), F (list of [C, s, tcc, I_ext, I_mid, delay_ext_mean, delay_ext_se, h_over_I_ext, delay_mid_mean, delay_mid_se, h_over_I_mid]; units shots). In F, `delay_mid_mean` and `delay_mid_se` are `null` where no mid-fringe run reached the threshold within the cap, so the delay is undefined — this is the case at tau_c/c = 20 and 1. See seeds.md.
+- `res1_core.json` — dict with keys A (list of [C, s, I_exact, I_lo, ratio, validity_param]), A2 (list of [C, err_at_q0.06, err_at_q0.17, q_for_6pc, q_for_20pc, k]; see notes/2026-09-03-note-01a-errata.md and claim C21), B (list of [C, s, tcc, S2, I_mid_strict, I_halfsum_exact_rk, I_hmm, pert_param, I_ext]), C (dict "C,s,tcc" -> [thetas_rad, exact, lo_strict]), D (list of [tau, tc, c, s2_closed, s2_num, a1_closed, a1_num]), E (regime-map grids; see below), F (list of [C, s, tcc, I_ext, I_mid, delay_ext_mean, delay_ext_se, h_over_I_ext, delay_mid_mean, delay_mid_se, h_over_I_mid]; units shots). In F, `delay_mid_mean` and `delay_mid_se` are `null` where no mid-fringe run reached the threshold within the cap, so the delay is undefined — this is the case at tau_c/c = 20 and 1. See seeds.md.
 - `res1_core.json` key **E** — the grids behind `figures/sid_regime_map.png`, so its curves can be
   checked without rerunning section E. Keys: `s_ref` (the reference phase spread, 0.5);
   `C_grid`, `tcc_grid` (the plotted axes, 400 points each); `crossover_tcc` (the leading-order
@@ -61,7 +61,7 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
   level is not attained on the axis); `ext_error_min` (the floor over the axis). See
   notes/2026-09-04-note-06-regime-map-overlays.md.
 - `res2_partial.json` — written by `sid_run2.py`. Four keys:
-  - `B2` — 7 rows of [C, s, tau_c/c, I_mid_lo, half_sum_rk2, I_gp, I_hmm, delta0, frozen_limit, I_ext_exact]; nats per shot.
+  - `B2` — 7 rows of [C, s, tau_c/c, I_mid_strict, half_sum_rk2, I_gp, I_hmm, delta0, frozen_limit, I_ext_exact]; nats per shot.
   - `crossover` — {"C,s": [tau_c/c grid, I_hmm at each, I_ext_exact, crossover tau_c/c]} from the HMM grid. This is `sid_run2.py`'s own crossover estimate and is NOT the comparator crossover of claim C05, which comes from `sid_run3.py` and is stored in `res3_comparator.json`. The two estimators agree; see notes/2026-09-04-note-08-comparator-vs-hmm-crossover.md.
   - `C2` — [thetas_rad, exact_rate, standard_error] over 7 Ramsey phases; the endpoint profile behind note 01 section 4.
   - `extremum_bonus` — 3 rows of [C, s, tau_c/c, exact_rate_mean, exact_rate_se,
@@ -111,3 +111,13 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.
 - `res7B_servo.json` — rows [kappa, Ceff_slope_parity, Ceff_slope_full, Ceff_var_parity, Ceff_var_full]; C1=C2=0.9; variance channel at s=0.3. `kappa = "positive-infinity"` is the perfect-oscillator limit, the last row: a known limiting case the calculation deliberately visits, carried as the declared sentinel string rather than as null (which would claim the value is absent) or as the JSON-invalid token Infinity. `sid_run7.py` draws it at 100 on the symlog axis.
 Missing as files (printed only): crossover table (C05), calibration slack table (C10), bonus table (C15) — flagged [unreproduced-from-file] in the ledger; step 2 of the work plan stores them.
+
+*Column relabelling, 7 Sept 2026.* The columns formerly named `I_lo`, `lo` and `I_mid_lo` are
+renamed `I_mid_strict` and `lo_strict`. **No stored value changed.** They always held the strict
+O(s^4) asymptote 1/2 Cbar^4 s^4 Sum a_k^2, while the name `lo` and one figure label attributed them
+to the card's leading-order rate, which retains the slope-loss resummation e^{-2s^2}
+(cards/v1.1-frozen.md:235, :292). The two agree through strict O(s^4) and differ by 19.7 % at
+s = 0.3 and 64.9 % at s = 0.5. The helpers are now separately named `I_mid_strict`/`I_mid_slope` and
+`I_lo_theta_strict`/`I_lo_theta_slope`. Only labels promising the card formula were changed: the
+false attribution in analysis/runs/sid_run3.py's figure legend, and claim C25's quoted comparison
+(910 -> 1496). See notes/2026-09-07-note-14-helper-split-and-BE-decisions.md.

@@ -1,7 +1,8 @@
 import math, sys, os
 import numpy as np
+import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "analysis", "lib"))
-from sid_lib import DB, I_ext_exact, I_ext_lo, rk_exact, S2_point, I_mid_lo
+from sid_lib import DB, I_ext_exact, I_ext_lo, rk_exact, S2_point, I_mid_strict, I_mid_slope
 
 def test_extremum_small_s_expansion_independent_expectation():
     # independent derivation: Delta p = C(1-e^{-s^2/2})/2, D ~ Delta p^2 / (2 p0 (1-p0))
@@ -41,3 +42,25 @@ def test_endpoint_lemma_numerator_linear_and_positive_at_x1():
     xs = np.linspace(0, 1, 11); v = num(xs)
     assert abs(np.polyfit(xs, v, 1)[0]*1 - (v[-1]-v[0])) < 1e-12   # linear
     assert num(1.0) > 0
+
+
+def test_mid_fringe_strict_and_slope_agree_at_leading_order_and_diverge_above_it():
+    """The two forms this file previously imported under one unused name. They agree through
+    strict O(s^4) -- so the ratio -> 1 as s -> 0 -- and differ by exactly e^{2s^2} elsewhere.
+    A result that attributes its number to the card formula must use the slope form; see
+    notes/2026-09-07-note-14-helper-split-and-BE-decisions.md."""
+    C, S2 = 0.4, S2_point(20.0)
+    for s in (1e-4, 0.1, 0.3, 0.5, 1.0):
+        assert I_mid_strict(C, s, S2) / I_mid_slope(C, s, S2) == pytest.approx(math.exp(2*s*s), rel=1e-13)
+    assert I_mid_strict(C, 1e-5, S2) / I_mid_slope(C, 1e-5, S2) == pytest.approx(1.0, abs=1e-9)
+    # the divergence that made the split necessary, at the pilot amplitude
+    assert I_mid_strict(C, 0.5, S2) / I_mid_slope(C, 0.5, S2) == pytest.approx(1.6487, rel=1e-4)
+
+
+def test_mid_fringe_strict_matches_the_half_sum_of_exact_rk_as_s_goes_to_zero():
+    """I_strict is the s -> 0 limit of the exact 1/2 sum r_k^2, which is what makes it the
+    strict asymptote rather than an approximation with a missing factor."""
+    C, tcc, s = 0.4, 20.0, 1e-3
+    a = math.exp(-1/tcc); ak = a**np.arange(1, 20000)
+    exact_half_sum = 0.5*np.sum(rk_exact(C, s, ak)**2)
+    assert I_mid_strict(C, s, S2_point(tcc)) == pytest.approx(exact_half_sum, rel=1e-5)

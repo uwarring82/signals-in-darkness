@@ -98,12 +98,14 @@ res3 = {"comparator_crossover": crossover_rows,
 fig, ax = plt.subplots(figsize=(6.6, 4.3), dpi=150, facecolor=PARCH); ax.set_facecolor(PARCH)
 C, s = 0.4, 0.5
 tcc_grid = np.array([1, 2, 3, 5, 8, 12, 20, 35, 60, 100])
-lo_v, hs_v, gp_v, hmm_v = [], [], [], []
+lo_v, sl_v, hs_v, gp_v, hmm_v = [], [], [], [], []
 for tcc in tcc_grid:
     a = math.exp(-1/tcc); ak = a**np.arange(1, 4000); rk = rk_exact(C, s, ak)
-    lo_v.append(I_mid_lo(C, s, S2_point(tcc))); hs_v.append(0.5*np.sum(rk**2)); gp_v.append(gp_rate_geom(rk[0]/a, a))
+    lo_v.append(I_mid_strict(C, s, S2_point(tcc))); sl_v.append(I_mid_slope(C, s, S2_point(tcc)))
+    hs_v.append(0.5*np.sum(rk**2)); gp_v.append(gp_rate_geom(rk[0]/a, a))
     hmm_v.append(hmm_rate(C, s, math.pi/2, a, N=100_000, seed=7, M=101))
-ax.plot(tcc_grid, lo_v, "--", color=STONE, label=r"leading order $\frac{1}{2}\bar{C}^4 s^4 \Sigma a_k^2$ (card)")
+ax.plot(tcc_grid, lo_v, "--", color=STONE, label=r"strict $O(s^4)$: $\frac{1}{2}\bar{C}^4 s^4 \Sigma a_k^2$")
+ax.plot(tcc_grid, sl_v, "--", color=SEA, lw=0.9, label=r"card leading order: $\times\,e^{-2s^2}$")
 ax.plot(tcc_grid, hs_v, ":", color=STONE, label=r"$\frac{1}{2}\Sigma r_k^2$ with exact $r_k$")
 ax.plot(tcc_grid, gp_v, "-", color=SEA, label="Gaussian-process closed form")
 ax.plot(tcc_grid, hmm_v, "o", color=SIG, label="exact latent-AR(1) binary HMM (MC)")

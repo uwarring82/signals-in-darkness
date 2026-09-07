@@ -67,12 +67,36 @@ def rk_exact(C, s, a):
 def S2_point(tc_over_c):
     return 1.0/np.expm1(2.0/tc_over_c)
 
-def I_mid_lo(C, s, S2):
+def I_mid_strict(C, s, S2):
+    """Strict O(s^4) mid-fringe asymptote: 1/2 Cbar^4 s^4 Sum a_k^2.
+
+    This is NOT the card's leading-order rate. cards/v1.1-frozen.md:235 and :292 retain
+    the slope-loss resummation e^{-2s^2}; see I_mid_slope. The two agree through strict
+    O(s^4) and diverge above it -- by 19.7 % at s = 0.3 and 64.9 % at s = 0.5 -- so a
+    result that attributes a number to the card formula must call I_mid_slope. Split out
+    of the former ambiguous I_mid_lo on 7 Sept 2026; see note 13 and note 14.
+    """
     return 0.5*C**4*s**4*S2
 
-def I_lo_theta(C, s, S2, theta):
+def I_mid_slope(C, s, S2):
+    """The card's leading-order mid-fringe rate: 1/2 Cbar^4 s^4 e^{-2s^2} Sum a_k^2."""
+    return I_mid_strict(C, s, S2)*np.exp(-2.0*s*s)
+
+def I_lo_theta_strict(C, s, S2, theta):
+    """Endpoint-lemma information at readout angle theta, strict O(s^4) B term."""
     x = np.cos(theta)**2
-    A = C**2*s**4/8; B = 0.5*C**4*s**4*S2
+    A = C**2*s**4/8; B = I_mid_strict(C, s, S2)
+    return A*x/(1-C**2*x) + B*(1-x)**2/(1-C**2*x)**2
+
+def I_lo_theta_slope(C, s, S2, theta):
+    """As I_lo_theta_strict, with the card's resummed B = 1/2 Cbar^4 s^4 e^{-2s^2} Sum a_k^2.
+
+    The interior-minimum-versus-endpoint conclusion of C06 is unchanged by the choice
+    (checked at (0.9,0.3,5), (0.4,0.5,20) and (0.4,0.5,1)); only the minimum's location
+    moves, e.g. 0.3416 -> 0.3954 rad at C=0.9, s=0.3, tau_c/c=5.
+    """
+    x = np.cos(theta)**2
+    A = C**2*s**4/8; B = I_mid_slope(C, s, S2)
     return A*x/(1-C**2*x) + B*(1-x)**2/(1-C**2*x)**2
 
 # ---------- exact latent-AR(1) binary HMM ----------
@@ -166,7 +190,7 @@ for C, s, tcc in cases:
     a = math.exp(-1/tcc)
     ks = np.arange(1, 400); ak = a**ks
     S2 = S2_point(tcc)
-    Imid_lo = I_mid_lo(C, s, S2)
+    Imid_lo = I_mid_strict(C, s, S2)
     Imid_rk = 0.5*np.sum(rk_exact(C, s, ak)**2)
     t0 = time.time(); Imid_hmm = hmm_rate(C, s, math.pi/2, a, N=100_000, seed=1); dt = time.time()-t0
     pert = C**4*s**4*S2
@@ -184,7 +208,7 @@ for C, s, tcc in [(0.4, 0.5, 20.0), (0.4, 0.5, 1.0), (0.9, 0.3, 5.0)]:
     a = math.exp(-1/tcc); S2 = S2_point(tcc)
     ex = []; lo = []
     for th in thetas:
-        ex.append(hmm_rate(C, s, th, a, N=60_000, seed=2)); lo.append(I_lo_theta(C, s, S2, th))
+        ex.append(hmm_rate(C, s, th, a, N=60_000, seed=2)); lo.append(I_lo_theta_strict(C, s, S2, th))
     C_rows[f"{C},{s},{tcc}"] = (thetas.tolist(), ex, lo)
     print(f"C={C} s={s} tc/c={tcc}:")
     for th, e_, l_ in zip(thetas, ex, lo):
