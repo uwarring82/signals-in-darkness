@@ -3,7 +3,8 @@
 Purpose  : calibrate each of the seven pilot policies to E_0[T] ~ 3e4 by bisection
            on the CUSUM threshold, then measure detection delay at tau_c/c in
            {20, 5, 1}. Feeds claims C09, C11, C12 in ledgers/status.yaml.
-Inputs   : none (operating point C = 0.4, s = 0.5 fixed in analysis/lib/sid_policies.py)
+Inputs   : the operating point, passed explicitly as sid_policies.PILOT and carried in
+           checkpoint identity and output metadata (roadmap G).
 Seeds    : calibration bisection seeds 100..104, confirmation seed 199;
            delay seeds 200 + int(tau_c/c). Recorded in analysis/seeds.md.
 Outputs  : analysis/reproduction/res6_policies.json (fresh run; git-ignored).
@@ -30,7 +31,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import sid_repro
-from sid_policies import GAMMA, build_policies, calibrate, delay_of
+from sid_policies import GAMMA, PILOT, build_policies, calibrate, delay_of
+
+OP = PILOT          # the operating point this driver runs at, explicit and immutable
 
 STATE_NAME = "res6_policies.json"
 CAL_SEEDS = "bisection 100-104, confirmation 199"
@@ -48,7 +51,7 @@ CAL_R, CAL_ITERS = 32, 5
 
 def cal_config(policy_names):
     """The configuration the thresholds depend on. A change here invalidates them."""
-    return {"gamma": GAMMA, "R": CAL_R, "iters": CAL_ITERS,
+    return {"operating_point": OP.as_dict(), "gamma": GAMMA, "R": CAL_R, "iters": CAL_ITERS,
             "seeds": CAL_SEEDS, "policies": sorted(policy_names)}
 
 
@@ -101,7 +104,8 @@ def main(argv):
             if not sid_repro.blas_is_identified(prior["meta"]):
                 log("note: BLAS could not be identified, so this run certifies one build "
                     "only -- no cross-platform checkpoint compatibility is claimed")
-    policies, _, _ = build_policies()
+    policies, _, _ = build_policies(OP)
+    log(f"operating point: {OP.label()}")
     computed = cached = 0
 
     if arg.startswith("cal:"):
@@ -140,6 +144,7 @@ def main(argv):
                     continue
                 m, se, nc = delay_of(bk, sc, true_tcc, source[name][0], 64, 200+int(true_tcc))
                 row[name] = [m, se, int(nc)]
+                state.setdefault("meta", {})["operating_point"] = OP.as_dict()
                 sid_repro.save_checkpoint(STATE_NAME, state)
                 computed += 1
                 log(f"tc/c={true_tcc:4.0f}  {name:32s} delay={m:7.0f} +- {se:5.0f}  (capped {nc})")

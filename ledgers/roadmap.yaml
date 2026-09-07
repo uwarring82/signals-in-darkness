@@ -28,6 +28,6 @@
   state: open
   gates_freeze: false
 - id: G
-  title: Operating-point provenance repair — replace the mutable sid_policies C,s globals with an immutable configuration passed into Bank and every simulator; carry it in checkpoint identity and output metadata; prove the refactor preserves all five reproducible pilot calibration rows. Gates B, not the freeze.
-  state: open
+  title: Operating-point provenance repair - COMPLETE 7 Sept 2026. Immutable OperatingPoint(C_eff, s) required explicitly by Bank and build_policies; simulator reads it from the bank; module-level C and s removed; serialised into checkpoint identity so reuse under a different operating point is refused by name (verified end to end, exit 2). The five valid pilot calibration rows reproduce at 0.00 sigma with exact threshold equality; C17's two withdrawn rows are excluded by name and still fail. tests/test_operating_point.py is the acceptance boundary.
+  state: complete
   gates_freeze: false

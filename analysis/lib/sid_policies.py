@@ -2,7 +2,8 @@
 
 Purpose   : batched latent-AR(1) filter-bank CUSUM simulator, null calibration
             (ARL -> threshold) and detection-delay measurement.
-Inputs    : none; the pilot operating point (C = 0.4, s = 0.5) is fixed below.
+Inputs    : an OperatingPoint, passed explicitly by every caller. There is no module-level
+            C or s: see the note under OperatingPoint for why that mattered.
 Seeds     : callers pass every seed explicitly; recorded in analysis/seeds.md.
 Outputs   : none. Callers own their output files.
 Runtime   : n/a (library).
@@ -16,14 +17,44 @@ Provenance: moved verbatim from the prefix of analysis/runs/sid_run6s.py as it
             notes/2026-09-03-note-04-reproduction-defect.md.
 """
 import math
+from dataclasses import dataclass
 
 import numpy as np
 
-# ---------------- pilot operating point ----------------
-C, s = 0.4, 0.5
 THM, THX = math.pi/2, math.pi          # mid-fringe, dark extremum
-M, L = 61, 5.0
+M, L = 61, 5.0                         # bank grid resolution and half-width in units of s
 GAMMA = 3.0e4                          # target null run length E_0[T]
+
+
+@dataclass(frozen=True)
+class OperatingPoint:
+    """The (contrast, amplitude) pair a simulation is run at. Immutable, and passed explicitly.
+
+    Until 7 September 2026 this module held `C, s = 0.4, 0.5` as mutable module globals with
+    three readers that could disagree. That is not a style question. A stored result did not
+    carry the parameters it was computed at, so a checkpoint could not refuse to be reused
+    under the wrong ones, and a threshold measured at one operating point could be consumed by
+    a delay run at another with nothing to detect it. Claims C17 and C18 were withdrawn over
+    calibration whose provenance could not be established; this is the structural fix for that
+    class of failure, and it is a precondition for adding a second operating point (roadmap B).
+
+    `C_eff` is the EFFECTIVE per-shot contrast, including all loss at the implicit fixed
+    interrogation time. It is not the zero-dephasing contrast C_0 that the physical maps and
+    the identifiability run use -- those are different quantities and do not share a field.
+    """
+    C_eff: float
+    s: float
+
+    def as_dict(self):
+        """Canonical serialisation, for checkpoint identity and output metadata."""
+        return {"C_eff": self.C_eff, "s": self.s}
+
+    def label(self):
+        return f"C_eff={self.C_eff:g}, s={self.s:g}"
+
+
+#: The pilot operating point. A named constant, not a default: callers pass it explicitly.
+PILOT = OperatingPoint(C_eff=0.4, s=0.5)
 
 # ---------------- work counter (read by the reproduction regression test) ------
 # Incremented once per simulator entry. A reproduction route that reports work
@@ -38,7 +69,19 @@ def reset_stats():
 
 # ---------------- batched latent-AR(1) bank simulator ----------------
 class Bank:
-    def __init__(self, tccs):
+    """Filter bank for one or more candidate correlation times, at one operating point.
+
+    The operating point is carried on the object, so every downstream function reads it from
+    the bank rather than from module state. Two banks built at different operating points
+    cannot be confused for one another.
+    """
+
+    def __init__(self, tccs, op):
+        if not isinstance(op, OperatingPoint):
+            raise TypeError("Bank requires an explicit OperatingPoint; module-level C and s "
+                            "were removed on 7 September 2026 (roadmap G)")
+        self.op = op
+        s = op.s
         self.g = np.linspace(-L*s, L*s, M)
         self.prior = np.exp(-self.g**2/(2*s*s)); self.prior /= self.prior.sum()
         self.T = []
@@ -47,15 +90,16 @@ class Bank:
             T = np.exp(-(self.g[None, :]-a*self.g[:, None])**2/(2*sd*sd)); T /= T.sum(1, keepdims=True)
             self.T.append(T)
         self.K = len(tccs)
-        self.e1 = {th: 0.5*(1+C*np.cos(th+self.g)) for th in (THM, THX)}
+        self.e1 = {th: 0.5*(1+op.C_eff*np.cos(th+self.g)) for th in (THM, THX)}
 
-    def p0(self, th): return 0.5*(1+C*math.cos(th))
+    def p0(self, th): return 0.5*(1+self.op.C_eff*math.cos(th))
 
 
 def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
     """sched(n) -> theta. Returns stopping step per run (max_steps if not stopped). Mixture-LR CUSUM with reset."""
     STATS["run_batch_calls"] += 1
     r = np.random.default_rng(seed)
+    C, s = bank.op.C_eff, bank.op.s        # read from the bank, never from module state
     alpha = [np.tile(bank.prior, (R, 1)) for _ in range(bank.K)]
     Lk = np.zeros((R, bank.K)); W = np.zeros(R); stop = np.full(R, max_steps); active = np.ones(R, bool)
     if not null:
@@ -118,10 +162,16 @@ def sched_mid(n): return THM
 def sched_ext(n): return THX
 
 
-def build_policies():
-    """Return (policies, bank_or, bank_ln). Banks are built once and shared."""
-    bank_or = {tcc: Bank([tcc]) for tcc in (20.0, 5.0, 1.0)}
-    bank_ln = Bank([1.0, 4.0, 10.0, 25.0])
+def build_policies(op):
+    """Return (policies, bank_or, bank_ln) at the given operating point.
+
+    Every Bank depends on the operating point -- the grid, the prior and the per-shot
+    likelihood all derive from s, and e1 from both -- so `op` is required, not defaulted.
+    """
+    if not isinstance(op, OperatingPoint):
+        raise TypeError("build_policies requires an explicit OperatingPoint (roadmap G)")
+    bank_or = {tcc: Bank([tcc], op) for tcc in (20.0, 5.0, 1.0)}
+    bank_ln = Bank([1.0, 4.0, 10.0, 25.0], op)
     policies = {
         "oracle-mid(tc=20)": (bank_or[20.0], sched_mid),
         "oracle-mid(tc=5)": (bank_or[5.0], sched_mid),

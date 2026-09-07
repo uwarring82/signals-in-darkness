@@ -2,7 +2,7 @@
 
 Purpose  : calibrate and measure the explore-then-switch hedge at B in {300, 1000},
            the policy family behind claim C11 in ledgers/status.yaml.
-Inputs   : none (operating point C = 0.4, s = 0.5 from analysis/lib/sid_policies.py)
+Inputs   : the operating point, passed explicitly as sid_policies.PILOT (roadmap G).
 Seeds    : calibration bisection 300..304, confirmation 399; delays 500 + int(tau_c/c).
            Recorded in analysis/seeds.md.
 Outputs  : analysis/reproduction/res8_switch.json (fresh run; git-ignored).
@@ -37,7 +37,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 import sid_repro
-from sid_policies import C, GAMMA, STATS, THM, THX, Bank, s
+from sid_policies import GAMMA, PILOT, STATS, THM, THX, Bank
+
+OP = PILOT          # explicit and immutable; this driver no longer reads module state
+C, s = OP.C_eff, OP.s
 
 STATE_NAME = "res8_switch.json"
 T0 = time.time()
@@ -93,7 +96,7 @@ def main(argv):
     resume = "--resume" in argv
     sid_repro.print_banner("explore-then-switch", resume,
                            "bisection 300-304, confirmation 399, delays 500 + int(tau_c/c)")
-    bank_ln = Bank([1.0, 4.0, 10.0, 25.0])
+    bank_ln = Bank([1.0, 4.0, 10.0, 25.0], OP)
     state = sid_repro.load_checkpoint(STATE_NAME, resume) or {}
     reference = sid_repro.load_reference(STATE_NAME) or {}
     computed = cached = 0

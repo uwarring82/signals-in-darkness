@@ -38,7 +38,17 @@ for lab, (key, col, ls) in pol.items():
 for B, col in ((300, SIG), (1000, "#e08070")):
     d = r8[str(B)][2]; ax.errorbar(tccs, [d[str(float(t))][0] for t in tccs], [d[str(float(t))][1] for t in tccs], color=col, marker="s", ms=4, ls="-.", label=f"explore mid-fringe {B} shots, then extremum", capsize=2)
 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("$\\tau_c/c$ (true)"); ax.set_ylabel("detection delay (shots)")
-ax.set_title("Policies at matched $\\hat{E}_0[T]\\approx3\\times10^4$, $\\bar C=0.4$, $s=0.5$ (pilot)", fontsize=10); ax.legend(fontsize=6.5)
+# The operating point is READ from the stored run's metadata, not hardcoded here. A figure
+# that names its parameters in a string literal keeps claiming them after the run beneath it
+# has moved (roadmap G).
+_op = ((st.get("meta") or {}).get("config") or {}).get("operating_point") \
+    or (st.get("meta") or {}).get("operating_point")
+if _op:
+    _optxt = f"$\\bar C_{{\\rm eff}}={_op['C_eff']:g}$, $s={_op['s']:g}$"
+else:
+    _optxt = "operating point not recorded in this output"
+ax.set_title(f"Policies at matched $\\hat{{E}}_0[T]\\approx3\\times10^4$, {_optxt}", fontsize=10)
+ax.legend(fontsize=6.5)
 fig.tight_layout()
 out = os.path.join(FIG, "sid_policy_delays.png")
 fig.savefig(out)

@@ -23,7 +23,10 @@ def test_manifest_is_strict_json_and_declares_its_record():
 def test_shot_stack_matches_sid_policies():
     import sid_policies as P
     shot = MANIFEST["shot_stack"]
-    assert (P.C, P.s) == (shot["operating_point_pilot"]["C_eff"], shot["operating_point_pilot"]["s"])
+    assert not hasattr(P, "C") and not hasattr(P, "s"), (
+        "the mutable module-level operating point is back; roadmap G removed it")
+    assert (P.PILOT.C_eff, P.PILOT.s) == (shot["operating_point_pilot"]["C_eff"],
+                                          shot["operating_point_pilot"]["s"])
     assert [P.THM, P.THX] == shot["action_set"]["theta"]
     assert P.GAMMA == shot["false_alarm_target"]["value"]
     assert [P.M, P.L] == [shot["bank"]["M"], shot["bank"]["L"]]

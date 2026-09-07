@@ -96,7 +96,7 @@ def test_reported_work_is_backed_by_simulation():
     """computed: N must mean the simulator ran; the counter is what the gate reads."""
     sid_policies.reset_stats()
     assert sid_policies.STATS["run_batch_calls"] == 0
-    bank = sid_policies.Bank([20.0])
+    bank = sid_policies.Bank([20.0], sid_policies.PILOT)
     stop = sid_policies.run_batch(bank, sid_policies.sched_ext, None, 2.0, 4, 7, 200, True)
     assert sid_policies.STATS["run_batch_calls"] == 1
     assert sid_policies.STATS["simulated_steps"] > 0

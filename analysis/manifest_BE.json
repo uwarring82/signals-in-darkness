@@ -15,8 +15,8 @@
     "operating_point_pilot": {
       "C_eff": 0.4,
       "s": 0.5,
-      "source": "code",
-      "at": "analysis/lib/sid_policies.py:23",
+      "source": "code (immutable OperatingPoint since roadmap G)",
+      "at": "analysis/lib/sid_policies.py:57 (PILOT)",
       "extremum_p0": 0.3
     },
     "operating_point_second": {
@@ -265,22 +265,25 @@
     "consequence": "Every tau_c/c = 20 baseline in analysis/outputs/res6_policies.json is poisoned. B must recalibrate at tau_c/c = 20 from scratch and may not compare against the archived row."
   },
   "hazards": [
-    "analysis/lib/sid_policies.py holds C and s as MUTABLE MODULE GLOBALS with three inconsistent readers. Resolved before B by pre_B_sequence step 1.",
+    "RESOLVED 7 Sept 2026 by roadmap G. analysis/lib/sid_policies.py previously held C and s as MUTABLE MODULE GLOBALS with three inconsistent readers. They are replaced by an immutable OperatingPoint carrying C_eff and s, required explicitly by Bank and build_policies, read by the simulator from the bank, serialised into checkpoint identity and output metadata, and refused on reuse when it differs. tests/test_operating_point.py is the acceptance boundary.",
     "delta(0) exceeds C23's validity level 0.3 at tau_c/c = 20 for the second operating point. Use the exact comparator for interpretation at tau_c/c = 5 and 20.",
     "res1_core.json['F'][1][8:10] is null in the archive but 87159.325 +- 6294.0 on python 3.9/numpy 1.x. PRE-EXISTING and NOT caused by the helper split, which reproduces byte-identically with and without it. The archived 'no run reached threshold' is stack-dependent at that point. Off B's and E's path; recorded for follow-up."
   ],
   "pre_B_sequence": [
     {
       "step": 1,
-      "do": "Replace the mutable C, s globals with an immutable operating-point configuration passed into Bank and every simulator."
+      "do": "Replace the mutable C, s globals with an immutable operating-point configuration passed into Bank and every simulator.",
+      "status": "done 2026-09-07 (roadmap G)"
     },
     {
       "step": 2,
-      "do": "Include that configuration in checkpoint identity and output metadata."
+      "do": "Include that configuration in checkpoint identity and output metadata.",
+      "status": "done 2026-09-07 — operating_point enters cal_config, so it reaches run_metadata, config_digest and incompatibilities()"
     },
     {
       "step": 3,
-      "do": "Prove the refactor preserves all five reproducible pilot calibration rows before adding the second point."
+      "do": "Prove the refactor preserves all five reproducible pilot calibration rows before adding the second point.",
+      "status": "done 2026-09-07 — fresh calibration of all seven pilot policies: the five valid rows reproduce at 0.00 sigma with EXACT threshold equality, and the two C17-withdrawn rows fail as they must (oracle-mid(tc=20) 4.671875 vs archived 4.359; learner-interleave-B10(bank) 3.734375 vs 3.55). Run on python 3.9.7/numpy 1.23.5, not the pinned stack, so the refactor is inert across two stacks."
     },
     {
       "step": 4,
