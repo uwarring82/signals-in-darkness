@@ -93,7 +93,14 @@ def test_no_module_level_operating_point_survives():
     assert "\nC, s = " not in src, "the mutable global assignment is back"
 
 
-def test_no_run_imports_C_or_s_from_the_library():
+def test_no_run_imports_OR_REBINDS_C_or_s():
+    """Forbidding the import is not enough. The first attempt at this fix removed
+    `from sid_policies import C, s` from sid_run8 and then wrote `C, s = OP.C_eff, OP.s`
+    one line below, rebuilding the same coupling: run_batch_age drew its post-change
+    process from those module names while its filter and null came from bank.op, so a bank
+    at a second operating point would have been simulated against the pilot's process.
+    Freezing OP does not freeze a binding derived from it."""
+    import ast
     for run in ("sid_run6s.py", "sid_run8.py"):
         src = _src(os.path.join("analysis", "runs", run))
         for line in src.splitlines():
@@ -101,6 +108,47 @@ def test_no_run_imports_C_or_s_from_the_library():
                 imported = {n.strip() for n in line.split("import", 1)[1].split(",")}
                 assert "C" not in imported and "s" not in imported, (
                     f"{run} still imports the operating point as loose names: {line}")
+        # and no module-level assignment binds them either
+        for node in ast.parse(src).body:
+            if isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                names = set()
+                for tgt in targets:
+                    if isinstance(tgt, ast.Name):
+                        names.add(tgt.id)
+                    elif isinstance(tgt, ast.Tuple):
+                        names |= {e.id for e in tgt.elts if isinstance(e, ast.Name)}
+                assert not (names & {"C", "s"}), (
+                    f"{run} rebinds the operating point at module level: {sorted(names & {chr(67), chr(115)})}")
+
+
+def test_run_batch_age_reads_the_operating_point_from_its_bank():
+    """The explore-then-switch simulator, which is a separate code path from run_batch and
+    was the one that kept the defect after the first repair."""
+    import sid_run8
+    lo = P.Bank([1.0, 4.0], P.OperatingPoint(C_eff=0.2, s=0.5))
+    hi = P.Bank([1.0, 4.0], P.OperatingPoint(C_eff=0.9, s=0.5))
+    a = sid_run8.run_batch_age(lo, 50, 20.0, 2.5, 16, 21, 1500, False)
+    b = sid_run8.run_batch_age(hi, 50, 20.0, 2.5, 16, 21, 1500, False)
+    assert list(a) != list(b), (
+        "run_batch_age does not respond to the bank's operating point; it is still reading "
+        "module state for the post-change process")
+    # and the null path too
+    na = sid_run8.run_batch_age(lo, 50, None, 2.5, 16, 22, 1500, True)
+    nb = sid_run8.run_batch_age(hi, 50, None, 2.5, 16, 22, 1500, True)
+    assert list(na) != list(nb)
+
+
+def test_sid_run8_has_a_serialised_configuration_identity():
+    import sid_run8
+    cfg = sid_run8.run_config()
+    assert cfg["operating_point"] == P.PILOT.as_dict(), (
+        "sid_run8's checkpoint carries no operating point, so it can be resumed at another")
+    have = sid_repro.run_metadata(cfg)
+    other = dict(cfg); other["operating_point"] = P.OperatingPoint(C_eff=0.5, s=0.3).as_dict()
+    why = sid_repro.incompatibilities(have, sid_repro.run_metadata(other))
+    assert any("operating_point" in r for r in why), (
+        f"sid_run8 would not refuse a checkpoint from another operating point: {why}")
 
 
 def test_the_pilot_constant_is_the_documented_one():
@@ -136,6 +184,44 @@ def test_checkpoint_reuse_is_refused_when_the_operating_point_differs():
         f"the refusal does not show both operating points: {named[0]!r}")
 
 
+def test_sid_run8_refuses_to_resume_across_operating_points_end_to_end():
+    """Not a unit check on incompatibilities(): the driver is run as a subprocess against a
+    planted checkpoint and must exit nonzero. The reproduction checkpoint is git-ignored
+    scratch, but it is saved and restored so an in-progress run is not destroyed."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    repro = os.path.join(ROOT, "analysis", "reproduction")
+    os.makedirs(repro, exist_ok=True)
+    ckpt = os.path.join(repro, "res8_switch.json")
+    backup = None
+    if os.path.exists(ckpt):
+        backup = tempfile.NamedTemporaryFile(delete=False, suffix=".json").name
+        shutil.copy(ckpt, backup)
+    try:
+        import sid_run8
+        cfg = dict(sid_run8.run_config())
+        cfg["operating_point"] = P.OperatingPoint(C_eff=0.5, s=0.3).as_dict()
+        planted = {"switch": {"300": [3.0, 3.0e4, {"20.0": [100.0, 1.0], "5.0": [100.0, 1.0],
+                                                  "1.0": [100.0, 1.0]}]},
+                   "meta": sid_repro.run_metadata(cfg)}
+        with open(ckpt, "w", encoding="utf-8") as fh:
+            json.dump(planted, fh)
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "runs", "sid_run8.py"),
+                            "--resume"], capture_output=True, text=True, timeout=300)
+        assert r.returncode == 2, (
+            f"sid_run8 --resume accepted a checkpoint from another operating point "
+            f"(exit {r.returncode})\n{r.stdout[-800:]}\n{r.stderr[-800:]}")
+        assert "operating_point" in r.stderr, (
+            f"the refusal does not name the operating point:\n{r.stderr}")
+    finally:
+        if os.path.exists(ckpt):
+            os.remove(ckpt)
+        if backup:
+            shutil.move(backup, ckpt)
+
+
 def test_identical_configurations_remain_compatible():
     """The gate must reject a changed operating point without rejecting everything."""
     import sid_run6s
@@ -153,6 +239,16 @@ def test_the_policy_figure_does_not_hardcode_its_operating_point():
         "the figure names its operating point in a string literal, which keeps claiming it "
         "after the run beneath it moves")
     assert "operating_point" in src, "the figure does not read the recorded operating point"
+
+
+def test_the_policy_figure_refuses_to_combine_unequal_operating_points():
+    """It draws res6_policies and res8_switch on one axis, so labelling both from one file's
+    metadata would be a silent misattribution once the two can differ."""
+    src = _src(os.path.join("analysis", "runs", "sid_fig_policy_delays.py"))
+    assert "_op6" in src and "_op8" in src, "the figure reads only one of its two sources"
+    assert "refusing to combine outputs from different operating points" in src, \
+        "the figure does not refuse mismatched operating points"
+    assert "sys.exit(" in src, "the refusal does not stop the rebuild"
 
 
 # ---- 6 & 7. the pilot calibration rows, and what the preservation claim excludes -----------

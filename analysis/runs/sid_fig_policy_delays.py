@@ -38,15 +38,31 @@ for lab, (key, col, ls) in pol.items():
 for B, col in ((300, SIG), (1000, "#e08070")):
     d = r8[str(B)][2]; ax.errorbar(tccs, [d[str(float(t))][0] for t in tccs], [d[str(float(t))][1] for t in tccs], color=col, marker="s", ms=4, ls="-.", label=f"explore mid-fringe {B} shots, then extremum", capsize=2)
 ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("$\\tau_c/c$ (true)"); ax.set_ylabel("detection delay (shots)")
-# The operating point is READ from the stored run's metadata, not hardcoded here. A figure
+# The operating point is READ from the stored runs' metadata, not hardcoded here. A figure
 # that names its parameters in a string literal keeps claiming them after the run beneath it
 # has moved (roadmap G).
-_op = ((st.get("meta") or {}).get("config") or {}).get("operating_point") \
-    or (st.get("meta") or {}).get("operating_point")
-if _op:
+#
+# This figure combines TWO outputs -- res6_policies (the seven policies) and res8_switch (the
+# explore-then-switch curves) -- so it must not label both from one file's metadata. If the
+# two were produced at different operating points the figure would be meaningless, and it
+# refuses rather than drawing it.
+def _opof(doc):
+    m = doc.get("meta") or {}
+    return (m.get("config") or {}).get("operating_point") or m.get("operating_point")
+
+_op6, _op8 = _opof(st), _opof(r8)
+if _op6 and _op8 and _op6 != _op8:
+    sys.exit(f"refusing to combine outputs from different operating points: "
+             f"res6_policies {_op6} vs res8_switch {_op8}")
+_op = _op6 or _op8
+if _op and _op6 and _op8:
     _optxt = f"$\\bar C_{{\\rm eff}}={_op['C_eff']:g}$, $s={_op['s']:g}$"
+elif _op:
+    _which = "res6_policies" if _op6 else "res8_switch"
+    _optxt = (f"$\\bar C_{{\\rm eff}}={_op['C_eff']:g}$, $s={_op['s']:g}$ "
+              f"(recorded in {_which} only)")
 else:
-    _optxt = "operating point not recorded in this output"
+    _optxt = "operating point not recorded in either output"
 ax.set_title(f"Policies at matched $\\hat{{E}}_0[T]\\approx3\\times10^4$, {_optxt}", fontsize=10)
 ax.legend(fontsize=6.5)
 fig.tight_layout()

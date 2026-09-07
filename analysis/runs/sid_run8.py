@@ -40,9 +40,25 @@ import sid_repro
 from sid_policies import GAMMA, PILOT, STATS, THM, THX, Bank
 
 OP = PILOT          # explicit and immutable; this driver no longer reads module state
-C, s = OP.C_eff, OP.s
+
+# There are deliberately NO module-level C and s aliases here. An earlier version of this
+# fix removed the `from sid_policies import C, s` and then immediately rebuilt the same
+# coupling as `C, s = OP.C_eff, OP.s`, which reintroduced the exact defect roadmap G exists
+# to remove: run_batch_age drew its post-change process from those module names while its
+# filter and null came from bank.op, so a bank built at a second operating point would have
+# been simulated against the pilot's process. Freezing OP does not freeze a derived binding.
+# Everything below reads bank.op.
 
 STATE_NAME = "res8_switch.json"
+CAL_R, CAL_ITERS = 32, 5
+CAL_SEEDS = "bisection 300-304, confirmation 399, delays 500 + int(tau_c/c)"
+B_VALUES = (300, 1000)
+
+
+def run_config():
+    """The configuration these thresholds depend on. A change here invalidates them."""
+    return {"operating_point": OP.as_dict(), "gamma": GAMMA, "R": CAL_R, "iters": CAL_ITERS,
+            "seeds": CAL_SEEDS, "B_values": list(B_VALUES)}
 T0 = time.time()
 
 
@@ -54,6 +70,7 @@ def log(*a):
 def run_batch_age(bank, B, true_tcc, h, R, seed, max_steps, null):
     STATS["run_batch_calls"] += 1
     r = np.random.default_rng(seed)
+    C, s = bank.op.C_eff, bank.op.s        # from the bank, never from module state
     alpha = [np.tile(bank.prior, (R, 1)) for _ in range(bank.K)]
     Lk = np.zeros((R, bank.K)); W = np.zeros(R); stop = np.full(R, max_steps); active = np.ones(R, bool); age = np.zeros(R, int)
     if not null:
@@ -96,12 +113,30 @@ def main(argv):
     resume = "--resume" in argv
     sid_repro.print_banner("explore-then-switch", resume,
                            "bisection 300-304, confirmation 399, delays 500 + int(tau_c/c)")
+    log(f"operating point: {OP.label()}")
     bank_ln = Bank([1.0, 4.0, 10.0, 25.0], OP)
-    state = sid_repro.load_checkpoint(STATE_NAME, resume) or {}
+    want = sid_repro.run_metadata(run_config())
+
+    raw = sid_repro.load_checkpoint(STATE_NAME, resume) or {}
+    # Checkpoints written before roadmap G were a flat {B: row} map with no identity. They
+    # are refused rather than silently resumed: an unidentified checkpoint is exactly what
+    # cost C17 and C18.
+    state = raw.get("switch", {}) if "switch" in raw else {}
+    if resume and raw:
+        why = sid_repro.incompatibilities(raw.get("meta"), want)
+        if why:
+            print("refusing to resume a checkpoint from a different run:", file=sys.stderr)
+            for reason in why:
+                print(f"  - {reason}", file=sys.stderr)
+            print("  drop analysis/reproduction/res8_switch.json and recompute.", file=sys.stderr)
+            return 2
+    elif raw and not resume:
+        state = {}          # fresh by default; the checkpoint is overwritten, not consumed
+
     reference = sid_repro.load_reference(STATE_NAME) or {}
     computed = cached = 0
 
-    for B in (300, 1000):
+    for B in B_VALUES:
         if str(B) in state:
             cached += 1; log(f"resumed switch@{B}"); continue
         h, m, se = cal_age(bank_ln, B); log(f"switch@{B}: h*={h:.3f} ARL={m:.0f}+-{se:.0f}")
@@ -111,12 +146,15 @@ def main(argv):
             row[str(tcc)] = [st.mean(), st.std()/8]
             log(f"   tc/c={tcc:4.0f}: delay={st.mean():6.0f} +- {st.std()/8:4.0f}")
         state[str(B)] = [h, m, row]
-        sid_repro.save_checkpoint(STATE_NAME, state)
+        sid_repro.save_checkpoint(STATE_NAME, {"switch": state, "meta": want})
         computed += 1
 
     verdicts, n_pass, n_fail = [], 0, 0
+    # The published archive predates roadmap G and is a flat {B: row} map; it is read in
+    # that shape deliberately, and its lack of identity is a fact about it, not a bug here.
+    ref_rows = reference.get("switch", reference)
     for B, entry in state.items():
-        ref = reference.get(B)
+        ref = ref_rows.get(B)
         if ref is None:
             verdicts.append(f"  NO-REFERENCE  switch@{B}"); continue
         if entry[0] != ref[0]:
