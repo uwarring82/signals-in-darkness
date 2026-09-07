@@ -107,7 +107,27 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
   delay seeds. The calibration block is written before the delay measurements, so a failure
   there cannot destroy it.
 - `res6_policies.json` — {"cal": {policy: [h_star, ARL, ARL_se, capped_runs]}, "delays": {tau_c: {policy: [mean, se, capped]}}}. Units: shots.
-- `res8_switch.json` — {B: [h_star, ARL, {tau_c: [mean, se]}]}.
+- **Per-operating-point files.** Every operating point other than the pilot writes its own
+  file: `res6_policies_<name>.json` and `res8_switch_<name>.json`, e.g.
+  `res6_policies_stress.json` for roadmap B's second point (C_eff = 0.5, s = 0.3). The pilot
+  keeps the unsuffixed names so its reproduction path is unchanged. Two operating points
+  sharing one file would reintroduce at the filesystem level exactly the confusion roadmap G
+  removed in memory, so the separation is enforced by `sid_policies.state_name_for()` rather
+  than by convention. A non-pilot run has no archived counterpart, so it must be asked for
+  with `--no-reference`; it *establishes* its numbers and verifies nothing, and says so in its
+  own output rather than reporting "0 pass, 0 FAIL" and exiting 0.
+- `res8_switch.json` — **two shapes, deliberately.** The *published archive* is the legacy flat map
+  `{B: [h_star, ARL, {tau_c: [mean, se]}]}`, written before roadmap G and carrying no run identity.
+  *Reproduction checkpoints written after G* are `{"switch": {B: [...]}, "meta": {...}}`, where `meta`
+  is `sid_repro.run_metadata(sid_run8.run_config(op, op_name))` and therefore records the operating
+  point and its name, gamma, R, the bisection bracket and iteration count, the seed offset, the bank
+  correlation-time list, the delay grid and both step caps, alongside the revision and library
+  versions. Post-G reproduction delay rows carry a third element, the capped-run count
+  `[mean, se, capped]`; the pre-G archive rows have only `[mean, se]`. `sid_run8.py` reads
+  the archive in its flat shape and writes only the identified shape; `--resume` refuses a checkpoint
+  whose identity differs, and refuses a flat pre-G checkpoint outright rather than resuming state that
+  cannot say what it was computed at. The archive keeps its flat shape because rewriting it would
+  claim a provenance it does not have; see notes/2026-09-07-note-17-roadmap-G.md.
 - `res7A_identifiability.json` — rows [C0, eta0, tau_c/t_dead, I_known_baseline, I_classA, I_classB, I_best_single_tau, DeltaGamma/(2 eta0 Gamma)]; nats per shot; T2=10, t_dead=1, g sigma_x T2=0.5.
 - `res7B_servo.json` — rows [kappa, Ceff_slope_parity, Ceff_slope_full, Ceff_var_parity, Ceff_var_full]; C1=C2=0.9; variance channel at s=0.3. `kappa = "positive-infinity"` is the perfect-oscillator limit, the last row: a known limiting case the calculation deliberately visits, carried as the declared sentinel string rather than as null (which would claim the value is absent) or as the JSON-invalid token Infinity. `sid_run7.py` draws it at 100 on the symlog axis.
 Missing as files (printed only): crossover table (C05), calibration slack table (C10), bonus table (C15) — flagged [unreproduced-from-file] in the ledger; step 2 of the work plan stores them.

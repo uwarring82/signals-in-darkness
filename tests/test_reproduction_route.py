@@ -45,7 +45,9 @@ def counting_calibrate(monkeypatch):
     def stub(bank, sched, gamma, R=48, iters=5, **kw):
         calls.append(R)
         sid_policies.STATS["run_batch_calls"] += 1        # a real calibrate would simulate
-        return 3.421875, 30000.0, 1000.0, 0
+        # 5-tuple since 7 Sept 2026: the last element names a bracket end that never moved,
+        # or None when the bisection was two-sided. The stub reports a clean bracket.
+        return 3.421875, 30000.0, 1000.0, 0, None
 
     monkeypatch.setattr(sid_run6s, "calibrate", stub)
     return calls

@@ -141,12 +141,15 @@ def test_run_batch_age_reads_the_operating_point_from_its_bank():
 
 def test_sid_run8_has_a_serialised_configuration_identity():
     import sid_run8
-    cfg = sid_run8.run_config()
+    cfg = sid_run8.run_config(P.PILOT, "pilot")
     assert cfg["operating_point"] == P.PILOT.as_dict(), (
         "sid_run8's checkpoint carries no operating point, so it can be resumed at another")
+    # everything that can move a threshold must be in the identity, not only the pair (C, s)
+    for field in ("bank_tccs", "bracket", "null_cap", "delay_cap", "seed_offset", "delay_tccs"):
+        assert field in cfg, f"run_config omits {field}: editing it would leave the digest intact"
     have = sid_repro.run_metadata(cfg)
-    other = dict(cfg); other["operating_point"] = P.OperatingPoint(C_eff=0.5, s=0.3).as_dict()
-    why = sid_repro.incompatibilities(have, sid_repro.run_metadata(other))
+    why = sid_repro.incompatibilities(have, sid_repro.run_metadata(
+        sid_run8.run_config(P.STRESS, "stress")))
     assert any("operating_point" in r for r in why), (
         f"sid_run8 would not refuse a checkpoint from another operating point: {why}")
 
@@ -159,7 +162,7 @@ def test_the_pilot_constant_is_the_documented_one():
 
 def test_the_operating_point_enters_checkpoint_identity():
     import sid_run6s
-    cfg = sid_run6s.cal_config(["extremum-only"])
+    cfg = sid_run6s.cal_config(["extremum-only"], P.PILOT, "pilot")
     assert cfg["operating_point"] == P.PILOT.as_dict(), (
         "the calibration config does not carry the operating point, so a checkpoint cannot "
         "record what it was computed at")
@@ -169,9 +172,8 @@ def test_checkpoint_reuse_is_refused_when_the_operating_point_differs():
     """The condition G exists for: thresholds measured at one operating point must not be
     silently consumed by a run at another."""
     import sid_run6s
-    have = sid_repro.run_metadata(sid_run6s.cal_config(["extremum-only"]))
-    other = dict(sid_run6s.cal_config(["extremum-only"]))
-    other["operating_point"] = P.OperatingPoint(C_eff=0.5, s=0.3).as_dict()
+    have = sid_repro.run_metadata(sid_run6s.cal_config(["extremum-only"], P.PILOT, "pilot"))
+    other = sid_run6s.cal_config(["extremum-only"], P.STRESS, "stress")
     want = sid_repro.run_metadata(other)
     why = sid_repro.incompatibilities(have, want)
     assert why, "a differing operating point did not make the checkpoint incompatible"
@@ -201,8 +203,7 @@ def test_sid_run8_refuses_to_resume_across_operating_points_end_to_end():
         shutil.copy(ckpt, backup)
     try:
         import sid_run8
-        cfg = dict(sid_run8.run_config())
-        cfg["operating_point"] = P.OperatingPoint(C_eff=0.5, s=0.3).as_dict()
+        cfg = sid_run8.run_config(P.STRESS, "stress")
         planted = {"switch": {"300": [3.0, 3.0e4, {"20.0": [100.0, 1.0], "5.0": [100.0, 1.0],
                                                   "1.0": [100.0, 1.0]}]},
                    "meta": sid_repro.run_metadata(cfg)}
@@ -225,7 +226,7 @@ def test_sid_run8_refuses_to_resume_across_operating_points_end_to_end():
 def test_identical_configurations_remain_compatible():
     """The gate must reject a changed operating point without rejecting everything."""
     import sid_run6s
-    cfg = sid_run6s.cal_config(["extremum-only"])
+    cfg = sid_run6s.cal_config(["extremum-only"], P.PILOT, "pilot")
     a = sid_repro.run_metadata(cfg)
     b = sid_repro.run_metadata(dict(cfg))
     assert sid_repro.incompatibilities(a, b) == []
@@ -334,3 +335,83 @@ def test_the_preservation_claim_excludes_exactly_the_withdrawn_rows_in_the_ledge
                          encoding="utf-8"))
     assert set(ref["cal"]) == set(WITHDRAWN_ROWS) | set(PRESERVED_ROWS), (
         "the archived calibration no longer holds exactly the seven pilot policies")
+
+
+# ---- guards added after the roadmap B path audit, 7 Sept 2026 -----------------------------
+
+def test_the_pilot_calibration_bracket_is_frozen():
+    """The pilot's (lo, hi, iters) produced the archived thresholds and G's preservation
+    evidence compares them by exact equality. Changing them silently invalidates that."""
+    assert P.CAL_BRACKET["pilot"] == (1.0, 6.0, 5)
+    assert P.SEED_OFFSET["pilot"] == 0, "a pilot seed offset would move its archived numbers"
+
+
+def test_every_operating_point_has_its_own_bracket_and_seed_offset():
+    for name in P.OPERATING_POINTS:
+        assert name in P.CAL_BRACKET, f"{name} has no calibration bracket"
+        assert name in P.SEED_OFFSET, f"{name} has no seed offset"
+    offsets = list(P.SEED_OFFSET.values())
+    assert len(set(offsets)) == len(offsets), (
+        "two operating points share a seed offset, so their latent noise paths are perfectly "
+        "correlated and the second is not an independent measurement")
+
+
+def test_calibrate_reports_a_bracket_end_that_never_moved(monkeypatch):
+    """The defect this guard exists for: at the stress point under the pilot's bracket,
+    oracle-mid(tc=1) converged to the midpoint of an untested [1.0, 1.156] and confirmed at
+    ARL 23669, a 21 % miss, with nothing reporting it.
+
+    Driven by a deterministic stub ARL(h) = e^h, so the branch taken at each probe is exactly
+    known and the test exercises the bracket logic rather than a simulation.
+    """
+    monkeypatch.setattr(P, "arl_of",
+                        lambda bank, sched, h, R, seed, cap=0: (math.exp(h), 0.0, 0))
+    bank = P.Bank([1.0], P.PILOT)
+    # gamma below ARL at every probe in [1, 6]: hi collapses, the floor is never moved
+    _, _, _, _, pinned = P.calibrate(bank, P.sched_mid, math.exp(0.5), R=4, lo=1.0, hi=6.0,
+                                     iters=4, seed=100)
+    assert pinned == "floor", f"a pinned floor was not reported (got {pinned!r})"
+    # gamma above ARL at every probe: lo climbs, the ceiling is never moved
+    _, _, _, _, pinned_hi = P.calibrate(bank, P.sched_mid, math.exp(9.0), R=4, lo=1.0, hi=6.0,
+                                        iters=4, seed=100)
+    assert pinned_hi == "ceiling", f"a pinned ceiling was not reported (got {pinned_hi!r})"
+    # gamma inside the bracket: both ends move and nothing is flagged
+    h, _, _, _, clean = P.calibrate(bank, P.sched_mid, math.exp(3.0), R=4, lo=1.0, hi=6.0,
+                                    iters=4, seed=100)
+    assert clean is None, f"a two-sided bisection was wrongly flagged ({clean!r})"
+    assert abs(h - 3.0) < 0.5, "the two-sided bisection did not converge near the true root"
+
+
+def test_drivers_refuse_an_unknown_flag_rather_than_defaulting_to_the_pilot():
+    """`--operating-point stress` with a space would otherwise select the pilot AND overwrite
+    the pilot's checkpoint while the operator believed they were running B."""
+    import subprocess
+    for run in ("sid_run6s.py", "sid_run8.py"):
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "runs", run),
+                            "cal:extremum-only", "--operating-point", "stress"],
+                           capture_output=True, text=True, timeout=120)
+        assert r.returncode == 2, f"{run} accepted a spaced --operating-point (exit {r.returncode})"
+        assert "unrecognised option" in r.stderr, f"{run} did not name the bad flag:\n{r.stderr}"
+
+
+def test_a_run_without_an_archived_reference_must_be_asked_for():
+    """Otherwise it prints the tolerance header, lists NO-REFERENCE for every row, summarises
+    '0 pass, 0 FAIL' and exits 0 -- indistinguishable from a run that compared and agreed."""
+    import subprocess
+    r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "runs", "sid_run6s.py"),
+                        "cal:extremum-only", "--operating-point=stress"],
+                       capture_output=True, text=True, timeout=120)
+    assert r.returncode == 2, f"a stress run without --no-reference was allowed (exit {r.returncode})"
+    assert "ESTABLISH" in r.stderr and "not verify" in r.stderr
+
+
+def test_main_reads_the_operating_point_from_its_own_argv():
+    """It was read from module-level sys.argv, so every programmatic caller -- including this
+    test suite -- silently got the pilot regardless of what it asked for."""
+    import sid_run6s
+    src = _src(os.path.join("analysis", "runs", "sid_run6s.py"))
+    assert "operating_point_from_argv(sys.argv)" not in src, (
+        "the operating point is bound from module-level sys.argv again")
+    assert "operating_point_from_argv(argv)" in src
+    # asking for stress without --no-reference is refused, which proves argv was honoured
+    assert sid_run6s.main(["x", "cal:extremum-only", "--operating-point=stress"]) == 2

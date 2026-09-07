@@ -56,6 +56,63 @@ class OperatingPoint:
 #: The pilot operating point. A named constant, not a default: callers pass it explicitly.
 PILOT = OperatingPoint(C_eff=0.4, s=0.5)
 
+#: Roadmap B's second operating point. C_eff = 0.5 is EXACTLY the parity ceiling
+#: C_par = (1/2) C_1 C_2 <= 1/2 (cards/v1.1-frozen.md:117), so it stays inside the
+#: oscillator-cancelled parity regime that carries the principal claims and does not depend on
+#: roadmap D. It is an UPPER-BOUND STRESS TEST, not a realistic contrast, and must be labelled
+#: as such wherever it is reported. Decided 7 Sept 2026 as manifest decision D2, replacing an
+#: earlier C = 0.8 proposal that would have placed a freeze gate in the servo regime.
+STRESS = OperatingPoint(C_eff=0.5, s=0.3)
+
+#: Calibration bisection bracket and iteration count, PER OPERATING POINT.
+#:
+#: The pilot's (1.0, 6.0, 5) is frozen: those exact values produced the archived thresholds,
+#: and roadmap G's preservation evidence compares them by exact equality. It must not change.
+#:
+#: The stress point needs its own. Measured 7 Sept 2026: under the pilot's bracket,
+#: oracle-mid(tc=1) at (C_eff=0.5, s=0.3) never moves the floor, converges to h* = 1.078125 --
+#: the midpoint of an *untested* [1.0, 1.156] -- and confirms at ARL 23669, a 21 % miss against
+#: the 3e4 target. Five iterations over a span of 5.0 resolve only to 0.156, which is coarse
+#: where h* ~ 1.1. A narrower bracket with more iterations resolves to 0.027 and brackets every
+#: stress policy: h* runs from about 1.1 (oracle-mid(tc=1)) to about 2.3 (extremum-only).
+CAL_BRACKET = {"pilot": (1.0, 6.0, 5), "stress": (0.5, 4.0, 7)}
+
+#: Seed offset per operating point. With a shared seed the latent phase paths of two operating
+#: points are perfectly correlated -- simulate() scales the same standard normals by s, so the
+#: stress path is exactly 0.6x the pilot's, shot for shot. That is fine as a variance-reduction
+#: device but it is not an independent second measurement, and the second operating point is
+#: meant to be one. The pilot's offset is 0 so its archived seeds are untouched.
+SEED_OFFSET = {"pilot": 0, "stress": 7000}
+
+#: Selectable by name from the command line. Adding an entry here is the only supported way to
+#: introduce an operating point; nothing reads one from module state.
+OPERATING_POINTS = {"pilot": PILOT, "stress": STRESS}
+
+
+def operating_point_from_argv(argv, default="pilot"):
+    """Read --operating-point=<name> from argv. Unknown names are refused, not defaulted."""
+    name = default
+    for arg in argv:
+        if arg.startswith("--operating-point="):
+            name = arg.split("=", 1)[1]
+    if name not in OPERATING_POINTS:
+        raise SystemExit(f"unknown operating point {name!r}; "
+                         f"choose one of {sorted(OPERATING_POINTS)}")
+    return name, OPERATING_POINTS[name]
+
+
+def state_name_for(base, op_name):
+    """Checkpoint/output filename for an operating point.
+
+    The pilot keeps the historical name so its reproduction path is unchanged; every other
+    operating point gets its own file. Two operating points sharing one checkpoint would
+    reintroduce, at the filesystem level, exactly the confusion roadmap G removed in memory.
+    """
+    if op_name == "pilot":
+        return base
+    stem, dot, ext = base.partition(".")
+    return f"{stem}_{op_name}{dot}{ext}"
+
 # ---------------- work counter (read by the reproduction regression test) ------
 # Incremented once per simulator entry. A reproduction route that reports work
 # done but leaves this at zero has replayed stored numbers instead of computing.
@@ -138,13 +195,23 @@ def arl_of(bank, sched, h, R, seed, cap=150_000):
 
 
 def calibrate(bank, sched, gamma, R=48, lo=1.0, hi=6.0, iters=5, seed=100):
+    """Fixed-iteration bisection on the CUSUM threshold. Returns (h, ARL, se, capped, endpoint).
 
+    `endpoint` is None when the bracket was two-sided -- both ends moved at least once -- and
+    otherwise names the end that was never moved. That case is not a convergence failure in the
+    usual sense: the bisection still returns the midpoint of its final interval, but one side of
+    that interval was never tested, so the answer is set by the bracket rather than by the data.
+    It is reported rather than swallowed, because at the stress point it silently cost 21 % of
+    the target run length before anyone looked.
+    """
+    lo0, hi0 = lo, hi
     for i in range(iters):
         mid = 0.5*(lo+hi); m, se, nc = arl_of(bank, sched, mid, R, seed+i)
         if m > gamma: hi = mid
         else: lo = mid
     h = 0.5*(lo+hi); m, se, nc = arl_of(bank, sched, h, 2*R, seed+99)
-    return h, m, se, nc
+    endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
+    return h, m, se, nc, endpoint
 
 
 def delay_of(bank, sched, true_tcc, h, R, seed, cap=100_000):
