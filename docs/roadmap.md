@@ -1,6 +1,6 @@
 # Roadmap
 
-Generated 2026-09-07T06:11:20+00:00 from ledgers/roadmap.yaml. Do not edit.
+Generated 2026-09-07T07:31:11+00:00 from ledgers/roadmap.yaml. Do not edit.
 
 | id | title | state | gates_freeze |
 |---|---|---|---|
@@ -9,6 +9,6 @@ Generated 2026-09-07T06:11:20+00:00 from ledgers/roadmap.yaml. Do not edit.
 | B | Second operating point C_eff=0.5, s=0.3 at the parity ceiling, labelled an upper-bound stress test (D2, 7 Sept 2026; replaces C=0.8, which would have made this gate depend on D) — benchmark, hedges, tau_c in {1,5,20}, tightened ARL. Blocked by G. Exact comparator for interpretation at tau_c/c = 5 and 20. | open | true |
 | C | Posterior-driven action selection vs true oracle over the same action set | open | false |
 | D | Correlated oscillator residual (AR(1) phase) in the four-outcome likelihood — size effect on C_eff | open | false |
-| E | Identifiability in dimensionless form - COMPLETE 7 Sept 2026. res9_identifiability_T2.json, 36 rows over C_0 in {0.4,0.5,0.9} x eta_0 in {0.02,0.05,0.10} x tau_c/T2 in {0.05,0.2,1,5}, per-shot, no dead time, regime-labelled in the output. C13 restated dimensionlessly with three corrections. Regression against res7A: 0 breaches, 2 rows where res7A is under-converged. See notes/2026-09-07-note-15-roadmap-E.md | complete | true |
+| E | Identifiability in dimensionless form - COMPLETE 7 Sept 2026. res9_identifiability_T2.json, 36 rows over C_0 in {0.4,0.5,0.9} x eta_0 in {0.02,0.05,0.10} x tau_c/T2 in {0.05,0.2,1,5}, per-shot, no dead time, regime-labelled in the output. C13 WITHDRAWN (false exact-zero assertion) and superseded by C26. I_B is a best-of-candidates estimate over three named starts plus a deterministic 121x121 grid and polish; the grid supplies the selected minimum on 11 of 36 rows and beats every named start on 5. Regression: 0 breaches, 0 review_required, 2 allowlisted under-converged reference rows. See notes/2026-09-07-note-16-E-closure.md | complete | true |
 | F | Model-consistency — validate the binary comparator against an exact ARMA(1,1) latent likelihood at a few finite-window points. The committed HMM is AR(1) in the phase, exact only for point sampling; the finite-window integrated phase is ARMA(1,1). Not a prior-art gate; resolve before the v2.0 manuscript freezes. | open | false |
 | G | Operating-point provenance repair — replace the mutable sid_policies C,s globals with an immutable configuration passed into Bank and every simulator; carry it in checkpoint identity and output metadata; prove the refactor preserves all five reproducible pilot calibration rows. Gates B, not the freeze. | open | false |
