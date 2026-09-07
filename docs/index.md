@@ -4,7 +4,9 @@
 can hear — and when you must raise an alarm quickly, that choice has a right answer that flips.**
 
 This is an open evidence archive for that question. Every claim carries a status, every withdrawal
-carries a reason, and every number can be recomputed from the code in this repository.
+carries a reason, and **every active `result` and `pilot` number can be recomputed** from the code in
+this repository. That qualification is deliberate: one withdrawn historical table cannot be
+reproduced, and its provenance is irrecoverable. It is kept, marked, and depended on by nothing.
 
 ---
 
