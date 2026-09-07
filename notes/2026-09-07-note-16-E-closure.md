@@ -36,7 +36,7 @@ something sharper than expected. On **five rows the grid beat every named start*
 | 0.4 | 0.02 | 0.05 | 1.425 % | 0.003 % |
 
 All five are **principal-regime** rows. On the worst, the three named starts agreed to 0.115 % and
-all three sat 9.7 % above the true minimum, which lies on the g₀ boundary. So across-start agreement
+all three sat 9.7 % above the lower grid-and-polish candidate, which lies on the g₀ boundary. So across-start agreement
 was *anti*-correlated with correctness, and a best-of-three would have published wrong numbers on
 exactly the rows C26's short-correlation clause rests on.
 
@@ -47,7 +47,13 @@ stays deterministic.
 **The determinism wording is corrected accordingly**: I_B is a *best-of-candidates estimate* over
 three named starts plus a deterministic grid scan and its polish — **not a certified global
 infimum**, and not start-independent. The artifact says so, and a test asserts the artifact does not
-claim otherwise.
+claim otherwise. Nothing here identifies a *true* minimum; the language throughout is
+"grid-stable minimum" or "lower grid-and-polish candidate".
+
+**Grid refinement.** Recomputing every row at 241 × 241 changes the best-of-candidates value by at
+most **1.28 × 10⁻¹¹** relatively (worst row C₀ = 0.5, η₀ = 0.02, τ_c/T₂ = 0.2), so the scan is
+converged at 121. The figure depends on which candidates are compared, so the artifact records the
+method alongside it.
 
 ## 3. The regression gate no longer accepts a lower number automatically
 

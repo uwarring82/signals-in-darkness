@@ -7,8 +7,8 @@ tested code the research runs use, and every conclusion carries a status label.
 | notebook | question | status |
 |---|---|---|
 | `00_how_many_coin_tosses.ipynb` | How many tosses to detect a change in a coin's bias? | available |
-| `01_when_the_coin_has_memory.ipynb` | What changes when the bias is an AR(1) process? | planned |
-| `02_from_coin_to_quantum_sensor.ipynb` | The binary link, contrast, and the two operating points | planned |
+| `01_when_the_coin_has_memory.ipynb` | What changes when the bias is an AR(1) process? | available |
+| `02_from_coin_to_quantum_sensor.ipynb` | The binary link, contrast, and the two operating points | deferred until roadmap B, so it teaches the final operating-point comparison |
 | `03_detection_is_not_identification.ipynb` | Why detecting a change is not interpreting it | planned |
 
 A single-shot quantum measurement **is** a Bernoulli observation, so the coin is not an analogy.

@@ -51,8 +51,8 @@ REGRESSION_TOL = 6e-8          # SCHEMA.md:43; the spread measured across stacks
 # here is a relative change of ~3e-4. Under the reparameterisation from Gamma to
 # Gamma/Gamma_hat that premature stop became visible -- the three starts landed on three
 # different points spread over 1.1 %, and the infimum came out 6.15e-7 ABOVE res7A. With
-# these tolerances every start converges to the same boundary solution and the across-start
-# spread falls to 2.4e-9, twenty-five times inside REGRESSION_TOL.
+# these tolerances the named starts stop prematurely far less often. They do NOT all reach the
+# same solution -- see class_b_infimum and the determinism field of the artifact.
 #
 # They are tightened to the numerical floor and no further. scipy differentiates this
 # objective by finite differences, so its gradient carries ~1e-14 absolute noise; asking for
@@ -61,6 +61,13 @@ REGRESSION_TOL = 6e-8          # SCHEMA.md:43; the spread measured across stacks
 # worthless. At these values all 108 starts converge cleanly. See note 15.
 OPT_OPTIONS = {"ftol": 1e-14, "gtol": 1e-9, "maxiter": 5000, "maxfun": 50000}
 GRID_N = 121            # deterministic pre-scan per axis; see class_b_infimum
+# Grid-refinement check, 7 Sept 2026: recomputing every row at GRID_N = 241 changed the
+# best-of-candidates value by at most 1.281e-11 relatively (worst row C_0 = 0.5,
+# eta_0 = 0.02, tau_c/T2 = 0.2). The scan is converged at 121; the figure depends on which
+# candidates are compared, so the method is stated rather than the number alone.
+GRID_REFINEMENT_CHECK = {"from": 121, "to": 241, "max_rel_change": 1.281e-11,
+                         "worst_row": {"C_0": 0.5, "eta_0": 0.02, "tau_c_over_T2": 0.2},
+                         "compared": "best-of-candidates value per row"}
 
 # Rows where res7A is ACCEPTED as under-converged. A lower I_B is only evidence that the
 # reference was under-converged; it is not proof, and treating any lower value as
@@ -134,8 +141,8 @@ def class_b_infimum(C0, eta0, s2, weights):
 
     WHY THE GRID. Agreement between the three named starts does not certify a minimum. At
     C_0 = 0.4, eta_0 = 0.10, tau_c/T2 = 0.05 -- a PRINCIPAL row -- all three starts landed
-    within 0.11 % of each other and all three were 9.7 % ABOVE the true infimum, which a
-    deterministic grid scan finds at the g_0 boundary. Low across-start spread was therefore
+    within 0.11 % of each other and all three were 9.7 % ABOVE the grid-stable minimum, which
+    a deterministic grid scan finds at the g_0 boundary. Low across-start spread was therefore
     an unreliable indicator, and a bare best-of-three would have published the wrong number.
     The grid is deterministic, so this stays reproducible without a seed.
 
@@ -328,13 +335,14 @@ def main():
                         f"{GRID_N}x{GRID_N} grid scan and its polish -- not a certified global "
                         "infimum. The named starts alone are not reliable: at tau_c/T2 = 0.05 their "
                         "relative spread reaches 12 %, and at C_0 = 0.4, eta_0 = 0.10 they agreed to "
-                        "0.11 % while all sitting 9.7 % ABOVE the true minimum, so low spread does "
-                        "not indicate correctness. Every candidate is stored with its solution, "
+                        "0.11 % while all sitting 9.7 % ABOVE the lower grid-and-polish candidate, so low "
+                        "spread does not indicate correctness. Every candidate is stored with its solution, "
                         "convergence status, objective and iteration count, and each row records "
                         "both absolute and relative named-start spread plus how far the grid route "
                         "beat the named ones."),
         "supersedes": ("section A of analysis/runs/sid_run7.py for the v2.0 record. "
                        "analysis/outputs/res7A_identifiability.json is left unchanged."),
+        "grid_refinement_check": GRID_REFINEMENT_CHECK,
         "regression_vs_res7A": reg,
         "run": sid_repro.run_metadata(config),
         "rows": rows,

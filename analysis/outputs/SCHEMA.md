@@ -117,9 +117,19 @@ Missing as files (printed only): crossover table (C05), calibration slack table 
   36 rows over C_0 ∈ {0.4, 0.5, 0.9} × η₀ ∈ {0.02, 0.05, 0.10} × τ_c/T₂ ∈ {0.05, 0.2, 1.0, 5.0},
   each an object carrying `C_0`, `regime` (`principal` for 0.4 and 0.5, `servo-context` for 0.9),
   `eta_0`, `tau_c_over_T2`, `I_unc`, `I_A`, `I_B`, `I_ref`, `DeltaGamma_over_Gamma_hat`,
-  `DeltaGamma_over_2eta0_Gamma_hat`, `class_A_points_passing`/`_total`, and an `optimizer` block with
-  all three L-BFGS-B starts (x0, solution, objective, convergence status, iterations, message), the
-  selected index, the across-start spread and the tolerance options used.
+  `DeltaGamma_over_2eta0_Gamma_hat`, `class_A_points_passing`/`_total`, and an `optimizer` block.
+  That block holds **five candidates**, each with `kind`, `x0`, solution `x`, objective `fun`,
+  `success`, `status`, `nit` and `message`: three `named` L-BFGS-B starts, one `grid-polish` seeded
+  from the deterministic 121×121 scan's argmin, and the raw `grid-raw` scan minimum itself. It also
+  holds `selected_index` and `selected_fun` (the reported `I_B`), `grid_n`, the tolerance `options`,
+  and **two spread measures over the named starts only**: `named_spread_abs` and
+  `named_spread_rel`. Both are needed — `I_B` spans four orders of magnitude across the grid, so an
+  absolute spread of 2.4e-9 is 12 % where `I_B` ~ 1e-9 and negligible where `I_B` ~ 1e-4.
+  `grid_beat_named` records how far the grid route fell below the best named start; it is positive
+  on 5 of 36 rows, by up to 9.7 %, and on those rows the named starts agreed to between 0.003 % and
+  0.115 % — so low named spread does not certify a minimum. The top-level `grid_refinement_check`
+  records that going to 241×241 moves the reported value by at most 1.28e-11 relatively.
+  `I_B` is a **best-of-candidates estimate, not a certified global infimum**.
   **Every quantity is dimensionless in T₂ and information is per shot; this run prices no dead time
   and contains no cycle time.** It supersedes section A of `sid_run7.py` for the v2.0 record;
   `res7A_identifiability.json` is unchanged. The `servo-context` rows exceed the parity ceiling and

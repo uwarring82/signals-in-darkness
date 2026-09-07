@@ -67,13 +67,17 @@ reader to cite an illustration as a finding. Both are forbidden.
 
 ## Work plan
 
-1. Notebook 00, its contract tests, and this card. **← `repo-v0.2.0` scope**
-2. Notebook 01 (AR(1) memory), with the equal-head-count demonstration.
-3. Notebook 02 (the binary link and the crossover).
-4. Notebook 03 (detection versus identification).
-5. Site page linking the sequence, generated like the others.
+1. Notebook 00, its contract tests, and this card. **← `repo-v0.2.0` scope. Done.**
+2. Notebook 01 (AR(1) memory), with the equal-head-count demonstration. **Done 7 Sept 2026.**
+3. Notebook 02 (the binary link and the crossover). **Deferred until roadmap B completes**, so it
+   teaches the final operating-point comparison rather than an interim one.
+4. Notebook 03 (detection versus identification). Follows notebook 02, and can now rest on the
+   settled C26 rather than the withdrawn C13.
+5. Site page linking the sequence. **Done 7 Sept 2026**: `docs/index.md` is a readable front page
+   and `docs/where-we-are.md` is the plain-language status, both checked against the ledger by
+   `tests/test_public_prose.py`.
 
-Only step 1 is in scope for `repo-v0.2.0`. The version is set **before** certification, so the
+Only step 1 was in scope for `repo-v0.2.0`. The version is set **before** certification, so the
 tagged commit declares its own version — the one avoidable defect of `repo-v0.1.0`, whose
 `CITATION.cff` still reads `0.0.0-seed`.
 
