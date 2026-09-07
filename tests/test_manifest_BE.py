@@ -46,6 +46,31 @@ def test_no_ambiguous_C_bar_field_survives_anywhere():
     assert '"C_bar"' not in blob, "an ambiguous C_bar field is back in the manifest"
 
 
+def test_declared_extremum_probabilities_are_recomputed_not_transcribed():
+    """A key-name check let stale PROSE quoting the withdrawn 0.8 point survive a re-lock.
+    Every declared p0 is now recomputed from its own contrast, and the action-set note must
+    quote the operating points that are actually adopted."""
+    shot = MANIFEST["shot_stack"]
+    for key in ("operating_point_pilot", "operating_point_second"):
+        op = shot[key]
+        assert op["extremum_p0"] == pytest.approx((1 - op["C_eff"]) / 2), f"{key}: p0 disagrees with its own C_eff"
+    note = shot["action_set"]["note"]
+    for op in ("operating_point_pilot", "operating_point_second"):
+        p0 = shot[op]["extremum_p0"]
+        assert f"{p0:.2f}" in note, f"action-set note does not quote p0 = {p0:.2f} for {op}"
+    # the note may narrate its own correction; only the live statement is constrained
+    live = note.split("Corrected")[0]
+    assert "0.10" not in live, "action-set note still states the withdrawn 0.8 point's p0 as live"
+    assert "0.8" not in live, "action-set note still states the withdrawn contrast as live"
+
+
+def test_terminology_rule_is_recorded_and_the_two_names_are_distinct():
+    """Calling both formulas 'leading order' would recreate the ambiguity the split removed."""
+    term = MANIFEST["terminology"]
+    assert "strict O(s^4) asymptote" in term and "slope-resummed weak-correlation rate" in term
+    assert "NEVER both called" in term["rule"]
+
+
 def test_identifiability_stack_matches_run7():
     src = open(os.path.join(ROOT, "analysis", "runs", "sid_run7.py"), encoding="utf-8").read()
     ident = MANIFEST["identifiability_stack"]

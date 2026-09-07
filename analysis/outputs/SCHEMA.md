@@ -112,6 +112,19 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
 - `res7B_servo.json` — rows [kappa, Ceff_slope_parity, Ceff_slope_full, Ceff_var_parity, Ceff_var_full]; C1=C2=0.9; variance channel at s=0.3. `kappa = "positive-infinity"` is the perfect-oscillator limit, the last row: a known limiting case the calculation deliberately visits, carried as the declared sentinel string rather than as null (which would claim the value is absent) or as the JSON-invalid token Infinity. `sid_run7.py` draws it at 100 on the symlog axis.
 Missing as files (printed only): crossover table (C05), calibration slack table (C10), bonus table (C15) — flagged [unreproduced-from-file] in the ledger; step 2 of the work plan stores them.
 
+- `res9_identifiability_T2.json` — **roadmap E**, first published 7 Sept 2026. Object with keys
+  `schema`, `units`, `regimes`, `determinism`, `supersedes`, `regression_vs_res7A`, `run`, `rows`.
+  36 rows over C_0 ∈ {0.4, 0.5, 0.9} × η₀ ∈ {0.02, 0.05, 0.10} × τ_c/T₂ ∈ {0.05, 0.2, 1.0, 5.0},
+  each an object carrying `C_0`, `regime` (`principal` for 0.4 and 0.5, `servo-context` for 0.9),
+  `eta_0`, `tau_c_over_T2`, `I_unc`, `I_A`, `I_B`, `I_ref`, `DeltaGamma_over_Gamma_hat`,
+  `DeltaGamma_over_2eta0_Gamma_hat`, `class_A_points_passing`/`_total`, and an `optimizer` block with
+  all three L-BFGS-B starts (x0, solution, objective, convergence status, iterations, message), the
+  selected index, the across-start spread and the tolerance options used.
+  **Every quantity is dimensionless in T₂ and information is per shot; this run prices no dead time
+  and contains no cycle time.** It supersedes section A of `sid_run7.py` for the v2.0 record;
+  `res7A_identifiability.json` is unchanged. The `servo-context` rows exceed the parity ceiling and
+  may not support the parity-regime headline.
+
 *Column relabelling, 7 Sept 2026.* The columns formerly named `I_lo`, `lo` and `I_mid_lo` are
 renamed `I_mid_strict` and `lo_strict`. **No stored value changed.** They always held the strict
 O(s^4) asymptote 1/2 Cbar^4 s^4 Sum a_k^2, while the name `lo` and one figure label attributed them

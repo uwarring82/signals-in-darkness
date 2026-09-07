@@ -20,8 +20,8 @@
   state: open
   gates_freeze: false
 - id: E
-  title: Identifiability in dimensionless form with C_0=0.5 added as the second principal-regime slice and ALL THREE calibration uncertainties eta_0 in {0.02,0.05,0.10} (D3). Per-shot over tau_c/T2; prices no dead time. C_0=0.9 rows kept as servo context only.
-  state: open
+  title: Identifiability in dimensionless form - COMPLETE 7 Sept 2026. res9_identifiability_T2.json, 36 rows over C_0 in {0.4,0.5,0.9} x eta_0 in {0.02,0.05,0.10} x tau_c/T2 in {0.05,0.2,1,5}, per-shot, no dead time, regime-labelled in the output. C13 restated dimensionlessly with three corrections. Regression against res7A: 0 breaches, 2 rows where res7A is under-converged. See notes/2026-09-07-note-15-roadmap-E.md
+  state: complete
   gates_freeze: true
 - id: F
   title: Model-consistency — validate the binary comparator against an exact ARMA(1,1) latent likelihood at a few finite-window points. The committed HMM is AR(1) in the phase, exact only for point sampling; the finite-window integrated phase is ARMA(1,1). Not a prior-art gate; resolve before the v2.0 manuscript freezes.

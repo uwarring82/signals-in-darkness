@@ -17,7 +17,10 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "reproducti
 os.makedirs(OUT, exist_ok=True)
 
 # ================= A. tau-scan identifiability =================
-T2, td = 10.0, 1.0
+T2 = 10.0                 # sid_run9.py supersedes section A in dimensionless T2 units.
+# There is no dead time in this run: an unused td = 1.0 was removed 7 Sept 2026, because
+# assigning it invited the reading that this axis prices dead time. It does not; res7A is
+# nats PER SHOT (SCHEMA.md:111).
 gs = 0.5/T2
 def s2_of(tau, tc): return gs*gs*2*(tc*tau - tc*tc*(1-math.exp(-tau/tc)))
 def pd(Cc): return (1-Cc)/2          # dark-fringe probability for contrast Cc
@@ -49,7 +52,7 @@ for C0 in (0.4, 0.9):
             I_ref = max(DB(pd(C0*math.exp(-ch-x/2)), pd(C0*math.exp(-ch))) for ch, x in zip(chihat, s2))
             dG = gs*gs*tc            # extra dephasing rate in the tau >> tau_c limit
             rows.append((C0, eta0, tc, I_unc, I_A, I_B, I_ref, dG/(2*eta0*Gam)))
-            print(f"C0={C0} eta0={eta0:.2f} tc/td={tc:5.1f}: unconstrained={I_unc:.2e}  classA={I_A:.2e}  classB={I_B:.2e}  "
+            print(f"C0={C0} eta0={eta0:.2f} tau_c={tc:5.1f} (=tau_c/T2 {tc/T2:.2f}): unconstrained={I_unc:.2e}  classA={I_A:.2e}  classB={I_B:.2e}  "
                   f"best-single-tau={I_ref:.2e}   DeltaGamma/(2 eta0 Gamma)={dG/(2*eta0*Gam):5.2f}")
 sid_repro.write_json(os.path.join(OUTD, "res7A_identifiability.json"), rows, allow_nan=False)
 

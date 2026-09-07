@@ -94,10 +94,11 @@
   output: analysis/outputs/res6_policies.json
   errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - 0.98x is 1299.03/1332.19 and the denominator is the withdrawn C18 benchmark entry)
 - id: C13
-  statement: tau-scan identifiability — pointwise band gives zero retained information at tau_c <~ T2/5; Markov-parametric class retains 2e-3 to 2e-2 there and 20-50 % (eta0=2 %) for tau_c >~ T2; general fast-noise criterion Delta Gamma_phi > 2 eta0 Gamma_hat
+  errata: notes/2026-09-07-note-15-roadmap-E.md
+  statement: tau-scan identifiability, stated dimensionlessly (roadmap E, 7 Sept 2026; supersedes the T2-threshold wording). Criterion Delta Gamma_phi / Gamma_hat > 2 eta0, with Delta Gamma_phi/Gamma_hat = (g sigma_x T2)^2 (tau_c/T2) = 0.25 tau_c/T2 on the committed grid. Pointwise band retains ZERO at tau_c/T2 = 0.05 for every eta0, and at tau_c/T2 = 0.2 for eta0 >= 0.05 - but NOT at tau_c/T2 = 0.2 with eta0 = 0.02, where it retains 3.6e-3 of the unconstrained rate with 21 of 40 tau points passing the separation guard; the earlier unqualified 'zero at tau_c <~ T2/5' was wrong at the boundary. Markov-parametric class retains 2.1e-3 to 3.1e-2 at tau_c/T2 <= 0.2 (2.1e-3 to 2.3e-2 over principal-regime contrasts C_0 = 0.4 and 0.5 alone), correcting the published 2e-3 to 2e-2; and 38-53 % at eta0 = 2 % for tau_c/T2 >= 1, correcting the published 20-50 %.
   status: result
-  note: notes/2026-09-02-note-03.md#4; note-03a E4
-  run: analysis/runs/sid_run7.py (A)
+  note: notes/2026-09-02-note-03.md#4; note-03a E4; notes/2026-09-07-note-15-roadmap-E.md
+  run: analysis/runs/sid_run9.py (supersedes analysis/runs/sid_run7.py section A)
   seed_ref: none (deterministic)
   output: analysis/outputs/res7A_identifiability.json
 - id: C14
