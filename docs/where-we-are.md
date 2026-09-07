@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Current research state"
+---
+
 # Where we are
 
 *Plain-language status, 7 September 2026. Written for a reader with no background in sequential
@@ -8,6 +13,21 @@ the record without a test failing.*
 *This page is a **view**, not a source. Every number lives in the ledger or an output file; nothing
 is computed here. For the technical record see the [status table](status.md), the
 [roadmap](roadmap.md), and the notes and labbook in the repository.*
+
+<div class="status-grid compact" aria-label="Current claim status">
+  <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="result">14</strong><span>supported results</span>
+  </a>
+  <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="pilot">1</strong><span>pilot result</span>
+  </a>
+  <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="open">4</strong><span>open claims</span>
+  </a>
+  <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="withdrawn">7</strong><span>withdrawn claims</span>
+  </a>
+</div>
 
 ---
 

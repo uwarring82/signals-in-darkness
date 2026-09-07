@@ -13,6 +13,10 @@ Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in p
 
 ## Start here
 
+The **[project website](https://uwarring82.github.io/signals-in-darkness/)** presents the current
+research state in plain language and renders the tutorial notebooks with their committed figures
+and numerical outputs.
+
 New to the problem? [`tutorials/00_how_many_coin_tosses.ipynb`](tutorials/00_how_many_coin_tosses.ipynb)
 begins with a coin and an elementary question — how many tosses to detect a change in its bias? —
 and arrives at the project's own machinery without changing mathematical language. A single-shot

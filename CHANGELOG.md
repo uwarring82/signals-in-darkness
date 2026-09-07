@@ -3,6 +3,15 @@
 One line per tag, as the repository seed card requires. Tags that do not yet exist are
 listed under Planned and are not claimed as history.
 
+## Unreleased (after `repo-v0.2.0`)
+
+- Public site enhancement: tutorial notebooks 00 and 01 are rendered as readable GitHub Pages
+  articles directly from their committed cells and outputs. Six PNG outputs are extracted
+  byte-for-byte, numerical output remains visible, and calculation code is collapsed rather than
+  removed. The generator binds each page to its notebook hash and `--check` detects stale pages,
+  figures and orphaned assets. The front page and plain-language research-state page now carry
+  ledger-checked status counts. No scientific claim changed.
+
 ## Tags
 
 - **`repo-v0.2.0`** — tutorial workstream and certification closure. Opens the tutorial

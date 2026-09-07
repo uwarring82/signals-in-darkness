@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Signals in Darkness"
+---
+
 # Signals in Darkness
 
 **A quantum sensor is read out one bit at a time. Where you choose to read it determines what you
@@ -10,17 +15,45 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 
 ---
 
-## Start here
+## Current research state
+
+<div class="status-grid" aria-label="Current claim status">
+  <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="result">14</strong><span>supported results</span>
+  </a>
+  <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="pilot">1</strong><span>pilot result</span>
+  </a>
+  <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="open">4</strong><span>open claims</span>
+  </a>
+  <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
+    <strong data-status-count="withdrawn">7</strong><span>withdrawn claims</span>
+  </a>
+</div>
+
+The central result is a quantitative crossover: depending on how long the hidden noise remembers
+itself, either contrast loss or temporal correlation can reveal a change sooner. The project has
+also established where its simplified boundary ceases to be trustworthy, and when detecting a
+change is easier than identifying its cause. The finite-delay policy comparison remains open and
+is now moving to a second operating point.
+
+**[Read the plain-language research state →](where-we-are.md)**
+
+---
+
+## Learn through the coin
 
 **New to the subject?** Start with a coin toss. No physics required.
 
-- **[Where we are](where-we-are.md)** — plain-language status: the question, what is established,
-  what was withdrawn and why, what is still open, and what this work does not cover.
-- **[Tutorial 00 — How many coin tosses?](../tutorials/00_how_many_coin_tosses.ipynb)** — how much
-  evidence one binary observation carries, and why "how many samples?" is an underspecified question.
-- **[Tutorial 01 — When the coin has memory](../tutorials/01_when_the_coin_has_memory.ipynb)** — two
-  records with identical head counts and different ordering, and why a sensor can detect a change in
-  *balance* or a change in *memory*.
+- **[Tutorial 00 — How many coin tosses?](tutorials/00-how-many-coin-tosses.md)** — how much evidence
+  one binary observation carries, and why “how many samples?” is an underspecified question.
+  [Notebook source](../tutorials/00_how_many_coin_tosses.ipynb).
+- **[Tutorial 01 — When the coin has memory](tutorials/01-when-the-coin-has-memory.md)** — two records
+  with identical head counts and different ordering, and why a sensor can detect a change in
+  *balance* or a change in *memory*. [Notebook source](../tutorials/01_when_the_coin_has_memory.ipynb).
+- **[Browse the tutorial sequence](tutorials/index.md)** — readable pages with the committed figures
+  and numerical outputs visible, while calculation code stays available on demand.
 
 The tutorials are pedagogical views. They import the project's tested functions rather than
 restating them, and every conclusion in them is labelled either `worked example` — a teaching

@@ -115,6 +115,9 @@ def test_internal_links_resolve(name):
 def test_the_front_page_routes_to_the_tutorial_and_the_status_page():
     body = _text("index.md")
     assert "where-we-are.md" in body, "the front page does not link the plain-language status"
+    assert "tutorials/index.md" in body, "the front page does not link the readable tutorial shelf"
+    assert "tutorials/00-how-many-coin-tosses.md" in body
+    assert "tutorials/01-when-the-coin-has-memory.md" in body
     assert "00_how_many_coin_tosses.ipynb" in body
     assert "01_when_the_coin_has_memory.ipynb" in body
     for generated in ("status.md", "roadmap.md", "milestones.md", "reproduce.md", "feedback.md"):

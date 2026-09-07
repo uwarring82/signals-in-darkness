@@ -18,7 +18,9 @@ of the probability does.
 ## Reading them
 
 The notebooks are committed **with their outputs**, so they can be read on GitHub with nothing
-installed. To re-execute:
+installed. The [tutorial shelf](https://uwarring82.github.io/signals-in-darkness/tutorials/) provides
+a cleaner reading view: figures and numerical outputs remain visible while the calculation cells
+are collapsed by default. To re-execute:
 
 ```
 conda create -n sid-tutorial -c conda-forge python=3.12.14 pip
