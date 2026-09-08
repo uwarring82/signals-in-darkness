@@ -153,8 +153,9 @@ def cal_age(bank_ln, B, lo, hi, iters, seed0, R=CAL_R, refine=False):
             if mk <= 0:
                 break
             pts.append((h, math.log(mk)))
-            if abs(mk-GAMMA)/GAMMA <= ARL_ENVELOPE:
-                break
+        # As sid_policies.calibrate_refined: no early stop on a single noisy probe.
+        if pts:
+            h = min(pts, key=lambda pt: abs(pt[1]-target))[0]
     st = run_batch_age(bank_ln, B, None, h, 2*R, seed0+99, NULL_CAP, True)
     endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
     m = st.mean()

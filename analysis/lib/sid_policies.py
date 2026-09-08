@@ -275,8 +275,14 @@ def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=10
         if m <= 0:
             break
         pts.append((h, math.log(m)))
-        if abs(m - gamma) / gamma <= ARL_ENVELOPE:
-            break
+
+    # Do NOT stop on the first measurement that lands inside the envelope: at confirm_R the
+    # ARL estimate carries ~11 % standard error, so a single lucky probe can pass while the
+    # 2*confirm_R confirmation falls outside. Measured 8 Sept 2026 on switch@300, which
+    # stopped early and confirmed at +38 %. Instead run every step and take the h whose
+    # measured ARL is closest to the target in log space, which uses all the information.
+    if pts:
+        h = min(pts, key=lambda pt: abs(pt[1] - target))[0]
 
     m, se, nc = arl_of(bank, sched, h, 2 * confirm_R, seed + 99, cap=cap)
     return h, m, se, nc, endpoint, abs(m - gamma) / gamma <= ARL_ENVELOPE
