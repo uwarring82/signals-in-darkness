@@ -226,20 +226,23 @@ def calibrate(bank, sched, gamma, R=48, lo=1.0, hi=6.0, iters=5, seed=100):
 
 
 def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=100,
-                      confirm_R=64, cap=NULL_CAP_DEFAULT):
-    """Bisection, then a log-linear refinement inside the final interval, then confirmation.
+                      confirm_R=64, cap=NULL_CAP_DEFAULT, max_secant=4):
+    """Bisection, then a secant root-find on ln(ARL), then confirmation.
 
-    Plain bisection was not good enough at the pilot. Its probes use R=32, whose ARL estimate
+    Plain bisection is not good enough at the pilot. Its probes use R=32, whose ARL estimate
     carries ~15 % standard error, and null runs that hit the cap contribute the cap instead of
-    their true larger stopping time -- a downward bias that grows with h. A probe that
-    understates the ARL moves `lo` UP, so the two errors push the same way and the bisection
-    settles above the true crossing. Measured 8 Sept 2026: oracle-mid(tc=20) came back at
-    h*=4.671875 with ARL 44699 (+49 %), while ARL(4.300) = 34895 (+16 %) and ARL(4.000) = 26875.
-    The crossing is near 4.15; the bisection missed it by half a unit of h.
+    their true larger stopping time -- a downward bias growing with h. A probe that understates
+    the ARL moves `lo` UP, so noise and censoring push the same way and the bracket can end up
+    entirely ABOVE the true crossing.
 
-    The refinement measures both ends of the final interval at confirm_R and interpolates
-    ln(ARL) linearly in h, which is a good local model because ARL grows close to
-    exponentially in the threshold. Returns (h, ARL, se, capped, endpoint, within_envelope).
+    Interpolating inside that bracket cannot then help: measured 8 Sept 2026, oracle-mid(tc=20)
+    and learner-interleave-B10 both had their whole final interval above target, the
+    interpolation fraction fell outside [0,1], and the routine fell back to the midpoint -- so
+    the refined answer was bit-identical to the bisection's and still +37 % and +48 % off.
+
+    A secant step on ln(ARL) versus h is not confined to the bracket, so it can walk back down
+    to the crossing. ln(ARL) is close to linear in h, which is what makes it converge quickly.
+    Returns (h, ARL, se, capped, endpoint, within_envelope).
     """
     lo0, hi0 = lo, hi
     for i in range(iters):
@@ -251,13 +254,29 @@ def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=10
             lo = mid
     endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
 
-    m_lo, _, _ = arl_of(bank, sched, lo, confirm_R, seed + 50, cap=cap)
-    m_hi, _, _ = arl_of(bank, sched, hi, confirm_R, seed + 51, cap=cap)
+    # Two anchors for the secant, measured at higher replication than the bisection used.
+    pts = []
+    for k, h_k in enumerate((lo, hi)):
+        m_k, _, _ = arl_of(bank, sched, h_k, confirm_R, seed + 50 + k, cap=cap)
+        if m_k > 0:
+            pts.append((h_k, math.log(m_k)))
+    target = math.log(gamma)
+
     h = 0.5 * (lo + hi)
-    if m_lo > 0 and m_hi > 0 and m_hi != m_lo:
-        frac = (math.log(gamma) - math.log(m_lo)) / (math.log(m_hi) - math.log(m_lo))
-        if 0.0 <= frac <= 1.0:
-            h = lo + frac * (hi - lo)
+    for step in range(max_secant):
+        if len(pts) < 2:
+            break
+        (h1, y1), (h2, y2) = pts[-2], pts[-1]
+        if y2 == y1:
+            break
+        h = h1 + (target - y1) * (h2 - h1) / (y2 - y1)
+        h = min(max(h, lo0), hi0)                      # never leave the declared bracket
+        m, _, _ = arl_of(bank, sched, h, confirm_R, seed + 60 + step, cap=cap)
+        if m <= 0:
+            break
+        pts.append((h, math.log(m)))
+        if abs(m - gamma) / gamma <= ARL_ENVELOPE:
+            break
 
     m, se, nc = arl_of(bank, sched, h, 2 * confirm_R, seed + 99, cap=cap)
     return h, m, se, nc, endpoint, abs(m - gamma) / gamma <= ARL_ENVELOPE
