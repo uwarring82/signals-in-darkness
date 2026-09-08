@@ -93,10 +93,13 @@ def main():
     print(f"paired bootstrap, {a.draws} draws, replicate indices resampled jointly within each")
     print("source so the shared-seed pairing is preserved; the maximum over tau_c is recomputed")
     print("inside every resample, so selection bias is included.\n")
-    print(f"{'policy':30s}{'worst case':>12}{'2.5%':>9}{'97.5%':>9}")
+    # The median is printed because a MAXIMUM of noisy quantities is biased upward: whichever
+    # tau_c fluctuates high is the one reported. median > point is that bias, made visible
+    # rather than assumed away.
+    print(f"{'policy':30s}{'worst case':>12}{'median':>9}{'2.5%':>9}{'97.5%':>9}")
     for p, v in sorted(point.items(), key=lambda x: x[1]):
-        lo, hi = np.percentile(draws[p], [2.5, 97.5])
-        print(f"{p:30s}{v:12.2f}{lo:9.2f}{hi:9.2f}")
+        lo, med, hi = np.percentile(draws[p], [2.5, 50, 97.5])
+        print(f"{p:30s}{v:12.2f}{med:9.2f}{lo:9.2f}{hi:9.2f}")
 
     ref = "extremum-only"
     print(f"\ndifference from {ref} (positive = the policy is BETTER), paired within source:")

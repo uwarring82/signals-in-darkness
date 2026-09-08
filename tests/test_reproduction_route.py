@@ -108,9 +108,13 @@ def test_reported_work_is_backed_by_simulation():
 def _stub_delay(monkeypatch):
     calls = []
 
-    def stub(bank, sched, true_tcc, h, R, seed, cap=100_000):
+    def stub(bank, sched, true_tcc, h, R, seed, cap=100_000, return_runs=False):
         calls.append((true_tcc, h))
-        return 1234.0, 56.0, 0
+        # Since 8 Sept 2026 the driver asks for per-replicate stopping times, which the paired
+        # bootstrap needs. The stub returns a constant series whose mean matches the mean it
+        # reports, so anything downstream that recomputes from the runs stays consistent.
+        out = (1234.0, 56.0, 0)
+        return (*out, [1234.0] * R) if return_runs else out
 
     monkeypatch.setattr(sid_run6s, "delay_of", stub)
     return calls
