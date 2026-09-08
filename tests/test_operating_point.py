@@ -527,11 +527,19 @@ def test_no_result_claim_points_at_an_artifact_with_a_breaching_calibration():
                        if l.startswith("  status: ")), None)
         out = next((l.split(": ", 1)[1].strip() for l in blk.splitlines()
                     if l.startswith("  output: ")), "")
-        for name in re.findall(r"res6_policies[\w.]*\.json", out):
+        # res8 artifacts were ungated entirely until 8 Sept 2026: the driver had no envelope
+        # check and this invariant's pattern matched only res6, so switch@300 sat at +35.7 %
+        # unnoticed while a claim quoting its ratio was marked `result`.
+        for name in re.findall(r"res[68]_(?:policies|switch)[\w.]*\.json", out):
             path = os.path.join(ROOT, "analysis", "outputs", name)
             if not os.path.exists(path):
                 continue
-            cal = json.load(open(path, encoding="utf-8")).get("cal", {})
+            doc = json.load(open(path, encoding="utf-8"))
+            if "cal" in doc:
+                cal = doc["cal"]
+            else:
+                sw = doc.get("switch", doc)
+                cal = {f"switch@{B}": row for B, row in sw.items()}
             breaches = {k: v[1] for k, v in cal.items()
                         if abs(v[1] - 3.0e4) / 3.0e4 > P.ARL_ENVELOPE}
             checked += 1

@@ -9,7 +9,7 @@
 | sid_midfringe_rate_check_gp_numeric.png | sid_run2.py | **not yet in the archive** — `sid_run2.py` writes it under this name from 4 Sept 2026. Both scripts previously wrote `sid_midfringe_rate_check.png` with different curves, so the archived file depended on which ran last; the archived copy is `sid_run3.py`'s. It will appear the next time `sid_run2.py` is run, which the Reproduce path must do in any case (`sid_run3.py` consumes its output) |
 | sid_endpoint_check.png | sid_core.py (C) | current (single seed; see note 02 for the three-seed values) |
 | sid_check2_geomfit_vs_series.png | sid_run4.py | current |
-| sid_policy_delays.png | sid_fig_policy_delays.py from stored outputs | **withdrawn inputs** — plots the delay entries withdrawn as C18, including the τ_c/c = 20 benchmark every ratio divides by. The rebuilder refuses to run without `--acknowledge-withdrawn` |
+| sid_policy_delays.png | sid_fig_policy_delays.py from stored outputs | current — **rebuilt 8 Sept 2026** from `res6_policies_pilot_recal.json` and `res8_switch_pilot_recal.json`, whose calibrations are inside the ±30 % matched-ARL envelope. The version published before that date is **withdrawn**: it plotted the delays withdrawn as C18, whose τ_c/c = 20 benchmark is the withdrawn `oracle-mid(tc=20)` row that every ratio divides by. `switch@300` is excluded from the rebuilt figure and named in its output, having calibrated to +52.4 %; three successive methods failed to bring it inside. `--legacy --acknowledge-withdrawn` reproduces the historical figure deliberately. See notes/2026-09-08-note-21-paired-bootstrap.md |
 | sid_servo_effective_contrast.png | sid_run7.py | current (pilot) |
 
 ## Rebuilding
