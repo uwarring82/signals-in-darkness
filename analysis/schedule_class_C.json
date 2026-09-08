@@ -1,0 +1,72 @@
+{
+  "preregistration": "roadmap C finite schedule class",
+  "frozen": "2026-09-08, BEFORE any C result was computed",
+  "why_frozen": "Benchmark L3 selects the best schedule separately for each true tau_c. If the class were chosen after seeing which schedules did well, the selection would be made on the same noise it is then evaluated against, and the benchmark would be optimistically biased -- it would look stronger than it is, which for a BENCHMARK means the learner would look weaker than it is. Freezing the class removes that degree of freedom; separate selection and evaluation seeds remove the rest.",
+  "class": {
+    "constants": [
+      {
+        "name": "mid",
+        "theta": "THM"
+      },
+      {
+        "name": "ext",
+        "theta": "THX"
+      }
+    ],
+    "interleave": [
+      {
+        "name": "interleave-B1",
+        "block": 1
+      },
+      {
+        "name": "interleave-B5",
+        "block": 5
+      },
+      {
+        "name": "interleave-B10",
+        "block": 10
+      },
+      {
+        "name": "interleave-B50",
+        "block": 50
+      }
+    ],
+    "switch": [
+      {
+        "name": "switch@100",
+        "age": 100
+      },
+      {
+        "name": "switch@300",
+        "age": 300
+      },
+      {
+        "name": "switch@600",
+        "age": 600
+      },
+      {
+        "name": "switch@1000",
+        "age": 1000
+      },
+      {
+        "name": "switch@3000",
+        "age": 3000
+      }
+    ]
+  },
+  "size": 11,
+  "declared_members": "interleave B=1 and B=10, and switch@300 and switch@1000, are the members already measured in roadmap B; the remaining seven extend the class on a regular grid rather than being chosen for their performance.",
+  "seeds": {
+    "selection": "700 + int(tau_c) + operating-point offset",
+    "evaluation": "200 + int(tau_c) + operating-point offset (the same stream roadmap B used, so L3 is measured on the same realisations as L1 and L2)",
+    "why": "Choosing the best schedule on one seed stream and measuring it on another means the winner's measured delay is not the fluctuation that made it win."
+  },
+  "ladder": {
+    "L1": "best fixed endpoint knowing tau_c -- establishes improvement over constant operation",
+    "L2": "best robust precommitted schedule from roadmap B -- establishes whether posterior feedback adds value over scheduling WITHOUT feedback. Minimum bar to move item 4 out of the appendix.",
+    "L3": "tau_c-knowing, schedule-aware: best member of THIS class for each true tau_c, selected on the selection seeds and measured on the evaluation seeds. Supports finite-class regret language only.",
+    "L4": "globally optimal dynamic controller -- not attempted; 'oracle', 'optimal' and unqualified regret claims require it."
+  },
+  "falsifier": "A genuine oracle over the same class cannot systematically lose to the learner. If L3 loses to the posterior policy, that is a diagnostic of Monte-Carlo error, selection bias, or a class mismatch -- NOT a result -- and must be investigated before anything is claimed.",
+  "digest": "f2b79c930afbfc69"
+}

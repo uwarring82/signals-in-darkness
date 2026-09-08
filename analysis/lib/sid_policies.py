@@ -16,6 +16,8 @@ Provenance: moved verbatim from the prefix of analysis/runs/sid_run6s.py as it
             verified bit-for-bit against the five reproducible archive rows in
             notes/2026-09-03-note-04-reproduction-defect.md.
 """
+import hashlib
+import json
 import math
 from dataclasses import dataclass
 
@@ -149,6 +151,7 @@ class Bank:
             raise TypeError("Bank requires an explicit OperatingPoint; module-level C and s "
                             "were removed on 7 September 2026 (roadmap G)")
         self.op = op
+        self.tccs = list(tccs)
         s = op.s
         self.g = np.linspace(-L*s, L*s, M)
         self.prior = np.exp(-self.g**2/(2*s*s)); self.prior /= self.prior.sum()
@@ -163,8 +166,31 @@ class Bank:
     def p0(self, th): return 0.5*(1+self.op.C_eff*math.cos(th))
 
 
+def posterior_weights(bank, Lk):
+    """Posterior over the bank's tau_c components, from the accumulated per-component evidence.
+
+    Lk[r, k] is run r's log-likelihood under component k since the last reset. With a uniform
+    prior the posterior is softmax(Lk) along k. Returned per run, shape (R, bank.K).
+    """
+    m = Lk.max(1, keepdims=True)
+    w = np.exp(Lk - m)
+    return w / w.sum(1, keepdims=True)
+
+
 def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
-    """sched(n) -> theta. Returns stopping step per run (max_steps if not stopped). Mixture-LR CUSUM with reset."""
+    """Mixture-LR CUSUM with reset. Returns the stopping step per run (max_steps if not stopped).
+
+    The action rule is `sched`. By default it is called as sched(n) and sees only the step
+    index, which is why every policy in roadmap B is PRECOMMITTED and why C27 and C28 are
+    claims about scheduling rather than about learning.
+
+    A schedule may instead set `sched.needs_posterior = True`, in which case it is called as
+    sched(n, w, bank) with w the current posterior over the bank's tau_c components, shape
+    (R, bank.K). That is the only way an action can depend on what the filter has inferred.
+    Existing schedules are untouched and take the sched(n) path unchanged, so roadmap B's
+    numbers are unaffected -- asserted by the pilot preservation evidence.
+    """
+    wants_posterior = getattr(sched, "needs_posterior", False)
     STATS["run_batch_calls"] += 1
     r = np.random.default_rng(seed)
     C, s = bank.op.C_eff, bank.op.s        # read from the bank, never from module state
@@ -174,13 +200,28 @@ def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
         a_true = math.exp(-1/true_tcc); sd = s*math.sqrt(1-a_true*a_true); eps = r.normal(0, s, R)
     logK = math.log(bank.K)
     for n in range(max_steps):
-        th = sched(n); e1 = bank.e1[th]
-        if null:
-            y = r.random(R) < bank.p0(th)
+        if wants_posterior:
+            # Per-run actions: the posterior differs between runs, so theta does too.
+            thv = sched(n, posterior_weights(bank, Lk), bank)
+            e1arr = np.stack([bank.e1[float(x)] for x in np.unique(thv)])
+            uniq = {float(x): i for i, x in enumerate(np.unique(thv))}
+            e1 = e1arr[[uniq[float(x)] for x in thv]]                    # R x M
+            p0v = np.array([bank.p0(float(x)) for x in thv])
+            if null:
+                y = r.random(R) < p0v
+            else:
+                eps = a_true*eps + sd*r.normal(0, 1, R)
+                y = r.random(R) < 0.5*(1+C*np.cos(thv+eps))
+            ey = np.where(y[:, None], e1, 1-e1)                          # R x M
         else:
-            eps = a_true*eps + sd*r.normal(0, 1, R)
-            y = r.random(R) < 0.5*(1+C*np.cos(th+eps))
-        ey = np.where(y[:, None], e1[None, :], 1-e1[None, :])           # R x M
+            th = sched(n); e1 = bank.e1[th]
+            if null:
+                y = r.random(R) < bank.p0(th)
+            else:
+                eps = a_true*eps + sd*r.normal(0, 1, R)
+                y = r.random(R) < 0.5*(1+C*np.cos(th+eps))
+            ey = np.where(y[:, None], e1[None, :], 1-e1[None, :])        # R x M
+            p0v = None
         logz = np.empty((R, bank.K))
         for k in range(bank.K):
             al = alpha[k] @ bank.T[k]; al *= ey; z = al.sum(1); al /= z[:, None]
@@ -188,7 +229,10 @@ def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
         # mixture predictive: log sum_k pi_k exp(L_k + logz_k) - log sum_k pi_k exp(L_k)
         A = Lk + logz; mA = A.max(1, keepdims=True); num = mA[:, 0] + np.log(np.exp(A-mA).sum(1))
         mB = Lk.max(1, keepdims=True); den = mB[:, 0] + np.log(np.exp(Lk-mB).sum(1))
-        p0 = bank.p0(th); l0 = np.where(y, math.log(p0), math.log(1-p0))
+        if wants_posterior:
+            l0 = np.where(y, np.log(p0v), np.log(1-p0v))
+        else:
+            p0 = bank.p0(th); l0 = np.where(y, math.log(p0), math.log(1-p0))
         W += (num-den) - l0; Lk = A
         hit = active & (W >= h); stop[hit] = n+1; active &= ~hit
         STATS["simulated_steps"] += 1
@@ -310,6 +354,67 @@ def sched_mid(n): return THM
 
 
 def sched_ext(n): return THX
+
+
+def component_rates(bank, kmax=4000):
+    """Per-component information rate for each action, for the bank's tau_c candidates.
+
+    DETERMINISTIC BY CONSTRUCTION. The obvious choice, hmm_rate, is a Monte-Carlo estimate, and
+    putting a Monte-Carlo quantity inside an action RULE would make the policy itself
+    seed-dependent -- two runs of "the same" policy would take different actions. So the
+    mid-fringe rate uses the exact half-sum 1/2 sum_k r_k^2 with the exact lag correlations,
+    which is closed-form given the operating point, and the extremum uses the exact Bernoulli
+    divergence, which does not depend on tau_c at all.
+
+    This is a rate PROXY used to choose actions, not a claim about the achievable rate. C04
+    establishes that the spectral comparator tracks the exact binary rate; interpretation of the
+    resulting delays still uses the exact comparator (manifest pre_B_sequence step 5).
+
+    Returns (mid, ext): mid is per component, ext is scalar.
+    """
+    from sid_lib import I_ext_exact, rk_exact
+    C, s = bank.op.C_eff, bank.op.s
+    mid = np.array([0.5 * float(np.sum(rk_exact(C, s, math.exp(-1/tcc) ** np.arange(1, kmax))**2))
+                    for tcc in bank.tccs])
+    return mid, float(I_ext_exact(C, s))
+
+
+def make_posterior_theta(bank):
+    """Choose theta each shot by maximising the posterior-expected information rate.
+
+    The only policy in this archive whose action depends on what the filter has inferred.
+    Given the posterior w over the bank's tau_c components, the expected rate of reading at
+    mid-fringe is sum_k w_k * I_mid(tau_c_k); the extremum's rate does not depend on tau_c.
+    Read wherever the expectation is larger.
+
+    Actions are PER RUN: run 7 may have inferred a different tau_c from run 12 and will act
+    differently. That is the whole point, and it is why run_batch had to vectorise the action.
+    """
+    mid, ext = component_rates(bank)
+
+    def sched(n, w, bk):
+        return np.where(w @ mid > ext, THM, THX)
+
+    sched.needs_posterior = True
+    sched.rates = (mid, ext)
+    # The policy is a mathematical object, so it carries its own identity: the rate table it
+    # decides from, the formula that produced it, the tie-break, and a digest of all of it.
+    # Two runs claiming to be "the posterior policy" are the same policy only if this matches.
+    sched.identity = {
+        "policy": "posterior-expected-rate theta selection",
+        "version": 1,
+        "rate_formula_mid": "0.5 * sum_{j=1..3999} rk_exact(C_eff, s, a^j)^2, a = exp(-1/tau_c)",
+        "rate_formula_ext": "I_ext_exact(C_eff, s), independent of tau_c",
+        "deterministic": True,
+        "tie_break": "strict >; an exact tie selects the dark extremum (THX)",
+        "tccs": list(bank.tccs),
+        "rate_table_mid": [float(x) for x in mid],
+        "rate_table_ext": float(ext),
+        "operating_point": bank.op.as_dict(),
+    }
+    sched.identity["digest"] = hashlib.sha256(
+        json.dumps(sched.identity, sort_keys=True).encode()).hexdigest()[:16]
+    return sched
 
 
 def build_policies(op):
