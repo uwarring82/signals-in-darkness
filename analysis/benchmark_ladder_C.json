@@ -1,0 +1,111 @@
+{
+  "preregistration": "roadmap C benchmark ladder and comparison classes",
+  "frozen": "2026-09-08, BEFORE any C result was computed",
+  "supersedes": {
+    "digest": "f2b79c930afbfc69",
+    "commit": "e5f779a",
+    "why": "The first attempt defined L3's class as the eleven PRECOMMITTED schedules and then asserted that a genuine oracle cannot systematically lose to the learner. That falsifier was invalid: the posterior policy is outside a class of precommitted schedules, so beating it is the EXPECTED outcome if feedback helps, not a diagnostic. The action set was shared; the policy class was not."
+  },
+  "schedule_class": {
+    "frozen_digest": "f2b79c930afbfc69",
+    "members": {
+      "constants": [
+        {
+          "name": "mid",
+          "theta": "THM"
+        },
+        {
+          "name": "ext",
+          "theta": "THX"
+        }
+      ],
+      "interleave": [
+        {
+          "name": "interleave-B1",
+          "block": 1
+        },
+        {
+          "name": "interleave-B5",
+          "block": 5
+        },
+        {
+          "name": "interleave-B10",
+          "block": 10
+        },
+        {
+          "name": "interleave-B50",
+          "block": 50
+        }
+      ],
+      "switch": [
+        {
+          "name": "switch@100",
+          "age": 100
+        },
+        {
+          "name": "switch@300",
+          "age": 300
+        },
+        {
+          "name": "switch@600",
+          "age": 600
+        },
+        {
+          "name": "switch@1000",
+          "age": 1000
+        },
+        {
+          "name": "switch@3000",
+          "age": 3000
+        }
+      ]
+    },
+    "size": 11,
+    "note": "unchanged from e5f779a; only the COMPARISON classes below are corrected"
+  },
+  "eligibility": {
+    "rule": "A schedule whose null calibration falls outside the declared +-30 % matched-E0[T] envelope is INELIGIBLE: it is excluded from selection and from every comparison, and named with its miss wherever a result reports the class.",
+    "why": "A policy outside the envelope is not held to the same false-alarm rate, so its delay ratio is not comparable. Leaving it in silently would let an incomparable number win or lose a selection. Roadmap B already has an instance: switch@300 at the pilot calibrates to +52.4 % after three repair attempts.",
+    "predeclared": "eligibility is decided by the calibration alone, never by the delay result"
+  },
+  "L1": {
+    "name": "best fixed endpoint knowing tau_c",
+    "class": [
+      "mid",
+      "ext"
+    ],
+    "licenses": "improvement over CONSTANT operation"
+  },
+  "L2": {
+    "name": "best eligible robust precommitted schedule from roadmap B",
+    "class": [
+      "interleave-B1",
+      "interleave-B10",
+      "switch@300",
+      "switch@1000"
+    ],
+    "selection_rule": "the eligible member of that four-schedule class with the SMALLEST worst-case delay ratio over tau_c in {20,5,1}, selected on the 700 + int(tau_c) + offset streams and evaluated on 200 + int(tau_c) + offset",
+    "why_a_rule": "'best robust schedule from B' was underspecified and would have been chosen using B's own evaluation data, which is the selection bias this ladder exists to avoid",
+    "licenses": "whether posterior FEEDBACK adds value over scheduling WITHOUT feedback -- the minimum bar to move card item 4 out of the appendix"
+  },
+  "L3": {
+    "name": "tau_c-knowing selector over the frozen class PLUS the posterior policy",
+    "class_size": 12,
+    "class": "the eleven frozen schedules AND the posterior policy, identified by its digest",
+    "selection_rule": "for each true tau_c independently, the eligible member with the smallest mean delay on the 700 + int(tau_c) + offset streams; measured on 200 + int(tau_c) + offset",
+    "why_the_learner_is_in_the_class": "This is the repair. With the learner inside the class the selector can always choose it, so L3's ratio is <= the learner's at EVERY tau_c and therefore its worst case is <= the learner's. The learner cannot beat L3 by construction, which is what makes a loss diagnostic rather than expected.",
+    "licenses": "FINITE-CLASS regret language only, over this twelve-member class"
+  },
+  "L4": {
+    "name": "globally optimal dynamic controller",
+    "attempted": false,
+    "licenses": "'oracle', 'optimal' and unqualified regret claims require this and it is not attempted; no C result may use those words"
+  },
+  "falsifier": "L3 contains the learner, so L3 <= learner at every tau_c by construction. If the measured L3 worst case EXCEEDS the learner's, that is impossible under correct execution and diagnoses Monte-Carlo error, a selection/evaluation seed mistake, or an eligibility bug. It is not a result and must be investigated before anything is claimed.",
+  "seeds": {
+    "selection": "700 + int(tau_c) + operating-point offset",
+    "evaluation": "200 + int(tau_c) + operating-point offset",
+    "why": "the schedule that wins is chosen on noise it is not then measured against; evaluation reuses roadmap B's stream so L1, L2 and L3 are measured on the same realisations"
+  },
+  "digest": "55b8a915e8844775"
+}

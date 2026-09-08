@@ -68,5 +68,10 @@
     "L4": "globally optimal dynamic controller -- not attempted; 'oracle', 'optimal' and unqualified regret claims require it."
   },
   "falsifier": "A genuine oracle over the same class cannot systematically lose to the learner. If L3 loses to the posterior policy, that is a diagnostic of Monte-Carlo error, selection bias, or a class mismatch -- NOT a result -- and must be investigated before anything is claimed.",
-  "digest": "f2b79c930afbfc69"
+  "digest": "f2b79c930afbfc69",
+  "superseded_by": {
+    "file": "analysis/benchmark_ladder_C.json",
+    "why": "this file's L3 definition and falsifier were logically invalid: L3's class held only precommitted schedules while the posterior policy sits outside it, so the learner beating L3 is expected if feedback helps rather than diagnostic. The eleven-member SCHEDULE CLASS below is unchanged and still frozen; only the comparison classes moved.",
+    "unchanged": "the eleven-member schedule class and its digest"
+  }
 }
