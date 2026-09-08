@@ -37,8 +37,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 
 import sid_repro
-from sid_policies import (CAL_BRACKET, GAMMA, SEED_OFFSET, STATS, THM, THX, Bank,
-                          operating_point_from_argv, state_name_for)
+from sid_policies import (ARL_ENVELOPE, CAL_BRACKET, GAMMA, SEED_OFFSET, STATS, THM, THX,
+                          Bank, operating_point_from_argv, state_name_for)
 
 # There are deliberately NO module-level C and s aliases here. An earlier version of this
 # fix removed the `from sid_policies import C, s` and then immediately rebuilt the same
@@ -70,7 +70,10 @@ def run_config(op, op_name):
             "gamma": GAMMA, "R": CAL_R, "iters": iters, "bracket": [lo, hi],
             "seed_offset": SEED_OFFSET[op_name], "bank_tccs": BANK_TCCS,
             "delay_tccs": list(DELAY_TCCS), "null_cap": NULL_CAP, "delay_cap": DELAY_CAP,
-            "seeds": CAL_SEEDS, "B_values": list(B_VALUES)}
+            "seeds": CAL_SEEDS, "B_values": list(B_VALUES),
+            "method": "secant-refined" if op_name.endswith("_recal") else "bisection",
+            "confirm_R": CONFIRM_R, "max_secant": MAX_SECANT, "arl_envelope": ARL_ENVELOPE,
+            "secant_seed_schedule": "anchors seed0+50,+51; secant steps seed0+60..; confirm seed0+99"}
 T0 = time.time()
 
 
@@ -112,7 +115,10 @@ def run_batch_age(bank, B, true_tcc, h, R, seed, max_steps, null):
     return stop
 
 
-def cal_age(bank_ln, B, lo, hi, iters, seed0, R=CAL_R):
+CONFIRM_R, MAX_SECANT = 64, 4
+
+
+def cal_age(bank_ln, B, lo, hi, iters, seed0, R=CAL_R, refine=False):
     """As sid_policies.calibrate, for the age-based schedule. Returns the bracket endpoint too.
 
     The bracket is passed in rather than hard-coded: it duplicated calibrate's pilot-era
@@ -126,9 +132,34 @@ def cal_age(bank_ln, B, lo, hi, iters, seed0, R=CAL_R):
         if m > GAMMA: hi = m_
         else: lo = m_
     h = 0.5*(lo+hi)
+    if refine:
+        # Same secant root-find as sid_policies.calibrate_refined. Until 8 Sept 2026 this
+        # driver had neither the refinement NOR an envelope gate, so a *_recal run silently
+        # produced plain-bisection thresholds identical to the un-recalibrated ones.
+        pts = []
+        for k, hk in enumerate((lo, hi)):
+            mk = run_batch_age(bank_ln, B, None, hk, CONFIRM_R, seed0+50+k, NULL_CAP, True).mean()
+            if mk > 0:
+                pts.append((hk, math.log(mk)))
+        target = math.log(GAMMA)
+        for step in range(MAX_SECANT):
+            if len(pts) < 2:
+                break
+            (h1, y1), (h2, y2) = pts[-2], pts[-1]
+            if y2 == y1:
+                break
+            h = min(max(h1 + (target-y1)*(h2-h1)/(y2-y1), lo0), hi0)
+            mk = run_batch_age(bank_ln, B, None, h, CONFIRM_R, seed0+60+step, NULL_CAP, True).mean()
+            if mk <= 0:
+                break
+            pts.append((h, math.log(mk)))
+            if abs(mk-GAMMA)/GAMMA <= ARL_ENVELOPE:
+                break
     st = run_batch_age(bank_ln, B, None, h, 2*R, seed0+99, NULL_CAP, True)
     endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
-    return h, st.mean(), st.std()/math.sqrt(2*R), int((st >= NULL_CAP).sum()), endpoint
+    m = st.mean()
+    return (h, m, st.std()/math.sqrt(2*R), int((st >= NULL_CAP).sum()), endpoint,
+            abs(m-GAMMA)/GAMMA <= ARL_ENVELOPE)
 
 
 def main(argv):
@@ -148,6 +179,7 @@ def main(argv):
     bank_ln = Bank(BANK_TCCS, op)
     want = sid_repro.run_metadata(run_config(op, op_name))
     bracket_failures = []
+    envelope_failures = []
 
     raw = sid_repro.load_checkpoint(state_name, resume) or {}
     # Checkpoints written before roadmap G were a flat {B: row} map with no identity. They
@@ -179,7 +211,11 @@ def main(argv):
         if str(B) in state:
             cached += 1; log(f"resumed switch@{B}"); continue
         lo, hi, iters = CAL_BRACKET[op_name]
-        h, m, se, ncap, endpoint = cal_age(bank_ln, B, lo, hi, iters, 300 + SEED_OFFSET[op_name])
+        h, m, se, ncap, endpoint, inside = cal_age(bank_ln, B, lo, hi, iters,
+                                                   300 + SEED_OFFSET[op_name],
+                                                   refine=op_name.endswith("_recal"))
+        if not inside:
+            envelope_failures.append((f"switch@{B}", h, m, 100*(m-GAMMA)/GAMMA))
         log(f"switch@{B}: h*={h:.3f} ARL={m:.0f}+-{se:.0f} (capped {ncap}/{2*CAL_R})")
         if endpoint:
             bracket_failures.append((f"switch@{B}", endpoint, h, m))
@@ -191,7 +227,7 @@ def main(argv):
             st = run_batch_age(bank_ln, B, tcc, h, 64, 500+int(tcc)+SEED_OFFSET[op_name],
                                DELAY_CAP, False)
             nc = int((st >= DELAY_CAP).sum())
-            row[str(tcc)] = [st.mean(), st.std()/8, nc]
+            row[str(tcc)] = [st.mean(), st.std()/8, nc, st.tolist()]
             log(f"   tc/c={tcc:4.0f}: delay={st.mean():6.0f} +- {st.std()/8:4.0f} (capped {nc}/64)")
         state[str(B)] = [h, m, row]
         sid_repro.save_checkpoint(state_name, {"switch": state, "meta": want})
@@ -217,6 +253,13 @@ def main(argv):
     status = sid_repro.report(computed, cached, verdicts, n_pass, n_fail, time.time()-T0)
     if published is None:
         print(f"\nNOT A COMPARISON: no archived reference for operating point {op_name!r}.")
+    if envelope_failures:
+        print(f"\nARL ENVELOPE BREACHES ({len(envelope_failures)}): a policy outside "
+              f"+-{100*ARL_ENVELOPE:.0f} % is not held to the same false-alarm rate as the "
+              f"others, so ratios built on it are incomparable.", file=sys.stderr)
+        for nm, h, m, pct in envelope_failures:
+            print(f"  {nm}: h*={h:.6f}, ARL={m:.0f} ({pct:+.1f} %)", file=sys.stderr)
+        status = status or 4
     if bracket_failures:
         print(f"\nCALIBRATION BRACKET FAILURES ({len(bracket_failures)}):", file=sys.stderr)
         for name, end, h, m in bracket_failures:

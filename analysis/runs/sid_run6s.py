@@ -49,6 +49,7 @@ def log(*a):
 
 
 CAL_R = 32
+CONFIRM_R, MAX_SECANT = 64, 4
 BANK_TCCS = {"oracle": [20.0, 5.0, 1.0], "learner": [1.0, 4.0, 10.0, 25.0]}
 DELAY_TCCS = (20.0, 5.0, 1.0)
 NULL_CAP, DELAY_CAP = 150_000, 100_000
@@ -63,7 +64,14 @@ def cal_config(policy_names, op, op_name):
     checkpoint without complaint.
     """
     lo, hi, iters = CAL_BRACKET[op_name]
+    refined = op_name.endswith("_recal")
     return {"operating_point": op.as_dict(), "operating_point_name": op_name,
+            "method": "secant-refined" if refined else "bisection",
+            "confirm_R": CONFIRM_R if refined else None,
+            "max_secant": MAX_SECANT if refined else None,
+            "arl_envelope": ARL_ENVELOPE,
+            "secant_seed_schedule": ("anchors seed+50,+51; secant steps seed+60..; confirm seed+99"
+                                     if refined else None),
             "gamma": GAMMA, "R": CAL_R, "iters": iters, "bracket": [lo, hi],
             "seed_offset": SEED_OFFSET[op_name], "bank_tccs": BANK_TCCS,
             "delay_tccs": list(DELAY_TCCS), "null_cap": NULL_CAP, "delay_cap": DELAY_CAP,
@@ -168,7 +176,8 @@ def main(argv):
             if op_name.endswith("_recal"):
                 h, m, se, nc, endpoint, inside = calibrate_refined(
                     bk, sc, GAMMA, R=CAL_R, lo=lo, hi=hi, iters=iters,
-                    seed=100 + SEED_OFFSET[op_name])
+                    seed=100 + SEED_OFFSET[op_name], confirm_R=CONFIRM_R,
+                    max_secant=MAX_SECANT)
             else:
                 h, m, se, nc, endpoint = calibrate(bk, sc, GAMMA, R=CAL_R, lo=lo, hi=hi,
                                                   iters=iters, seed=100 + SEED_OFFSET[op_name])
@@ -206,9 +215,10 @@ def main(argv):
                 if name not in source:
                     log(f"skipping {name}: no threshold for it")
                     continue
-                m, se, nc = delay_of(bk, sc, true_tcc, source[name][0], 64,
-                                    200 + int(true_tcc) + SEED_OFFSET[op_name], cap=DELAY_CAP)
-                row[name] = [m, se, int(nc)]
+                m, se, nc, runs = delay_of(bk, sc, true_tcc, source[name][0], 64,
+                                           200 + int(true_tcc) + SEED_OFFSET[op_name],
+                                           cap=DELAY_CAP, return_runs=True)
+                row[name] = [m, se, int(nc), runs]
                 state.setdefault("meta", {})["operating_point"] = op.as_dict()
                 sid_repro.save_checkpoint(state_name, state)
                 computed += 1

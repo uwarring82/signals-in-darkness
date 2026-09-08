@@ -282,9 +282,18 @@ def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=10
     return h, m, se, nc, endpoint, abs(m - gamma) / gamma <= ARL_ENVELOPE
 
 
-def delay_of(bank, sched, true_tcc, h, R, seed, cap=100_000):
+def delay_of(bank, sched, true_tcc, h, R, seed, cap=100_000, return_runs=False):
+    """Detection delay. With return_runs, also gives the per-replicate stopping times.
+
+    Those are needed because policies at one tau_c share a seed, so their runs are PAIRED and
+    marginal standard errors do not describe the uncertainty of a difference between them.
+    They are also needed because the headline statistic is a maximum over three correlation
+    times, and a maximum of noisy quantities is biased upward by selection. Neither effect is
+    visible from (mean, se) alone.
+    """
     st = run_batch(bank, sched, true_tcc, h, R, seed, cap, False)
-    return st.mean(), st.std()/math.sqrt(R), (st >= cap).sum()
+    out = (st.mean(), st.std()/math.sqrt(R), (st >= cap).sum())
+    return (*out, st.tolist()) if return_runs else out
 
 
 # ---------------- the seven pilot policies ----------------
