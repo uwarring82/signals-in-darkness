@@ -16,16 +16,16 @@ is computed here. For the technical record see the [status table](status.md), th
 
 <div class="status-grid compact" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">18</strong><span>supported results</span>
+    <strong data-status-count="result">16</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
   </a>
   <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="open">1</strong><span>open claim</span>
+    <strong data-status-count="open">4</strong><span>open claims</span>
   </a>
   <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="withdrawn">7</strong><span>withdrawn claims</span>
+    <strong data-status-count="withdrawn">8</strong><span>withdrawn claims</span>
   </a>
 </div>
 
@@ -74,7 +74,8 @@ precedent rather than claiming it.
 detection strategy raises the alarm soonest in its *worst* case is not a fixed answer. At the first
 operating point the simple fixed choice — always read at the dark extremum — wins, and no hedging
 schedule beats it. At a second point it loses badly, and four of five hedges beat it, the best by
-nearly a factor of two. What makes this more than a numerical curiosity is the cleanest pair in it:
+nearly a factor of two. That second point is the part that is established; whether the *first*
+point really behaves the other way is still open, because one strategy there is mis-tuned. What makes this more than a numerical curiosity is the cleanest pair in it:
 two strategies calibrated to the *same* accuracy, 1.9× apart. A caution the record insists on: every
 schedule tested was **fixed in advance**. None of them watches the data and decides what to do next.
 So this says that committing to a robust schedule pays where a single fixed choice does not — it
@@ -102,7 +103,7 @@ results (C19, C20). C10 and C25 concern how well the theory predicts actual dete
 
 ## What was corrected or withdrawn
 
-Seven claims are `withdrawn`. The project treats this as ordinary, and none of them was withdrawn
+Eight claims are `withdrawn`. The project treats this as ordinary, and none of them was withdrawn
 because someone else pointed it out.
 
 - **C01** claimed an accuracy bound that held regardless of contrast. It does not — the error
@@ -119,6 +120,10 @@ because someone else pointed it out.
   because they could not be reproduced. Everything that depended on them is marked.
 - **C22** withdrew two figure overlays that overstated where the theory was valid.
 - **C16** withdrew a scaling argument from an early draft.
+- **C12** said a mixed-model detector paid no measurable price against one that already knew the
+  answer. At the shortest correlation time it pays **1.60×**, and that measurement is made where
+  both detectors *are* properly matched, so it is not a quibble about tuning. Replaced by **C29**,
+  which says where the claim holds and, just as importantly, where it declines to say anything.
 
 Two further corrections did not need a withdrawal. A published comparison quoted the wrong one of
 two similar formulas, and now quotes the right one (C25). And the correlator at the heart of the
@@ -141,11 +146,14 @@ is not quite the simple process the simulator assumes. F is not expected to move
 number, but it has not been run, so that expectation is not a guarantee; what it certainly gates is
 how strongly the manuscript may word one claim.
 
-**Open claims.** Only one remains. **C09**, **C11** and **C12** were open because every ratio they
-quoted divided by a benchmark that had been withdrawn — not because anyone doubted them. Re-running
-the whole pilot chain on its own fresh thresholds removed that dependency, and all three are now
-supported, with corrected numbers, because replacing a withdrawn benchmark changes what it
-normalises. **C24** concerns a small extra correlation effect in the extremum stream. Its proposed ceiling of
+**Open claims.** **C09**, **C11** and **C28** turn on comparisons made at one particular noise
+correlation time, and at that setting one of the strategies being compared is not actually being
+held to the agreed false-alarm rate — it raises far fewer false alarms than intended, which makes it
+look slower than it is. Until that is recalibrated, those comparisons are not like-for-like and the
+claims stay open. **C24** concerns a small extra correlation effect whose proposed ceiling is not yet established. Re-running the whole pilot chain did
+remove a *different* problem — every ratio used to divide by a number that had been withdrawn — but
+repairing where a number came from is not the same as repairing how well it was tuned, and only the
+first was fixed. **C24** concerns a small extra correlation effect in the extremum stream. Its proposed ceiling of
 6 %, in the high-contrast long-correlation corner only, is **not yet established** — the claim is
 open, so the effect is at present unbounded rather than bounded. **C14** remains `pilot`: it holds in a
 simplified servo model only.

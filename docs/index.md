@@ -19,16 +19,16 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 
 <div class="status-grid" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">18</strong><span>supported results</span>
+    <strong data-status-count="result">16</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
   </a>
   <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="open">1</strong><span>open claim</span>
+    <strong data-status-count="open">4</strong><span>open claims</span>
   </a>
   <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="withdrawn">7</strong><span>withdrawn claims</span>
+    <strong data-status-count="withdrawn">8</strong><span>withdrawn claims</span>
   </a>
 </div>
 
@@ -85,7 +85,7 @@ test — including the entries recording mistakes.
 - **`withdrawn`** — believed at some point, now known to be wrong. The original statement is kept,
   marked, and pointed at whatever replaced it.
 
-Withdrawn claims are not deleted, and there are seven of them. Reading them is the fastest way to
+Withdrawn claims are not deleted, and there are eight of them. Reading them is the fastest way to
 understand what this project actually knows.
 
 ---

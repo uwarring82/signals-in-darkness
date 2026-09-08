@@ -119,6 +119,17 @@ on macOS x86_64 **under Rosetta 2** on an Apple M1 Pro host. Native arm64 is unt
   `res6_policies_stress.json` and `res8_switch_stress.json` on 7 Sept 2026, so the stress point
   now HAS a reference and later stress runs are compared against it in the ordinary way; the
   flag was needed only for the run that created it.
+- **Recalibration profiles.** `pilot_recal` is the SAME physical operating point as `pilot`,
+  calibrated with `sid_policies.calibrate_refined` instead of plain bisection, and it writes
+  `res6_policies_pilot_recal.json`. It exists because two pilot rows breach the declared +-30 %
+  matched-E0[T] envelope under plain bisection (note 19), and because the historical archive must
+  not be overwritten by a recalibration of the same point. Profiles of one operating point share a
+  seed offset so they remain comparable; distinct operating points must not.
+- `res6_policies_pilot_fresh.json`, `res8_switch_pilot_fresh.json` — the 7 Sept 2026 fresh pilot
+  chain, published under distinct names rather than over the archive. Its thresholds are this run's
+  own, so no withdrawn C17/C18 value enters, and its delay rows reproduce the archive within 3 sigma.
+  Two of its calibrations breach the envelope, so it supports C29 (which quotes only tau_c/c = 1 and
+  5, where both ARLs are matched) and does NOT support a tau_c/c = 20 comparison.
 - `res8_switch.json` — **two shapes, deliberately.** The *published archive* is the legacy flat map
   `{B: [h_star, ARL, {tau_c: [mean, se]}]}`, written before roadmap G and carrying no run identity.
   *Reproduction checkpoints written after G* are `{"switch": {B: [...]}, "meta": {...}}`, where `meta`

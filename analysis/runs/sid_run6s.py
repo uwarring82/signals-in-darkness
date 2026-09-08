@@ -33,8 +33,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import sid_repro
-from sid_policies import (CAL_BRACKET, GAMMA, SEED_OFFSET, build_policies, calibrate,
-                          delay_of, operating_point_from_argv, state_name_for)
+from sid_policies import (ARL_ENVELOPE, CAL_BRACKET, GAMMA, SEED_OFFSET, build_policies,
+                          calibrate, calibrate_refined, delay_of,
+                          operating_point_from_argv, state_name_for)
 
 CAL_SEEDS = "bisection 100-104, confirmation 199"
 DELAY_SEEDS = "200 + int(tau_c/c)"
@@ -107,6 +108,7 @@ def main(argv):
     published = sid_repro.load_reference(state_name)
     reference = published or empty_state()
     bracket_failures = []
+    envelope_failures = []
 
     # An operating point with no archived counterpart cannot be verified against anything.
     # Left alone the run would print the tolerance header, list NO-REFERENCE for every row,
@@ -163,8 +165,16 @@ def main(argv):
                 continue
             bk, sc = policies[name]
             lo, hi, iters = CAL_BRACKET[op_name]
-            h, m, se, nc, endpoint = calibrate(bk, sc, GAMMA, R=CAL_R, lo=lo, hi=hi,
-                                               iters=iters, seed=100 + SEED_OFFSET[op_name])
+            if op_name.endswith("_recal"):
+                h, m, se, nc, endpoint, inside = calibrate_refined(
+                    bk, sc, GAMMA, R=CAL_R, lo=lo, hi=hi, iters=iters,
+                    seed=100 + SEED_OFFSET[op_name])
+            else:
+                h, m, se, nc, endpoint = calibrate(bk, sc, GAMMA, R=CAL_R, lo=lo, hi=hi,
+                                                  iters=iters, seed=100 + SEED_OFFSET[op_name])
+                inside = abs(m - GAMMA) / GAMMA <= ARL_ENVELOPE
+            if not inside:
+                envelope_failures.append((name, h, m, 100 * (m - GAMMA) / GAMMA))
             state["cal"][name] = [h, m, se, int(nc)]
             state["meta"] = sid_repro.run_metadata(cal_config(state["cal"], op, op_name))
             sid_repro.save_checkpoint(state_name, state)
@@ -232,6 +242,16 @@ def main(argv):
     if published is None:
         print(f"\nNOT A COMPARISON: no archived reference for operating point {op_name!r}. "
               f"The rows above were established by this run, not verified against anything.")
+    if envelope_failures:
+        print(f"\nARL ENVELOPE BREACHES ({len(envelope_failures)}): a policy calibrated outside "
+              f"+-{100*ARL_ENVELOPE:.0f} % is NOT held to the same false-alarm rate as the others, "
+              f"so every delay ratio built on it is incomparable.", file=sys.stderr)
+        for name, h, m, pct in envelope_failures:
+            print(f"  {name}: h*={h:.6f}, ARL={m:.0f} ({pct:+.1f} %)", file=sys.stderr)
+        print("  this was a warning inside sid_fig_policy_delays.py until 8 Sept 2026, printed "
+              "after the figure had been drawn from the offending rows. It is now a gate.",
+              file=sys.stderr)
+        status = status or 4
     if bracket_failures:
         print(f"\nCALIBRATION BRACKET FAILURES ({len(bracket_failures)}): a threshold whose "
               f"bracket end never moved is set by the bracket, not by the data.", file=sys.stderr)

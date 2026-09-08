@@ -351,10 +351,21 @@ def test_every_operating_point_has_its_own_bracket_and_seed_offset():
     for name in P.OPERATING_POINTS:
         assert name in P.CAL_BRACKET, f"{name} has no calibration bracket"
         assert name in P.SEED_OFFSET, f"{name} has no seed offset"
-    offsets = list(P.SEED_OFFSET.values())
-    assert len(set(offsets)) == len(offsets), (
-        "two operating points share a seed offset, so their latent noise paths are perfectly "
-        "correlated and the second is not an independent measurement")
+    # Distinct PHYSICAL operating points must not share a seed offset: simulate() scales the
+    # same standard normals by s, so a shared seed makes their latent paths perfectly
+    # correlated and the second is not an independent measurement. Profiles of the SAME point
+    # (pilot vs pilot_recal) should share seeds -- that is what makes them comparable.
+    by_point = {}
+    for name, op in P.OPERATING_POINTS.items():
+        by_point.setdefault((op.C_eff, op.s), []).append(P.SEED_OFFSET[name])
+    for point, offsets in by_point.items():
+        assert len(set(offsets)) == 1, (
+            f"profiles of the same operating point {point} use different seeds, so they cannot "
+            f"be compared: {offsets}")
+    distinct = [offs[0] for offs in by_point.values()]
+    assert len(set(distinct)) == len(distinct), (
+        "two distinct operating points share a seed offset, so their latent noise paths are "
+        "perfectly correlated and the second is not an independent measurement")
 
 
 def test_calibrate_reports_a_bracket_end_that_never_moved(monkeypatch):
@@ -451,3 +462,62 @@ def test_main_reads_the_operating_point_from_its_own_argv():
     assert sid_run6s.main(["x", "cal:extremum-only", "--operating-point", "stress"]) == 2
     # and the state name it derives follows the operating point it was handed
     assert sid_run6s.state_name_for("res6_policies.json", "stress") == "res6_policies_stress.json"
+
+
+# ---- the matched-E0[T] premise, after note 19 ---------------------------------------------
+
+def test_the_arl_envelope_is_a_gate_not_a_warning():
+    """It lived as a warning inside sid_fig_policy_delays.py, printed AFTER the figure had been
+    drawn from the offending rows. Every delay ratio divides by a benchmark, and a policy
+    calibrated outside the envelope is not held to the same false-alarm rate as the others, so
+    the ratios built on it are incomparable."""
+    assert P.ARL_ENVELOPE == 0.30
+    src = _src(os.path.join("analysis", "runs", "sid_run6s.py"))
+    assert "envelope_failures" in src, "the driver does not collect envelope breaches"
+    assert "ARL ENVELOPE BREACHES" in src, "the driver does not report them"
+    assert "status = status or 4" in src, "an envelope breach does not fail the run"
+
+
+def test_calibrate_refined_beats_plain_bisection_where_it_is_known_to_fail(monkeypatch):
+    """Driven by a deterministic stub ARL(h) = e^h so the answer is known exactly.
+
+    Plain bisection returns the midpoint of its final interval; the refinement interpolates
+    ln(ARL) across that interval, which is exact for this stub and near-exact in practice
+    because ARL grows close to exponentially in the threshold.
+    """
+    monkeypatch.setattr(P, "arl_of",
+                        lambda bank, sched, h, R, seed, cap=0: (math.exp(h), 0.0, 0))
+    bank = P.Bank([1.0], P.PILOT)
+    target = math.exp(3.3)
+    h_plain, _, _, _, _ = P.calibrate(bank, P.sched_mid, target, R=4, lo=1.0, hi=6.0,
+                                      iters=4, seed=100)
+    h_ref, m_ref, _, _, _, inside = P.calibrate_refined(bank, P.sched_mid, target, R=4, lo=1.0,
+                                                        hi=6.0, iters=4, seed=100)
+    assert abs(h_ref - 3.3) < abs(h_plain - 3.3), (
+        f"the refinement is no better than bisection: {h_ref} vs {h_plain}, true 3.3")
+    assert abs(h_ref - 3.3) < 1e-9, "log-interpolation should be exact for an exponential ARL"
+    assert inside is True
+
+
+def test_the_recal_profile_is_the_same_operating_point_but_a_separate_artifact():
+    """The historical archive must not be overwritten by a recalibration of the same point."""
+    assert P.OPERATING_POINTS["pilot_recal"] is P.PILOT
+    assert P.state_name_for("res6_policies.json", "pilot_recal") == "res6_policies_pilot_recal.json"
+    assert P.state_name_for("res6_policies.json", "pilot") == "res6_policies.json"
+
+
+def test_claims_resting_on_a_breaching_row_are_not_marked_result():
+    """C09 and C11 set every worst-case ratio at tau_c/c=20, whose benchmark breaches the
+    envelope in the fresh chain. They may not be `result` while that holds."""
+    txt = open(os.path.join(ROOT, "ledgers", "status.yaml"), encoding="utf-8").read()
+    for cid in ("C09", "C11", "C28"):
+        blk = txt.split(f"- id: {cid}")[1].split("- id:")[0]
+        assert "status: open" in blk, f"{cid} is not open despite resting on a breaching calibration"
+    c12 = txt.split("- id: C12")[1].split("- id:")[0]
+    assert "status: withdrawn" in c12
+    c29 = txt.split("- id: C29")[1].split("- id:")[0]
+    assert "supersedes: C12" in c29 and "status: result" in c29
+    # C27 must no longer contain the inversion, which C28 now holds
+    c27 = txt.split("- id: C27")[1].split("- id:")[0]
+    assert "STRESS POINT ONLY" in c27, "C27 is not narrowed to the stress point"
+    assert "see C28" in c27

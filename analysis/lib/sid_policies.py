@@ -75,18 +75,29 @@ STRESS = OperatingPoint(C_eff=0.5, s=0.3)
 #: the 3e4 target. Five iterations over a span of 5.0 resolve only to 0.156, which is coarse
 #: where h* ~ 1.1. A narrower bracket with more iterations resolves to 0.027 and brackets every
 #: stress policy: h* runs from about 1.1 (oracle-mid(tc=1)) to about 2.3 (extremum-only).
-CAL_BRACKET = {"pilot": (1.0, 6.0, 5), "stress": (0.5, 4.0, 7)}
+CAL_BRACKET = {"pilot": (1.0, 6.0, 5), "stress": (0.5, 4.0, 7), "pilot_recal": (1.0, 6.0, 5)}
 
 #: Seed offset per operating point. With a shared seed the latent phase paths of two operating
 #: points are perfectly correlated -- simulate() scales the same standard normals by s, so the
 #: stress path is exactly 0.6x the pilot's, shot for shot. That is fine as a variance-reduction
 #: device but it is not an independent second measurement, and the second operating point is
 #: meant to be one. The pilot's offset is 0 so its archived seeds are untouched.
-SEED_OFFSET = {"pilot": 0, "stress": 7000}
+SEED_OFFSET = {"pilot": 0, "stress": 7000, "pilot_recal": 0}
+
+#: The declared matched-E0[T] envelope. A calibration outside it breaks the premise every
+#: delay ratio rests on -- the policies are then NOT held to the same false-alarm rate, so the
+#: ratios are not comparable. Until 8 Sept 2026 this lived only as a WARNING inside
+#: sid_fig_policy_delays.py, printed after the figure had already been drawn from the offending
+#: rows; note 04 documented the breach and nothing enforced it. It is now a gate.
+ARL_ENVELOPE = 0.30
+NULL_CAP_DEFAULT = 150_000
 
 #: Selectable by name from the command line. Adding an entry here is the only supported way to
 #: introduce an operating point; nothing reads one from module state.
-OPERATING_POINTS = {"pilot": PILOT, "stress": STRESS}
+#: `pilot_recal` is the SAME physical operating point as `pilot`, calibrated with
+#: calibrate_refined instead of plain bisection. It is a separate name so it writes a
+#: separate artifact and cannot overwrite the historical archive.
+OPERATING_POINTS = {"pilot": PILOT, "stress": STRESS, "pilot_recal": PILOT}
 
 
 def operating_point_from_argv(argv, default="pilot"):
@@ -212,6 +223,44 @@ def calibrate(bank, sched, gamma, R=48, lo=1.0, hi=6.0, iters=5, seed=100):
     h = 0.5*(lo+hi); m, se, nc = arl_of(bank, sched, h, 2*R, seed+99)
     endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
     return h, m, se, nc, endpoint
+
+
+def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=100,
+                      confirm_R=64, cap=NULL_CAP_DEFAULT):
+    """Bisection, then a log-linear refinement inside the final interval, then confirmation.
+
+    Plain bisection was not good enough at the pilot. Its probes use R=32, whose ARL estimate
+    carries ~15 % standard error, and null runs that hit the cap contribute the cap instead of
+    their true larger stopping time -- a downward bias that grows with h. A probe that
+    understates the ARL moves `lo` UP, so the two errors push the same way and the bisection
+    settles above the true crossing. Measured 8 Sept 2026: oracle-mid(tc=20) came back at
+    h*=4.671875 with ARL 44699 (+49 %), while ARL(4.300) = 34895 (+16 %) and ARL(4.000) = 26875.
+    The crossing is near 4.15; the bisection missed it by half a unit of h.
+
+    The refinement measures both ends of the final interval at confirm_R and interpolates
+    ln(ARL) linearly in h, which is a good local model because ARL grows close to
+    exponentially in the threshold. Returns (h, ARL, se, capped, endpoint, within_envelope).
+    """
+    lo0, hi0 = lo, hi
+    for i in range(iters):
+        mid = 0.5 * (lo + hi)
+        m, _, _ = arl_of(bank, sched, mid, R, seed + i, cap=cap)
+        if m > gamma:
+            hi = mid
+        else:
+            lo = mid
+    endpoint = "floor" if lo == lo0 else ("ceiling" if hi == hi0 else None)
+
+    m_lo, _, _ = arl_of(bank, sched, lo, confirm_R, seed + 50, cap=cap)
+    m_hi, _, _ = arl_of(bank, sched, hi, confirm_R, seed + 51, cap=cap)
+    h = 0.5 * (lo + hi)
+    if m_lo > 0 and m_hi > 0 and m_hi != m_lo:
+        frac = (math.log(gamma) - math.log(m_lo)) / (math.log(m_hi) - math.log(m_lo))
+        if 0.0 <= frac <= 1.0:
+            h = lo + frac * (hi - lo)
+
+    m, se, nc = arl_of(bank, sched, h, 2 * confirm_R, seed + 99, cap=cap)
+    return h, m, se, nc, endpoint, abs(m - gamma) / gamma <= ARL_ENVELOPE
 
 
 def delay_of(bank, sched, true_tcc, h, R, seed, cap=100_000):

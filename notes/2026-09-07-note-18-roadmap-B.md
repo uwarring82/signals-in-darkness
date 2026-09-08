@@ -17,8 +17,11 @@ pilot ratios all divide by a τ_c/c = 20 benchmark that was withdrawn as C18. Wi
 operating points could not be compared like for like.
 
 The fresh pilot reproduces the archive: **15 of 15 delay rows and 6 of 6 switch rows pass**, with
-calibration failing on exactly the two rows withdrawn as C17. Zero capped runs anywhere, at either
-operating point.
+calibration failing on exactly the two rows withdrawn as C17. **Zero capped detection-delay runs**
+at either operating point — but the calibration rows are a different matter: 9 capped null runs at
+the pilot, 3 at the stress point. A capped null run contributes the cap instead of its true larger
+stopping time, so it biases the measured ARL *downward*; an ARL already above target is therefore an
+understatement of the miss.
 
 ## 2. The result
 
