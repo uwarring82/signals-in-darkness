@@ -8,7 +8,7 @@
   state: complete
   gates_freeze: true
 - id: B
-  title: Second operating point C_eff=0.5, s=0.3 at the parity ceiling, an upper-bound stress test - COMPLETE 7 Sept 2026. The hedge ordering INVERTS: fixed-extremum best at the pilot (1.44, no hedge beats it), worst-case 2.88 at the stress point where four of five hedges beat it (switch@1000 1.51). Cleanest anchor: switch@1000 vs fixed-extremum, both +13 % off the ARL target, 1.91x apart. Pilot chain re-run on fresh thresholds first (15/15 delays, 6/6 switch reproduce) to remove the withdrawn C18 benchmark, which repaired C09/C11/C12 to result. New claim C27. Every schedule is precommitted: this is action SCHEDULING, not online learning (roadmap C).
+  title: Second operating point C_eff=0.5, s=0.3 at the parity ceiling, an upper-bound stress test - COMPLETE 8 Sept 2026 after recalibration. Both operating points now sit inside the +-30 % matched-ARL envelope; the 7 Sept pilot chain did not, and its promotions were reverted. What resolves, with uncertainties propagated: switch@1000 reverses direction between the two points, 2.7 sigma WORSE than fixed-extremum at the pilot and 3.1 sigma BETTER at the stress point (C28). At the pilot no hedge is resolvedly better (C11 survives); at the stress point two of five are, not four (C27 corrected from a point-estimate count). Every schedule is precommitted: action SCHEDULING, not online learning.
   state: complete
   gates_freeze: true
 - id: C

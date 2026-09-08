@@ -506,18 +506,74 @@ def test_the_recal_profile_is_the_same_operating_point_but_a_separate_artifact()
     assert P.state_name_for("res6_policies.json", "pilot") == "res6_policies.json"
 
 
-def test_claims_resting_on_a_breaching_row_are_not_marked_result():
-    """C09 and C11 set every worst-case ratio at tau_c/c=20, whose benchmark breaches the
-    envelope in the fresh chain. They may not be `result` while that holds."""
+def test_no_result_claim_points_at_an_artifact_with_a_breaching_calibration():
+    """A live invariant, not a snapshot.
+
+    The first version of this test asserted that C09, C11 and C28 were `open` -- true while
+    their chain breached the +-30 % envelope, and false the moment it was recalibrated. That is
+    a check that stops checking, the failure mode this repository has now hit three times.
+
+    What actually matters is the rule underneath: every delay ratio divides by a benchmark, so a
+    claim marked `result` must not rest on an artifact in which any policy was calibrated outside
+    the envelope. This walks each claim's own output pointer and enforces exactly that.
+    """
+    import re
     txt = open(os.path.join(ROOT, "ledgers", "status.yaml"), encoding="utf-8").read()
-    for cid in ("C09", "C11", "C28"):
-        blk = txt.split(f"- id: {cid}")[1].split("- id:")[0]
-        assert "status: open" in blk, f"{cid} is not open despite resting on a breaching calibration"
-    c12 = txt.split("- id: C12")[1].split("- id:")[0]
-    assert "status: withdrawn" in c12
-    c29 = txt.split("- id: C29")[1].split("- id:")[0]
-    assert "supersedes: C12" in c29 and "status: result" in c29
-    # C27 must no longer contain the inversion, which C28 now holds
-    c27 = txt.split("- id: C27")[1].split("- id:")[0]
-    assert "STRESS POINT ONLY" in c27, "C27 is not narrowed to the stress point"
-    assert "see C28" in c27
+    blocks = re.split(r"^- id: ", txt, flags=re.M)[1:]
+    checked = 0
+    for blk in blocks:
+        cid = blk.split("\n", 1)[0].strip()
+        status = next((l.split(": ", 1)[1].strip() for l in blk.splitlines()
+                       if l.startswith("  status: ")), None)
+        out = next((l.split(": ", 1)[1].strip() for l in blk.splitlines()
+                    if l.startswith("  output: ")), "")
+        for name in re.findall(r"res6_policies[\w.]*\.json", out):
+            path = os.path.join(ROOT, "analysis", "outputs", name)
+            if not os.path.exists(path):
+                continue
+            cal = json.load(open(path, encoding="utf-8")).get("cal", {})
+            breaches = {k: v[1] for k, v in cal.items()
+                        if abs(v[1] - 3.0e4) / 3.0e4 > P.ARL_ENVELOPE}
+            checked += 1
+            if status != "result" or not breaches:
+                continue
+            # A `result` MAY rest on an artifact containing a breaching row, but only if it
+            # DECLARES the breach. Silence is what makes a breach dangerous: a reader building
+            # a ratio on that policy has no way to know it is not held to the same false-alarm
+            # rate. This is the declared-exception rule the archive uses everywhere else --
+            # a withdrawn claim must carry an errata pointer, an unverified reference must say
+            # so -- applied to calibration.
+            statement = next((l.split(": ", 1)[1] for l in blk.splitlines()
+                              if l.startswith("  statement: ")), "")
+            # Conservative on purpose. An earlier version tried to infer WHICH policies a claim
+            # depends on, by matching policy names in its prose. That is fragile in both
+            # directions -- "learner-mid(bank)" reduces to the token "mid", which matches
+            # "mid-fringe" in any statement, and a claim can depend on a policy it never names.
+            # So the rule is simply: if you mark a claim `result` on an artifact, you disclose
+            # every calibration breach that artifact contains, and you quote its size. A claim
+            # that does not use the breaching row says so in one clause; that is cheaper than a
+            # heuristic that can be wrong silently.
+            for policy, arl in sorted(breaches.items()):
+                pct = 100 * (arl - 3.0e4) / 3.0e4
+                quoted = (f"{pct:+.1f}"[1:] in statement or f"{arl:.0f}" in statement)
+                assert quoted, (
+                    f"{cid} is `result` and rests on {name}, in which {policy} is calibrated to "
+                    f"ARL {arl:.0f} ({pct:+.1f} %), outside the +-{100*P.ARL_ENVELOPE:.0f} % "
+                    f"envelope -- and the claim does not disclose it. Every delay ratio divides "
+                    f"by a benchmark, so a policy outside the envelope is not held to the same "
+                    f"false-alarm rate. Quote the breach and say whether the claim uses that "
+                    f"row, or do not mark the claim `result`.")
+    assert checked, "no claim points at a policy artifact; this invariant is inert"
+
+
+def test_the_recalibrated_pilot_artifact_is_fully_inside_the_envelope():
+    """The repair itself, asserted from the published artifact."""
+    path = os.path.join(ROOT, "analysis", "outputs", "res6_policies_pilot_recal.json")
+    assert os.path.exists(path), "the recalibrated pilot artifact is not published"
+    doc = json.load(open(path, encoding="utf-8"))
+    assert not doc["meta"]["revision"].endswith("+dirty")
+    worst = max((abs(v[1] - 3.0e4) / 3.0e4, k) for k, v in doc["cal"].items())
+    assert worst[0] <= P.ARL_ENVELOPE, (
+        f"{worst[1]} is {100*worst[0]:.1f} % off target in the recalibrated artifact")
+    assert sum(r[2] for t in doc["delays"].values() for r in t.values()) == 0, \
+        "the recalibrated chain has capped delay runs"

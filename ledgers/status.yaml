@@ -62,12 +62,12 @@
   output: analysis/outputs/res3_comparator.json (tau_optimised_threshold); figure figures/sid_regime_map_tau_optimised_exact.png
   reproduced: 2026-09-04, pinned environment. The per-contrast thresholds at which mid-fringe wins after tau optimisation are stored, with the C0 and tau_c/t_dead grids and the win fraction. Scientific status unchanged.
 - id: C09
-  statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20; consistent with the comparator crossover 7.2. REMAINS OPEN as of 8 Sept 2026. Re-running the pilot chain on fresh thresholds (7 Sept) removed the withdrawn-C18 dependency and reproduced every archived delay row within 3 sigma, but did NOT repair the calibration: oracle-mid(tc=20) sits at ARL 44699 (+49 %), outside the declared +-30 % envelope, and 4 of its 64 null runs are capped so the true miss is larger still. The tau_c/c=20 comparison therefore does not hold the two channels to the same false-alarm rate, which is the premise the crossover claim needs. Fresh computation repaired provenance, not calibration.
-  status: open
+  statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20. Established 8 Sept 2026 on the RECALIBRATED pilot chain, where all seven policies sit inside the +-30 % envelope (worst -18.1 %): mid-fringe wins at tau_c/c=20 (oracle-mid 1315.6 vs extremum 2146.9) and loses at 5 (2523.9 vs 2163.2) and 1 (10586.4 vs 2260.8). Consistent with the comparator crossover 7.2. Zero capped delay runs. The earlier chains could not support this: the archived one divided by a withdrawn C18 benchmark, and the 7 Sept fresh one had oracle-mid(tc=20) at +49 % outside the envelope.
+  status: result
   note: notes/2026-09-02-note-02.md (check 3b); note-03 §2
-  run: analysis/runs/sid_run5.py, sid_run6s.py
+  run: analysis/runs/sid_run6s.py --operating-point=pilot_recal
   seed_ref: seeds.md#run5, seeds.md#run6
-  output: analysis/outputs/res6_policies.json
+  output: analysis/outputs/res6_policies_pilot_recal.json
   errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - the tau_c/c=20 comparison divides by the withdrawn C18 benchmark entry)
 - id: C10
   statement: Martingale bound E0[T] >= e^h holds for the restarted-SPRT variant under the action-conditional null but is loose by 1e2-1e4; calibration is by simulation
@@ -78,12 +78,12 @@
   output: analysis/outputs/res5_calibration.json (calibration, delays)
   reproduced: 2026-09-04, pinned environment. The calibration and slack table was printed only; sid_run5.py now stores it, written before the delay measurements so a later failure cannot destroy it. Scientific status unchanged.
 - id: C11
-  statement: AT THE PILOT OPERATING POINT ONLY (C_eff=0.4, s=0.5, E0T~3e4, tau_c/c in {1,5,20}): no tested hedge shows a worst-case delay-ratio advantage over fixed-extremum operation. REMAINS OPEN as of 8 Sept 2026 for the same reason as C09: every worst-case ratio is set at tau_c/c=20, whose benchmark is oracle-mid(tc=20) at ARL 44699 (+49 %), and learner-interleave-B10 is at 47313 (+58 %); both breach the +-30 % envelope. The fresh chain gives fixed-extremum 1.44 against a best hedge of 1.64, and the published 1.64-1.67 range omitted interleave-B10 at 2.12, but neither figure rests on a matched calibration. Closing this requires recalibrating those rows inside the envelope and rerunning the delays that depend on them.
-  status: open
+  statement: AT THE PILOT OPERATING POINT (C_eff=0.4, s=0.5, E0T~3e4, tau_c/c in {1,5,20}): no tested hedge shows a RESOLVED worst-case delay-ratio advantage over fixed-extremum operation. Established 8 Sept 2026 on the recalibrated chain, all rows inside the +-30 % envelope, with uncertainties propagated from the delay standard errors of numerator and benchmark: fixed-extremum 1.63+-0.19; interleave-B1 1.60+-0.17 (difference 0.1 sigma) and switch@300 1.61+-0.17 (0.1 sigma) are indistinguishable from it; interleave-B10 2.02+-0.21 is 1.4 sigma worse, not resolved; switch@1000 2.55+-0.28 is 2.7 sigma WORSE and learner-mid 6.98+-1.05 is 5.0 sigma worse, both resolved. The original claim's closing clause - that ARL precision does not order them - is the correct reading and survives recalibration. Point estimates alone would have said a hedge wins here (1.60 < 1.63); they do not resolve.
+  status: result
   note: notes/2026-09-02-note-03.md#3; notes/2026-09-03-note-03a-errata.md E1-E3
-  run: analysis/runs/sid_run6s.py, sid_run8.py
+  run: analysis/runs/sid_run6s.py --operating-point=pilot_recal
   seed_ref: seeds.md#run6, seeds.md#run8
-  output: analysis/outputs/res6_policies.json, res8_switch.json; figure figures/sid_policy_delays.png
+  output: analysis/outputs/res6_policies_pilot_recal.json
   errata: notes/2026-09-03-note-04-reproduction-defect.md#3 (demoted from pilot - the 1.56 worst-case ratio divides by the withdrawn C18 benchmark entry, and the hedge leg rests on C19)
 - id: C12
   statement: Composite-model (bank) detection at mid-fringe shows no resolved penalty relative to the known-tau_c fixed endpoint (0.98x). WITHDRAWN 8 Sept 2026: the unqualified claim is false. At tau_c/c=1, where both ARLs sit comfortably inside the envelope (oracle-mid(tc=1) 28854, learner-mid 27698), the measured penalty is 1.60x. The published 0.98x was the tau_c/c=20 figure alone, computed against the C18 benchmark. That is a substantive scope correction, not a tightening. Replaced by C29.
@@ -209,24 +209,24 @@
   seed_ref: none (deterministic; grid scan is seed-free)
   output: analysis/outputs/res9_identifiability_T2.json
 - id: C27
-  statement: AT THE PARITY-CEILING STRESS POINT ONLY (C_eff=0.5, s=0.3), precommitted hedging schedules beat fixed-extremum operation on worst-case delay ratio over tau_c/c in {20,5,1} at matched E0[T]~3e4. Fixed-extremum 2.88; switch@1000 1.51, interleave-B1 1.87, interleave-B10 2.01, switch@300 2.19, learner-mid 4.95. CLEAN ANCHOR: switch@1000 versus fixed-extremum, both +13 % off the ARL target and so held to the same false-alarm accuracy, 1.91x apart - a gap no calibration mismatch explains. All stress calibrations sit inside the declared +-30 % envelope except learner-interleave-B1 at +31.8 %, whose stricter false-alarm rate biases its delay UPWARD and therefore against it. Zero capped detection-delay runs; 3 capped null runs in calibration. SCOPE: every schedule tested is PRECOMMITTED - sid_policies' sched(n) takes the step index and cannot consult the posterior - so this is evidence about robust action SCHEDULING across unknown correlation times, NOT that online action learning succeeds; posterior-driven selection is roadmap C and is untested. Established on python 3.9.7/numpy 1.23.5, one environment; the stress artifacts are published as the reference for future reproduction. Says nothing about the pilot - see C28.
+  statement: AT THE PARITY-CEILING STRESS POINT (C_eff=0.5, s=0.3), two precommitted hedging schedules are RESOLVEDLY better than fixed-extremum operation on worst-case delay ratio over tau_c/c in {20,5,1} at matched E0[T]~3e4, with uncertainties propagated: fixed-extremum 2.88+-0.40; switch@1000 1.51+-0.18 (3.1 sigma better) and interleave-B1 1.87+-0.26 (2.2 sigma better) are resolved; interleave-B10 2.01+-0.25 (1.9 sigma) and switch@300 2.19+-0.30 (1.4 sigma) are NOT resolved; learner-mid 4.95+-0.65 is 2.7 sigma worse. Corrects the earlier 'four of five beat it', which counted point estimates. Clean anchor: switch@1000 versus fixed-extremum, both +13 % off the ARL target so held to the same false-alarm accuracy. All stress calibrations inside the +-30 % envelope except interleave-B1 at +31.8 %, whose stricter false-alarm rate biases its delay upward and so against it. Zero capped detection-delay runs; 3 capped null runs in calibration. SCOPE: every schedule tested is PRECOMMITTED - sid_policies' sched(n) takes the step index and cannot consult the posterior - so this is evidence about robust action SCHEDULING across unknown correlation times, NOT that online action learning succeeds; posterior-driven selection is roadmap C and is untested. One environment (python 3.9.7/numpy 1.23.5).
   status: result
   note: notes/2026-09-07-note-18-roadmap-B.md; notes/2026-09-08-note-19-B-calibration-gate.md
   run: analysis/runs/sid_run6s.py --operating-point=stress; analysis/runs/sid_run8.py --operating-point=stress
   seed_ref: seeds.md (stress offset +7000)
   output: analysis/outputs/res6_policies_stress.json; analysis/outputs/res8_switch_stress.json
 - id: C28
-  statement: OPERATING-POINT INVERSION of the hedge ordering - that fixed-extremum is best at the pilot and beaten at the stress point, so the best policy depends on the operating point. The stress half is established (C27). The PILOT half is not: its worst-case ratios are all set at tau_c/c=20, whose benchmark oracle-mid(tc=20) calibrates to ARL 44699 (+49 %) with 4 of 64 null runs capped, and learner-interleave-B10 to 47313 (+58 %). Both breach the declared +-30 % envelope, so the pilot comparison does not hold its policies to the same false-alarm rate. OPEN until those rows are recalibrated inside the envelope with independent confirmation and every dependent delay is rerun. Recorded so the inversion is not quoted from C27 alone.
-  status: open
-  note: notes/2026-09-08-note-19-B-calibration-gate.md
-  run: pending recalibration of the pilot benchmark rows
+  statement: OPERATING-POINT REVERSAL FOR switch@1000, resolved in BOTH directions. Against fixed-extremum on worst-case delay ratio at matched E0[T]~3e4: at the pilot (C_eff=0.4, s=0.5) switch@1000 is 2.55+-0.28 against 1.63+-0.19, i.e. 2.7 sigma WORSE; at the parity-ceiling stress point (C_eff=0.5, s=0.3) it is 1.51+-0.18 against 2.88+-0.40, i.e. 3.1 sigma BETTER. Both operating points are calibrated inside the +-30 % envelope and both comparisons are resolved, so this is a reversal of a resolved ordering rather than of point estimates. It is a claim about ONE named schedule, not about hedging in general: at the pilot no hedge is resolvedly better than fixed-extremum (C11), and at the stress point only two of five are (C27). Mechanism, visible in the columns: fixed-extremum is optimal at tau_c/c=1 and collapses at tau_c/c=20 where the mid-fringe channel dominates; a hedge gives up a little everywhere and loses much less in the bad corner, and whether that trade pays depends on where the crossover sits. Precommitted schedules only - see the scope note in C27. Disclosure: the stress artifact also contains learner-interleave-B1(bank) calibrated to ARL 39543 (+31.8 %), outside the +-30 % envelope; this claim compares switch@1000 with fixed-extremum, both inside it, and does not use that row.
+  status: result
+  note: notes/2026-09-08-note-20-recalibrated-pilot.md
+  run: analysis/runs/sid_run6s.py --operating-point=pilot_recal; --operating-point=stress
   seed_ref: seeds.md
-  output: pending
+  output: analysis/outputs/res6_policies_pilot_recal.json; analysis/outputs/res6_policies_stress.json; and the two res8 counterparts
 - id: C29
   supersedes: C12
-  statement: Composite-model (bank) mid-fringe detection against the known-tau_c fixed endpoint, on the fresh pilot chain with no withdrawn value entering. At tau_c/c=1 the bank costs 1.60x (16837 vs 10529 shots), and BOTH calibrations sit inside the +-30 % envelope (learner-mid ARL 27698, -7.7 %; oracle-mid(tc=1) 28854, -3.8 %), so the penalty is measured under a matched premise. At tau_c/c=5 the ratio is 1.04x, both also inside the envelope. At tau_c/c=20 no statement is made: oracle-mid(tc=20) is +49 % off target. The mechanism is that a mixture over tau_c in {1,4,10,25} is furthest from the truth at the shortest correlation time. Supersedes C12, whose unqualified 'no resolved penalty' was false at tau_c/c=1.
+  statement: Composite-model (bank) mid-fringe detection against the known-tau_c fixed endpoint, on the RECALIBRATED pilot chain with all rows inside the +-30 % envelope: 0.96x at tau_c/c=20, 1.13x at 5, and 1.49x at tau_c/c=1. The penalty at the shortest correlation time is real and is measured under a matched premise; the mechanism is that a mixture over tau_c in {1,4,10,25} is furthest from the truth there. Supersedes C12, whose unqualified 'no resolved penalty (0.98x)' was the tau_c/c=20 figure alone, computed against a withdrawn benchmark, and false at tau_c/c=1.
   status: result
   note: notes/2026-09-08-note-19-B-calibration-gate.md
   run: analysis/runs/sid_run6s.py (fresh pilot chain, 7 Sept 2026)
   seed_ref: seeds.md
-  output: analysis/outputs/res6_policies_pilot_fresh.json
+  output: analysis/outputs/res6_policies_pilot_recal.json

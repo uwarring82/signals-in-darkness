@@ -19,13 +19,13 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 
 <div class="status-grid" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">16</strong><span>supported results</span>
+    <strong data-status-count="result">19</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
   </a>
   <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="open">4</strong><span>open claims</span>
+    <strong data-status-count="open">1</strong><span>open claim</span>
   </a>
   <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="withdrawn">8</strong><span>withdrawn claims</span>

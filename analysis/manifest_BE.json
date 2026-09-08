@@ -339,14 +339,20 @@
     "regression": "the 24 overlapping historical rows must reproduce res7A within 6e-8"
   },
   "B_result": {
-    "status": "complete 2026-09-07",
-    "headline": "the hedge ordering inverts between operating points; see claim C27",
-    "clean_anchor": "switch@1000 vs fixed-extremum at the stress point, both +13 % off the ARL target, 1.91x apart",
-    "scope": "every schedule tested is precommitted; sched(n) cannot consult the posterior. Action scheduling, not online learning.",
-    "recorded_deviation": "learner-interleave-B1 calibrates to +31.8 % at the stress point, outside the +-30 % envelope; the bias runs against the hedge",
+    "status": "complete 2026-09-08, after a recalibration pass",
+    "headline": "switch@1000 reverses direction between operating points, resolved in BOTH directions (C28)",
+    "resolved_at_pilot": "no hedge better than fixed-extremum; switch@1000 2.7 sigma worse, learner-mid 5.0 sigma worse",
+    "resolved_at_stress": "switch@1000 3.1 sigma better, interleave-B1 2.2 sigma better; interleave-B10 and switch@300 not resolved",
+    "corrected": "the 7 Sept reading -- 'the ordering inverts', 'four of five hedges beat it' -- counted point estimates. Propagating the delay standard errors of numerator and benchmark, the pilot's apparent 1.60 vs 1.63 reversal is 0.1 sigma and does not resolve.",
+    "calibration": "both points inside +-30 %; the pilot needed calibrate_refined's secant root-find, because plain bisection put oracle-mid(tc=20) at +49 % and interleave-B10 at +58 %",
+    "scope": "every schedule tested is precommitted; sched(n) cannot consult the posterior. Roadmap C is untested.",
     "artifacts": [
       "analysis/outputs/res6_policies_stress.json",
-      "analysis/outputs/res8_switch_stress.json"
+      "analysis/outputs/res8_switch_stress.json",
+      "analysis/outputs/res6_policies_pilot_recal.json",
+      "analysis/outputs/res8_switch_pilot_recal.json",
+      "analysis/outputs/res6_policies_pilot_fresh.json",
+      "analysis/outputs/res8_switch_pilot_fresh.json"
     ]
   }
 }

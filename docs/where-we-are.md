@@ -16,13 +16,13 @@ is computed here. For the technical record see the [status table](status.md), th
 
 <div class="status-grid compact" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">16</strong><span>supported results</span>
+    <strong data-status-count="result">19</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
   </a>
   <a class="status-card status-open" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="open">4</strong><span>open claims</span>
+    <strong data-status-count="open">1</strong><span>open claim</span>
   </a>
   <a class="status-card status-withdrawn" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="withdrawn">8</strong><span>withdrawn claims</span>
@@ -146,17 +146,12 @@ is not quite the simple process the simulator assumes. F is not expected to move
 number, but it has not been run, so that expectation is not a guarantee; what it certainly gates is
 how strongly the manuscript may word one claim.
 
-**Open claims.** **C09**, **C11** and **C28** turn on comparisons made at one particular noise
-correlation time, and at that setting one of the strategies being compared is not actually being
-held to the agreed false-alarm rate — it raises far fewer false alarms than intended, which makes it
-look slower than it is. Until that is recalibrated, those comparisons are not like-for-like and the
-claims stay open. **C24** concerns a small extra correlation effect whose proposed ceiling is not yet established. Re-running the whole pilot chain did
-remove a *different* problem — every ratio used to divide by a number that had been withdrawn — but
-repairing where a number came from is not the same as repairing how well it was tuned, and only the
-first was fixed. **C24** concerns a small extra correlation effect in the extremum stream. Its proposed ceiling of
-6 %, in the high-contrast long-correlation corner only, is **not yet established** — the claim is
-open, so the effect is at present unbounded rather than bounded. **C14** remains `pilot`: it holds in a
-simplified servo model only.
+**Open claims.** One remains: **C24**, a small extra correlation effect whose proposed ceiling is
+not yet established. **C09**, **C11** and **C28** were open until 8 September because one of the
+strategies being compared was not actually being held to the agreed false-alarm rate. Recalibrating
+it fixed that, and all three are now supported — though the answer changed on the way: with the
+repair in place the raw numbers appeared to reverse the earlier finding, and only propagating the
+measurement uncertainties showed that the apparent reversal was smaller than its own error bar.
 
 ---
 
