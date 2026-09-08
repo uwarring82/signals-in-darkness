@@ -2,9 +2,15 @@
   "preregistration": "roadmap C benchmark ladder and comparison classes",
   "frozen": "2026-09-08, BEFORE any C result was computed",
   "supersedes": {
-    "digest": "f2b79c930afbfc69",
-    "commit": "e5f779a",
-    "why": "The first attempt defined L3's class as the eleven PRECOMMITTED schedules and then asserted that a genuine oracle cannot systematically lose to the learner. That falsifier was invalid: the posterior policy is outside a class of precommitted schedules, so beating it is the EXPECTED outcome if feedback helps, not a diagnostic. The action set was shared; the policy class was not."
+    "digests": [
+      "f2b79c930afbfc69",
+      "55b8a915e8844775"
+    ],
+    "commits": [
+      "e5f779a",
+      "bb102d3"
+    ],
+    "why": "e5f779a defined L3 over precommitted schedules only and asserted a falsifier its class could not support. bb102d3 put the learner in the class and claimed the learner 'cannot beat L3 by construction'. THAT IS ALSO FALSE. Membership guarantees only that the learner CAN be selected on the selection stream; it does not guarantee that whichever member IS selected beats the learner on the independent evaluation stream, nor even in expectation at finite selection sample size. Selection noise can repeatedly choose a genuinely worse member. The mathematical property belongs to the population optimum; the observable quantity is an estimate, and the two were conflated."
   },
   "schedule_class": {
     "frozen_digest": "f2b79c930afbfc69",
@@ -89,23 +95,58 @@
     "licenses": "whether posterior FEEDBACK adds value over scheduling WITHOUT feedback -- the minimum bar to move card item 4 out of the appendix"
   },
   "L3": {
-    "name": "tau_c-knowing selector over the frozen class PLUS the posterior policy",
+    "name": "tau_c-knowing finite-class benchmark over 12 eligible policies",
     "class_size": 12,
     "class": "the eleven frozen schedules AND the posterior policy, identified by its digest",
-    "selection_rule": "for each true tau_c independently, the eligible member with the smallest mean delay on the 700 + int(tau_c) + offset streams; measured on 200 + int(tau_c) + offset",
-    "why_the_learner_is_in_the_class": "This is the repair. With the learner inside the class the selector can always choose it, so L3's ratio is <= the learner's at EVERY tau_c and therefore its worst case is <= the learner's. The learner cannot beat L3 by construction, which is what makes a loss diagnostic rather than expected.",
-    "licenses": "FINITE-CLASS regret language only, over this twelve-member class"
+    "three_distinct_objects": {
+      "target": {
+        "what": "the POPULATION finite-class optimum over the 12 eligible policies at each tau_c",
+        "property": "includes the learner, so it is mathematically no worse than the learner. This is the only object with that property.",
+        "observable": false,
+        "note": "an estimand, not a measurement; nothing is reported as this"
+      },
+      "estimate": {
+        "what": "the member selected on the 700 + int(tau_c) + offset stream, evaluated on the 200 + int(tau_c) + offset stream",
+        "property": "honest out-of-sample performance of a realisable selection procedure. It CAN lose to the learner through finite-sample selection error, and a resolved loss is a genuine finding about SELECTION INSTABILITY -- not necessarily a seed or implementation defect.",
+        "observable": true,
+        "note": "this is what a C result reports as L3"
+      },
+      "diagnostic_envelope": {
+        "what": "the minimum over all 12 candidates computed on the EVALUATION stream itself",
+        "property": "cannot exceed the learner IN THAT SAMPLE, because the learner is one of the minimands. This is the only rung carrying a hard falsifier.",
+        "observable": true,
+        "optimistically_biased": true,
+        "note": "selected on the same noise it is scored on, so it is NOT deployable performance and must never be reported as achievable"
+      }
+    },
+    "selection_rule": "for each true tau_c independently, the eligible member with the smallest mean delay on the selection stream; measured on the evaluation stream",
+    "licenses": "FINITE-CLASS regret language over these twelve members, never global",
+    "learner_ineligibility": "If the posterior policy itself fails the +-30 % calibration envelope, C HAS NO COMPARABLE LEARNER RESULT and must say so. The policy must NOT simply drop out of L3's eligible set while any domination or regret statement continues to be made about the remaining eleven: that would quietly restore the invalid e5f779a construction."
   },
   "L4": {
     "name": "globally optimal dynamic controller",
     "attempted": false,
     "licenses": "'oracle', 'optimal' and unqualified regret claims require this and it is not attempted; no C result may use those words"
   },
-  "falsifier": "L3 contains the learner, so L3 <= learner at every tau_c by construction. If the measured L3 worst case EXCEEDS the learner's, that is impossible under correct execution and diagnoses Monte-Carlo error, a selection/evaluation seed mistake, or an eligibility bug. It is not a result and must be investigated before anything is claimed.",
+  "falsifier": {
+    "hard": "The DIAGNOSTIC ENVELOPE cannot exceed the learner's worst case in the evaluation sample, because the learner is one of the quantities minimised over. If it does, that is impossible under correct execution and diagnoses Monte-Carlo bookkeeping, a seed mistake or an eligibility bug.",
+    "not_a_falsifier": "The L3 ESTIMATE losing to the learner is NOT a falsifier. It is a possible and interpretable outcome: selecting on finite data can pick a worse member. Reported as selection instability, with the selection-stream and evaluation-stream numbers both shown.",
+    "corrected_from": "bb102d3 attached the hard falsifier to the L3 estimate, where it does not hold."
+  },
   "seeds": {
     "selection": "700 + int(tau_c) + operating-point offset",
     "evaluation": "200 + int(tau_c) + operating-point offset",
     "why": "the schedule that wins is chosen on noise it is not then measured against; evaluation reuses roadmap B's stream so L1, L2 and L3 are measured on the same realisations"
   },
-  "digest": "55b8a915e8844775"
+  "required_diagnostics": {
+    "why": "A policy can be nominally adaptive and behaviourally constant. Pooled action frequencies hide that: a policy that reads mid-fringe in every long-tau_c run and the extremum in every short-tau_c run has the same pooled mixture as one that alternates at random, and both differ from one that simply always picks the extremum. The diagnostics must be able to tell those apart, so nothing is aggregated away.",
+    "store": [
+      "action frequency BY tau_c and separately for the null and post-change streams",
+      "per-run switch counts (how often theta changes between consecutive shots), not just means",
+      "the number of exact ties and which way each was broken, since the tie-break is part of the policy identity and a policy sitting on a tie is effectively arbitrary",
+      "the posterior weights at the moment of each switch, so a switch can be attributed to inference rather than to noise"
+    ],
+    "acceptance": "If the action frequency does not vary with tau_c, the policy is not using the posterior in any way that matters and no feedback claim may be made, whatever the delays show."
+  },
+  "digest": "dbf17ef20e6f3a99"
 }

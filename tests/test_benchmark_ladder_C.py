@@ -29,13 +29,64 @@ def test_the_schedule_class_digest_is_intact():
     assert LADDER["schedule_class"]["frozen_digest"] == CLASS["digest"]
 
 
-def test_L3_contains_the_learner_so_its_falsifier_is_true_by_construction():
-    """The repair. With the learner inside the class the selector can always choose it, so L3's
-    ratio is at most the learner's at every tau_c. Only then is a loss diagnostic."""
+def test_L3_separates_the_population_optimum_from_the_selected_estimate():
+    """The second repair, and the one that took two attempts to get right.
+
+    Putting the learner in the class guarantees only that it CAN be selected. It does not
+    guarantee that whichever member IS selected beats it out of sample. The mathematical
+    property belongs to the population optimum; the observable quantity is an estimate.
+    """
+    o = LADDER["L3"]["three_distinct_objects"]
+    assert set(o) == {"target", "estimate", "diagnostic_envelope"}
+    assert o["target"]["observable"] is False, "an estimand is being reported as a measurement"
+    assert o["estimate"]["observable"] is True
+    assert "CAN lose" in o["estimate"]["property"]
+    assert o["diagnostic_envelope"]["optimistically_biased"] is True
     assert LADDER["L3"]["class_size"] == CLASS["size"] + 1
-    assert "posterior policy" in LADDER["L3"]["class"]
-    assert "digest" in LADDER["L3"]["class"]
-    assert "cannot beat L3 by construction" in LADDER["L3"]["why_the_learner_is_in_the_class"]
+
+
+def test_the_hard_falsifier_is_attached_only_to_the_diagnostic_envelope():
+    f = LADDER["falsifier"]
+    assert "DIAGNOSTIC ENVELOPE" in f["hard"]
+    assert "NOT a falsifier" in f["not_a_falsifier"]
+    assert "selection instability" in f["not_a_falsifier"]
+
+
+def test_selection_on_finite_data_really_can_pick_a_worse_member():
+    """The claim, demonstrated rather than asserted.
+
+    Candidates with a true best, selected on one independent sample and scored on another. If
+    membership alone guaranteed domination this would never lose; it does, which is exactly why
+    the guarantee had to be moved off the estimate.
+    """
+    import numpy as np
+    # Scaled to THIS measurement's regime, not a convenient one: roadmap B's worst-case ratios
+    # are ~1.6 with standard errors ~0.17, and the candidates differ by 0.03 to 0.4. The noise
+    # is therefore comparable to or larger than the gaps being selected on, which is exactly
+    # the regime where selection instability bites.
+    rng = np.random.default_rng(3)
+    trials = 4000
+    truth = np.array([1.60, 1.61, 1.63, 2.02, 2.55])   # candidate 0 is genuinely best
+    se = 0.17                                           # measured scale, not chosen for effect
+    losses = 0
+    for _ in range(trials):
+        sel = truth + rng.normal(0, se, truth.size)
+        ev = truth + rng.normal(0, se, truth.size)
+        if ev[int(np.argmin(sel))] > ev[0]:   # selected member worse than the learner, in-sample
+            losses += 1
+    frac = losses / trials
+    assert frac > 0.20, (
+        f"independent selection lost to the learner in only {100*frac:.1f} % of trials; if the "
+        f"effect were this small the preregistration would be overstating the risk")
+    assert LADDER["L3"]["three_distinct_objects"]["estimate"]["property"].count("CAN lose") == 1
+
+
+def test_a_learner_failing_the_envelope_does_not_silently_leave_the_class():
+    """Otherwise the invalid first construction returns by the back door: a domination claim
+    over eleven precommitted schedules with the learner quietly removed."""
+    text = LADDER["L3"]["learner_ineligibility"]
+    assert "NO COMPARABLE LEARNER RESULT" in text
+    assert "must NOT simply drop out" in text
 
 
 def test_L2_has_an_explicit_selection_rule_on_the_selection_seeds():
@@ -64,8 +115,9 @@ def test_the_superseded_preregistration_is_kept_and_points_forward():
     """The correction is valuable history; the first attempt is not deleted."""
     assert "superseded_by" in CLASS
     assert CLASS["superseded_by"]["file"] == "analysis/benchmark_ladder_C.json"
-    assert LADDER["supersedes"]["commit"] == "e5f779a"
-    assert "invalid" in LADDER["supersedes"]["why"]
+    assert "e5f779a" in LADDER["supersedes"]["commits"]
+    assert "bb102d3" in LADDER["supersedes"]["commits"]
+    assert "ALSO FALSE" in LADDER["supersedes"]["why"]
 
 
 def test_no_C_measurement_exists_yet():
@@ -74,3 +126,13 @@ def test_no_C_measurement_exists_yet():
     for name in os.listdir(os.path.join(ROOT, "analysis", "outputs")):
         assert "posterior" not in name and "res10" not in name, (
             f"{name} exists: roadmap C was measured before its ladder was frozen")
+
+
+def test_diagnostics_cannot_be_satisfied_by_pooled_frequencies_alone():
+    """A policy can be nominally adaptive and behaviourally constant; pooling hides it."""
+    dg = LADDER["required_diagnostics"]
+    joined = " ".join(dg["store"]).lower()
+    assert "by tau_c" in joined and "null and post-change" in joined
+    assert "switch counts" in joined and "ties" in joined
+    assert "does not vary with tau_c" in dg["acceptance"], (
+        "there is no stated condition under which the feedback claim is refused")
