@@ -417,6 +417,68 @@ def make_posterior_theta(bank):
     return sched
 
 
+def make_posterior_sampling_theta(bank, action_seed):
+    """Posterior sampling: draw a candidate tau_c from the posterior, take ITS preferred endpoint.
+
+    The greedy rule (make_posterior_theta) maximises the posterior-EXPECTED rate and is myopic.
+    Measured 8 Sept 2026: from the uniform prior it starts at mid-fringe at both operating
+    points, and to leave it needs 0.578 (pilot) or 0.770 (stress) of the posterior mass on the
+    tau_c = 1 component -- while mid-fringe readout at short tau_c is the least informative
+    action available, so the evidence needed to escape is the evidence it fails to gather. Under
+    forced mid-fringe at true tau_c = 1 the mass on the true component FALLS below its prior
+    before recovering, reaching 0.33 (pilot) and 0.21 (stress) after 20000 shots, far beyond any
+    detection horizon. Operationally trapped; not shown to be absorbing.
+
+    Posterior sampling escapes without a tuned exploration coefficient. Sampling k ~ w and
+    playing k's preferred endpoint gives the extremum probability 0.50 at the pilot and 0.25 at
+    the stress point under the uniform prior -- nonzero immediately, and self-correcting as w
+    concentrates. There is nothing to fit.
+
+    The action RNG is part of the policy: a policy whose actions depend on an unrecorded random
+    stream is not a reproducible object. It is reseeded from `action_seed` at n == 0, so the
+    policy is identical across calls regardless of how many calibration probes preceded it --
+    otherwise the RNG state would carry between probes and the result would depend on call order.
+    """
+    mid, ext = component_rates(bank)
+    prefers_mid = mid > ext
+    rng = {"g": np.random.default_rng(action_seed)}
+
+    def sched(n, w, bk):
+        if n == 0:
+            rng["g"] = np.random.default_rng(action_seed)
+        u = rng["g"].random(len(w))
+        k = (w.cumsum(1) < u[:, None]).sum(1).clip(0, w.shape[1] - 1)
+        return np.where(prefers_mid[k], THM, THX)
+
+    sched.needs_posterior = True
+    sched.rates = (mid, ext)
+    sched.identity = {
+        "policy": "posterior-sampling theta selection",
+        "version": 1,
+        "rule": "sample k ~ posterior(w); play argmax_theta I(theta | tau_c_k)",
+        "rate_formula_mid": "0.5 * sum_{j=1..3999} rk_exact(C_eff, s, a^j)^2, a = exp(-1/tau_c)",
+        "rate_formula_ext": "I_ext_exact(C_eff, s), independent of tau_c",
+        "deterministic_given_seed": True,
+        "action_rng_algorithm": "numpy PCG64 via default_rng",
+        "action_rng_stream": ("SEPARATE from the latent-process and measurement RNG, which lives "
+                              "inside run_batch and is seeded by the run seed. The action stream "
+                              "never draws from it, so action randomness cannot correlate with "
+                              "the data it is reacting to."),
+        "action_rng_seed_rule": "reseeded from action_seed at n == 0 of every batch",
+        "action_seed": int(action_seed),
+        "exploration_coefficient": "none; exploration comes from the posterior itself",
+        "tie_break": "none required; the endpoint follows the sampled component",
+        "tccs": list(bank.tccs),
+        "prefers_mid": [bool(x) for x in prefers_mid],
+        "rate_table_mid": [float(x) for x in mid],
+        "rate_table_ext": float(ext),
+        "operating_point": bank.op.as_dict(),
+    }
+    sched.identity["digest"] = hashlib.sha256(
+        json.dumps(sched.identity, sort_keys=True).encode()).hexdigest()[:16]
+    return sched
+
+
 def build_policies(op):
     """Return (policies, bank_or, bank_ln) at the given operating point.
 

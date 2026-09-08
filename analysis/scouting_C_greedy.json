@@ -1,0 +1,114 @@
+{
+  "record": "roadmap C scouting run for the greedy posterior-expected-rate policy",
+  "status": "SCOUTING, not confirmatory",
+  "why_recorded": "Until this file existed the repository asserted that nothing had been measured for roadmap C. That stopped being true the moment an R=8 switching table was produced. The accurate statement is that no CONFIRMATORY C calibration or delay measurement exists; scouting data does, and it is here.",
+  "revision": "d05dcf8",
+  "environment": "python 3.9.7 / numpy 1.23.5",
+  "policy": "greedy posterior-expected-rate theta selection (digests: pilot fa22bac9ac38d6d7, stress 1778e8ebd51c92cb)",
+  "deterministic_properties": {
+    "what": "These are NOT measurements. They are computed from the policy's rate table in closed form and would be identical on any stack with any seed.",
+    "uniform_prior_starts_at": "mid-fringe at both operating points",
+    "pilot": {
+      "expected_mid_under_uniform_prior": 0.002232,
+      "I_ext": 0.001296,
+      "components_favouring_mid": [
+        "10",
+        "25"
+      ],
+      "posterior_mass_on_tau_c_1_needed_to_switch": 0.578
+    },
+    "stress": {
+      "expected_mid_under_uniform_prior": 0.0009643,
+      "I_ext": 0.0003196,
+      "components_favouring_mid": [
+        "4",
+        "10",
+        "25"
+      ],
+      "posterior_mass_on_tau_c_1_needed_to_switch": 0.77
+    }
+  },
+  "scouting_measurement": {
+    "what": "an R=8 exploratory switching table, seeds 201 + int(tau_c), threshold h=3.0 (not calibrated), horizon cap 6000 shots",
+    "R": 8,
+    "cap": 6000,
+    "h": 3.0,
+    "seeds": "201 + int(tau_c)",
+    "results_mid_fringe_fraction": {
+      "pilot": {
+        "20.0": 1.0,
+        "5.0": 0.99,
+        "1.0": 0.956
+      },
+      "stress": {
+        "20.0": 1.0,
+        "5.0": 1.0,
+        "1.0": 1.0
+      }
+    },
+    "results_switches_per_run": {
+      "pilot": {
+        "20.0": 0.0,
+        "5.0": 1.5,
+        "1.0": 6.0
+      },
+      "stress": {
+        "20.0": 0.0,
+        "5.0": 0.0,
+        "1.0": 0.0
+      }
+    },
+    "limitations": [
+      "R=8 is far too small for any inferential statement",
+      "h=3.0 is arbitrary and NOT the calibrated threshold",
+      "the 6000-shot horizon is shorter than several measured detection delays",
+      "seeds overlap the evaluation stream 200 + int(tau_c), so this data must not be reused as evaluation"
+    ]
+  },
+  "not_yet_established": "Whether the greedy policy is MATHEMATICALLY self-trapping -- the posterior unable to escape -- or only OPERATIONALLY trapped, meaning the escape is possible but slower than the detection horizon. Those are different claims and the scouting data distinguishes neither. Recorded as an open question, not as a negative result.",
+  "may_become_a_negative_result_only_after": "an independently seeded confirmation at adequate R with the calibrated threshold, plus the odds-accumulation comparison above",
+  "correction_appended_2026_09_08": {
+    "what_was_overstated": "The R=8 scouting showed 0.0 pp spread in action frequency across tau_c at the stress point, and I concluded the greedy policy 'would fail the acceptance rule outright'. On an independent stream at R=32 the spread is 3.6 pp, so that conclusion was drawn from eight runs at an uncalibrated threshold and was too strong.",
+    "and_the_second_overstatement": "I then said 3.6 pp 'would pass the >=1 pp floor'. That is equally unsupported: with replicate-level uncertainty the contrast f(tau_c=20) - f(tau_c=1) is 3.6 pp [-0.7, 7.8], which does NOT resolve. The honest statement is that the greedy policy's behavioural adaptation is UNRESOLVED at the stress point, neither demonstrated nor refuted.",
+    "confirmation_R32_seeds_800_plus_tau_c": {
+      "note": "design evidence, h = 3.0 uncalibrated, cap 8000; NOT confirmatory",
+      "contrast_f20_minus_f1_percentage_points": {
+        "pilot_greedy": {
+          "value": 8.7,
+          "ci95": [
+            2.6,
+            14.7
+          ],
+          "resolved": true
+        },
+        "pilot_posterior_sampling": {
+          "value": 10.5,
+          "ci95": [
+            7.4,
+            13.7
+          ],
+          "resolved": true
+        },
+        "stress_greedy": {
+          "value": 3.6,
+          "ci95": [
+            -0.7,
+            7.8
+          ],
+          "resolved": false
+        },
+        "stress_posterior_sampling": {
+          "value": 7.4,
+          "ci95": [
+            5.1,
+            9.7
+          ],
+          "resolved": true
+        }
+      }
+    },
+    "what_survives_independently_of_scouting": "The greedy rule's DETERMINISTIC properties: it starts at mid-fringe from the uniform prior at both operating points, and needs 0.578 (pilot) or 0.770 (stress) of the posterior mass on tau_c = 1 to leave. Those are closed-form consequences of its rate table and hold on any stack with any seed.",
+    "forced_trajectory_is_illustrative": "The posterior masses of 0.33 (pilot) and 0.21 (stress) after 20000 shots under forced mid-fringe at true tau_c = 1 are a SINGLE stochastic realisation: R = 32, seed 4242, means across runs, no uncertainty computed. They are illustrative of slow escape, not expectations, and no claim rests on their exact values. What they do show qualitatively is that the mass falls BELOW its 0.25 prior before recovering.",
+    "status_of_the_two_policies": "Both remain in L3's comparison class. Greedy is retained as a negative baseline, NOT retired, because the evidence that would have retired it did not survive confirmation."
+  }
+}

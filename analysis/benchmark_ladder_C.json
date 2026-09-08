@@ -96,8 +96,8 @@
   },
   "L3": {
     "name": "tau_c-knowing finite-class benchmark over 12 eligible policies",
-    "class_size": 12,
-    "class": "the eleven frozen schedules AND the posterior policy, identified by its digest",
+    "class_size": 13,
+    "class": "the eleven frozen schedules AND both learners, each identified by its digest: greedy posterior-expected-rate (pilot fa22bac9ac38d6d7, stress 1778e8ebd51c92cb) and posterior sampling (pilot 8b9c96327df16cae, stress 53a01df4b279cbbf)",
     "three_distinct_objects": {
       "target": {
         "what": "the POPULATION finite-class optimum over the 12 eligible policies at each tau_c",
@@ -158,8 +158,39 @@
       ],
       "stratification_caveat": "Any null grouping aligned with a later tau_c experiment is an EVALUATION STRATUM -- a bookkeeping label matching null runs to the post-change runs they will be compared with -- and never a physical tau_c. It must be named as a stratum wherever it appears."
     },
-    "acceptance": "Applies to POST-CHANGE behaviour specifically: if post-change action frequency does not vary with true tau_c, the policy is not using the posterior in any way that matters and no feedback claim may be made, whatever the delays show. Null-stream switching is not evidence of useful adaptation -- under H0 there is nothing to adapt to, and a policy that switches busily there is reacting to noise.",
+    "acceptance": "Applies to POST-CHANGE behaviour specifically, and with an INTERVAL, not a bare floor. Report the contrast f(tau_c=20) - f(tau_c=1) per policy with replicate-level uncertainty. A 1 percentage-point floor is a sanity check, NOT a statistical test: a 3.6 pp observed spread at R = 32 has a 95 % interval of [-0.7, 7.8] and does not resolve. If the contrast does not resolve, behavioural adaptation is UNDEMONSTRATED -- which is different from absent -- and no feedback claim may be made. Null-stream switching is never evidence of adaptation: under H0 there is nothing to adapt to.",
     "null_has_no_tau_c": "Under H0 there IS no tau_c: arl_of passes true_tcc=None and run_batch uses it only in the non-null branch. Grouping null diagnostics 'by tau_c' would be meaningless. What does exist under H0 is the BANK's tau_c components as the filter's hypotheses, and the posterior over them still moves because it is fitting noise -- which is precisely what determines the policy's null run length and therefore its calibration."
   },
-  "digest": "bc4d676c421392b4"
+  "learners": {
+    "greedy_posterior_expected_rate": {
+      "status": "retained as a negative baseline; NOT retired",
+      "why_retained": "the R=8 evidence that appeared to disqualify it did not survive independent confirmation: its stress-point action-frequency contrast is 3.6 pp [-0.7, 7.8], unresolved rather than absent"
+    },
+    "posterior_sampling": {
+      "status": "PILOT-INFORMED, not blind",
+      "why": "this policy was designed after seeing the greedy policy's behaviour, and has itself been exercised at R=8 and R=32 on design seeds. Its calibration and delay study can be preregistered prospectively -- they have not been run -- but the POLICY was chosen with knowledge of scouting results and that must not be presented as a blind prediction.",
+      "rng": "a separate action stream, PCG64 via default_rng, reseeded from action_seed at n == 0, never drawing from the latent-process or measurement RNG inside run_batch",
+      "design_seeds_excluded_from_calibration_and_evaluation": [
+        202,
+        206,
+        221,
+        801,
+        805,
+        820,
+        5150
+      ]
+    }
+  },
+  "provisional_language": {
+    "supported_now": [
+      "posterior sampling produces more BALANCED action mixtures than greedy (near 50/50 versus 90/10 at the pilot) -- directly observed"
+    ],
+    "provisional": [
+      "'more responsive' -- sampling's contrast resolves at both operating points while greedy's does not at the stress point, but this is design evidence at R = 32 with an uncalibrated threshold"
+    ],
+    "not_implied_by_either": [
+      "better detection. Neither balance nor responsiveness implies a shorter delay, which is what the calibrated study measures."
+    ]
+  },
+  "digest": "010ab8944c6b2b7d"
 }

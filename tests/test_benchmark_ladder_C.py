@@ -42,7 +42,8 @@ def test_L3_separates_the_population_optimum_from_the_selected_estimate():
     assert o["estimate"]["observable"] is True
     assert "CAN lose" in o["estimate"]["property"]
     assert o["diagnostic_envelope"]["optimistically_biased"] is True
-    assert LADDER["L3"]["class_size"] == CLASS["size"] + 1
+    # two learners since 8 Sept: greedy retained as a negative baseline alongside sampling
+    assert LADDER["L3"]["class_size"] == CLASS["size"] + 2
 
 
 def test_the_hard_falsifier_is_attached_only_to_the_diagnostic_envelope():
@@ -123,12 +124,52 @@ def test_the_superseded_preregistration_is_kept_and_points_forward():
     assert "ALSO FALSE" in LADDER["supersedes"]["why"]
 
 
-def test_no_C_measurement_exists_yet():
-    """This file is a preregistration. If a C artifact appears, these definitions were not
-    frozen before the data and this test must be deleted deliberately."""
+def test_no_calibrated_or_confirmatory_delay_result_exists_yet():
+    """The guard, corrected 8 Sept 2026.
+
+    It first asserted that NOTHING had been measured, which stopped being true when an R=8
+    scouting table was produced. It then said "no confirmatory measurement", which is still
+    loose: R=8 AND R=32 design evidence both exist, for both policies. The accurate condition
+    is that no CALIBRATED or CONFIRMATORY DELAY result exists. Design evidence does, at
+    uncalibrated thresholds, and is recorded in analysis/scouting_C_greedy.json.
+    """
     for name in os.listdir(os.path.join(ROOT, "analysis", "outputs")):
         assert "posterior" not in name and "res10" not in name, (
             f"{name} exists: roadmap C was measured before its ladder was frozen")
+    scout = json.load(open(os.path.join(ROOT, "analysis", "scouting_C_greedy.json"),
+                           encoding="utf-8"))
+    assert scout["status"] == "SCOUTING, not confirmatory"
+    assert "correction_appended_2026_09_08" in scout, "the correction was not appended"
+    # the original account must SURVIVE the correction, not be replaced by it
+    assert scout["scouting_measurement"]["results_mid_fringe_fraction"]["stress"]["1.0"] == 1.000, (
+        "the original R=8 account was overwritten; corrections are appended here")
+    assert scout["revision"], "the scouting run names no revision"
+    for field in ("R", "cap", "h", "seeds"):
+        assert field in scout["scouting_measurement"], f"scouting run does not record {field}"
+    assert scout["scouting_measurement"]["limitations"], "scouting run states no limitations"
+
+
+def test_scouting_separates_deterministic_properties_from_measured_ones():
+    """The starting action and switching thresholds are closed-form consequences of the rate
+    table; the switching table is data. Presenting them together would let a deterministic fact
+    borrow the authority of a measurement, or a thin measurement borrow the certainty of a
+    theorem."""
+    scout = json.load(open(os.path.join(ROOT, "analysis", "scouting_C_greedy.json"),
+                           encoding="utf-8"))
+    det = scout["deterministic_properties"]
+    assert "NOT measurements" in det["what"]
+    assert det["pilot"]["posterior_mass_on_tau_c_1_needed_to_switch"] == 0.578
+    assert det["stress"]["posterior_mass_on_tau_c_1_needed_to_switch"] == 0.770
+    assert "R=8" in scout["scouting_measurement"]["what"]
+
+
+def test_self_trapping_is_an_open_question_not_a_result():
+    """Absorbing and merely-slow are different claims; the scouting data settles neither."""
+    scout = json.load(open(os.path.join(ROOT, "analysis", "scouting_C_greedy.json"),
+                           encoding="utf-8"))
+    assert "MATHEMATICALLY self-trapping" in scout["not_yet_established"]
+    assert "OPERATIONALLY trapped" in scout["not_yet_established"]
+    assert "independently seeded confirmation" in scout["may_become_a_negative_result_only_after"]
 
 
 def test_diagnostics_cannot_be_satisfied_by_pooled_frequencies_alone():
@@ -151,3 +192,39 @@ def test_diagnostics_cannot_be_satisfied_by_pooled_frequencies_alone():
     assert "POST-CHANGE behaviour specifically" in dg["acceptance"], (
         "the acceptance rule is not scoped to post-change behaviour")
     assert "nothing to adapt to" in dg["acceptance"]
+
+
+def test_L3_holds_both_learners_and_names_the_pilot_informed_one():
+    assert LADDER["L3"]["class_size"] == CLASS["size"] + 2
+    for dig in ("fa22bac9ac38d6d7", "1778e8ebd51c92cb",
+                "8b9c96327df16cae", "53a01df4b279cbbf"):
+        assert dig in LADDER["L3"]["class"], f"{dig} is not named in L3's class"
+    ln = LADDER["learners"]
+    assert ln["posterior_sampling"]["status"] == "PILOT-INFORMED, not blind"
+    assert "NOT retired" in ln["greedy_posterior_expected_rate"]["status"]
+    assert "did not survive" in ln["greedy_posterior_expected_rate"]["why_retained"]
+
+
+def test_design_seeds_are_excluded_from_calibration_and_evaluation():
+    """Action randomness must not reuse a stream the policy was designed on."""
+    excluded = set(LADDER["learners"]["posterior_sampling"]
+                   ["design_seeds_excluded_from_calibration_and_evaluation"])
+    used = set()
+    for off in (0, 7000):
+        used |= {100 + off, 900 + off} | {200 + int(t) + off for t in (20, 5, 1)}
+    assert not (excluded & used), f"design seeds reused for measurement: {sorted(excluded & used)}"
+    assert 5150 in excluded, "the action seed is not excluded"
+
+
+def test_the_acceptance_rule_demands_an_interval_not_a_floor():
+    a = LADDER["required_diagnostics"]["acceptance"]
+    assert "INTERVAL, not a bare floor" in a
+    assert "[-0.7, 7.8]" in a, "the unresolved example is not recorded"
+    assert "UNDEMONSTRATED -- which is different from absent" in a
+
+
+def test_responsiveness_is_marked_provisional_and_detection_is_not_implied():
+    pl = LADDER["provisional_language"]
+    assert any("BALANCED" in s for s in pl["supported_now"])
+    assert any("more responsive" in s for s in pl["provisional"])
+    assert any("better detection" in s for s in pl["not_implied_by_either"])
