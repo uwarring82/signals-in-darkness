@@ -97,7 +97,7 @@
   "L3": {
     "name": "tau_c-knowing finite-class benchmark over 12 eligible policies",
     "class_size": 13,
-    "class": "the eleven frozen schedules AND both learners, each identified by its digest: greedy posterior-expected-rate (pilot fa22bac9ac38d6d7, stress 1778e8ebd51c92cb) and posterior sampling (pilot 8b9c96327df16cae, stress 53a01df4b279cbbf)",
+    "class": "the eleven frozen schedules AND both learners, each identified by its SEED-FREE policy digest: greedy posterior-expected-rate (pilot fa22bac9ac38d6d7, stress 1778e8ebd51c92cb) and posterior sampling (pilot 3a687899c8b1821d, stress a8654d2ebc97a762)",
     "three_distinct_objects": {
       "target": {
         "what": "the POPULATION finite-class optimum over the 12 eligible policies at each tau_c",
@@ -178,7 +178,11 @@
         805,
         820,
         5150
-      ]
+      ],
+      "policy_digests": {
+        "pilot": "3a687899c8b1821d",
+        "stress": "a8654d2ebc97a762"
+      }
     }
   },
   "provisional_language": {
@@ -192,5 +196,17 @@
       "better detection. Neither balance nor responsiveness implies a shorter delay, which is what the calibrated study measures."
     ]
   },
-  "digest": "010ab8944c6b2b7d"
+  "identity_separation": {
+    "why": "An earlier version put the realised action seed inside the policy digest. L3 then named policies built with the DESIGN seed 5150, while that seed is excluded from measurement -- so any measurement would have produced a different digest and the measured learner would not have been the learner preregistered in L3. The class membership that makes L3's falsifier work would have failed silently.",
+    "policy_identity": "decision rule, rate table, operating point, RNG algorithm and the SEED SCHEDULE RULE. The realised seed is excluded, so the policy is the same object under any seed family.",
+    "run_identity": "the policy digest plus the actual action and data seeds",
+    "action_seed_families": {
+      "calibration": "6100 + offset",
+      "selection (L2/L3)": "6300 + int(tau_c) + offset",
+      "evaluation": "6200 + int(tau_c) + offset",
+      "design, excluded from all measurement": 5150
+    },
+    "requirement": "calibration, selection and evaluation must not share an action seed, and none may reuse a design seed -- otherwise the policy would be measured on a stream it was tuned against, or a benchmark selected on the stream it is scored on"
+  },
+  "digest": "f0b3e936c351871c"
 }

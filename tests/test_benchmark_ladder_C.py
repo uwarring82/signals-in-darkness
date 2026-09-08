@@ -196,9 +196,20 @@ def test_diagnostics_cannot_be_satisfied_by_pooled_frequencies_alone():
 
 def test_L3_holds_both_learners_and_names_the_pilot_informed_one():
     assert LADDER["L3"]["class_size"] == CLASS["size"] + 2
-    for dig in ("fa22bac9ac38d6d7", "1778e8ebd51c92cb",
-                "8b9c96327df16cae", "53a01df4b279cbbf"):
-        assert dig in LADDER["L3"]["class"], f"{dig} is not named in L3's class"
+    # Digests are read from the CODE, not hardcoded: a hardcoded copy drifts silently from the
+    # policy it names, which is the failure this whole repair is about.
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(ROOT, "analysis", "lib"))
+    from sid_policies import (Bank, PILOT, STRESS, ACTION_SEEDS,
+                              make_posterior_theta, make_posterior_sampling_theta)
+    for op in (PILOT, STRESS):
+        bank = Bank([1.0, 4.0, 10.0, 25.0], op)
+        for pol in (make_posterior_theta(bank),
+                    make_posterior_sampling_theta(bank, ACTION_SEEDS["calibration"](0))):
+            dig = pol.identity["digest"]
+            assert dig in LADDER["L3"]["class"], (
+                f"L3 does not name {pol.identity['policy']} at {op.label()} (digest {dig}); "
+                f"the ladder and the code disagree about which policy is in the class")
     ln = LADDER["learners"]
     assert ln["posterior_sampling"]["status"] == "PILOT-INFORMED, not blind"
     assert "NOT retired" in ln["greedy_posterior_expected_rate"]["status"]
@@ -206,14 +217,58 @@ def test_L3_holds_both_learners_and_names_the_pilot_informed_one():
 
 
 def test_design_seeds_are_excluded_from_calibration_and_evaluation():
-    """Action randomness must not reuse a stream the policy was designed on."""
-    excluded = set(LADDER["learners"]["posterior_sampling"]
-                   ["design_seeds_excluded_from_calibration_and_evaluation"])
-    used = set()
+    """Action randomness must not reuse a stream the policy was designed on.
+
+    The earlier version of this test compared the excluded design seeds against the DATA seed
+    formulas, and so never looked at the action seeds a measurement would actually draw. It
+    now evaluates the declared action-seed families themselves.
+    """
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(ROOT, "analysis", "lib"))
+    from sid_policies import ACTION_SEEDS
+
+    design = {ACTION_SEEDS["design"]}
+    action_used, data_used = set(), set()
     for off in (0, 7000):
-        used |= {100 + off, 900 + off} | {200 + int(t) + off for t in (20, 5, 1)}
-    assert not (excluded & used), f"design seeds reused for measurement: {sorted(excluded & used)}"
-    assert 5150 in excluded, "the action seed is not excluded"
+        action_used.add(ACTION_SEEDS["calibration"](off))
+        for tcc in (20.0, 5.0, 1.0):
+            action_used.add(ACTION_SEEDS["selection"](tcc, off))
+            action_used.add(ACTION_SEEDS["evaluation"](tcc, off))
+        data_used |= {100 + off, 900 + off} | {200 + int(t) + off for t in (20, 5, 1)}
+
+    assert not (design & action_used), (
+        f"a measurement would draw actions from a design stream: {sorted(design & action_used)}")
+    assert not (design & data_used), "a design seed is reused as a data seed"
+    # calibration, selection and evaluation must not share an action stream either
+    for off in (0, 7000):
+        cal = {ACTION_SEEDS["calibration"](off)}
+        sel = {ACTION_SEEDS["selection"](t, off) for t in (20.0, 5.0, 1.0)}
+        ev = {ACTION_SEEDS["evaluation"](t, off) for t in (20.0, 5.0, 1.0)}
+        assert not (cal & sel) and not (cal & ev) and not (sel & ev), (
+            f"action-seed families collide at offset {off}: cal {cal}, sel {sel}, ev {ev}")
+    # and the data and action streams must not collide with each other
+    assert not (action_used & data_used), (
+        f"action and data streams share seeds: {sorted(action_used & data_used)}")
+
+
+def test_the_policy_digest_is_seed_free_so_L3_names_what_gets_measured():
+    """The blocker this repair exists for: with the realised seed inside the digest, measuring
+    with a fresh seed produces a different policy from the one preregistered in L3, and the
+    class membership that makes L3's falsifier work fails silently."""
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(ROOT, "analysis", "lib"))
+    from sid_policies import Bank, PILOT, make_posterior_sampling_theta, ACTION_SEEDS
+
+    bank = Bank([1.0, 4.0, 10.0, 25.0], PILOT)
+    a = make_posterior_sampling_theta(bank, ACTION_SEEDS["design"])
+    b = make_posterior_sampling_theta(bank, ACTION_SEEDS["calibration"](0))
+    assert a.identity["digest"] == b.identity["digest"], (
+        "the policy digest depends on the realised action seed, so the measured learner would "
+        "not be the learner preregistered in L3")
+    assert "action_seed" not in a.identity, "the realised seed is still inside policy identity"
+    assert a.run_identity != b.run_identity, "run provenance does not distinguish the streams"
+    assert a.identity["digest"] in LADDER["L3"]["class"], (
+        "L3 names a policy digest that differs from the one the code produces")
 
 
 def test_the_acceptance_rule_demands_an_interval_not_a_floor():

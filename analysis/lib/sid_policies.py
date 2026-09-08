@@ -94,6 +94,18 @@ SEED_OFFSET = {"pilot": 0, "stress": 7000, "pilot_recal": 0}
 ARL_ENVELOPE = 0.30
 NULL_CAP_DEFAULT = 150_000
 
+#: Action-randomness seed families for the posterior-sampling policy, predeclared so that a
+#: measurement's action stream is never one the policy was designed on, and so calibration,
+#: selection and evaluation never share one. The design seed 5150 belongs to none of them.
+#: These are RUN provenance, not policy identity: the policy is the same object under any of
+#: them, which is exactly why the realised seed must stay out of the policy digest.
+ACTION_SEEDS = {
+    "design": 5150,
+    "calibration": lambda off: 6100 + off,
+    "selection": lambda tcc, off: 6300 + int(tcc) + off,
+    "evaluation": lambda tcc, off: 6200 + int(tcc) + off,
+}
+
 #: Selectable by name from the command line. Adding an entry here is the only supported way to
 #: introduce an operating point; nothing reads one from module state.
 #: `pilot_recal` is the SAME physical operating point as `pilot`, calibrated with
@@ -454,7 +466,7 @@ def make_posterior_sampling_theta(bank, action_seed):
     sched.rates = (mid, ext)
     sched.identity = {
         "policy": "posterior-sampling theta selection",
-        "version": 1,
+        "version": 2,
         "rule": "sample k ~ posterior(w); play argmax_theta I(theta | tau_c_k)",
         "rate_formula_mid": "0.5 * sum_{j=1..3999} rk_exact(C_eff, s, a^j)^2, a = exp(-1/tau_c)",
         "rate_formula_ext": "I_ext_exact(C_eff, s), independent of tau_c",
@@ -464,8 +476,16 @@ def make_posterior_sampling_theta(bank, action_seed):
                               "inside run_batch and is seeded by the run seed. The action stream "
                               "never draws from it, so action randomness cannot correlate with "
                               "the data it is reacting to."),
-        "action_rng_seed_rule": "reseeded from action_seed at n == 0 of every batch",
-        "action_seed": int(action_seed),
+        "action_rng_seed_rule": ("reseeded from the run's action seed at n == 0 of every batch. "
+                                 "The RULE is policy identity; the REALISED seed is run "
+                                 "provenance and is deliberately NOT in this digest -- otherwise "
+                                 "measuring with a fresh seed would produce a different policy "
+                                 "from the one preregistered in L3, and the class membership "
+                                 "that makes L3's falsifier work would silently fail."),
+        "action_seed_families": {"calibration": "6100 + offset",
+                                 "selection": "6300 + int(tau_c) + offset",
+                                 "evaluation": "6200 + int(tau_c) + offset",
+                                 "design_excluded": 5150},
         "exploration_coefficient": "none; exploration comes from the posterior itself",
         "tie_break": "none required; the endpoint follows the sampled component",
         "tccs": list(bank.tccs),
@@ -476,6 +496,10 @@ def make_posterior_sampling_theta(bank, action_seed):
     }
     sched.identity["digest"] = hashlib.sha256(
         json.dumps(sched.identity, sort_keys=True).encode()).hexdigest()[:16]
+    # Run provenance: the policy plus the stream it actually drew from. Two runs of the SAME
+    # policy differ here and only here.
+    sched.run_identity = {"policy_digest": sched.identity["digest"],
+                          "action_seed": int(action_seed)}
     return sched
 
 
