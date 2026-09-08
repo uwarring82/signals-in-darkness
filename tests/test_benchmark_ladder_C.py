@@ -108,7 +108,10 @@ def test_ineligibility_is_decided_by_calibration_not_by_result():
 def test_no_rung_licenses_oracle_or_regret_language_without_L4():
     assert LADDER["L4"]["attempted"] is False
     assert "no C result may use those words" in LADDER["L4"]["licenses"]
-    assert "FINITE-CLASS" in LADDER["L3"]["licenses"]
+    assert "Not finite-class regret" in LADDER["L3"]["licenses"], (
+        "L3's estimate is a noisy selection procedure's out-of-sample performance, not the "
+        "population best-in-class value, so the difference from it is not regret")
+    assert LADDER["L3"]["regret_language"]["status"].startswith("no such estimate")
 
 
 def test_the_superseded_preregistration_is_kept_and_points_forward():
@@ -131,8 +134,20 @@ def test_no_C_measurement_exists_yet():
 def test_diagnostics_cannot_be_satisfied_by_pooled_frequencies_alone():
     """A policy can be nominally adaptive and behaviourally constant; pooling hides it."""
     dg = LADDER["required_diagnostics"]
-    joined = " ".join(dg["store"]).lower()
-    assert "by tau_c" in joined and "null and post-change" in joined
-    assert "switch counts" in joined and "ties" in joined
-    assert "does not vary with tau_c" in dg["acceptance"], (
-        "there is no stated condition under which the feedback claim is refused")
+    null_s = " ".join(dg["store"]["null_stream"]).lower()
+    post_s = " ".join(dg["store"]["post_change_stream"]).lower()
+    # tau_c does not exist under H0, so the null stream must not be GROUPED by it. The text may
+    # legitimately mention true tau_c in a negation ("no true tau_c does"), so the check is on
+    # the grouping phrase rather than on the words appearing at all -- the third time in this
+    # suite that a bare substring test would have flagged a correct sentence for saying the
+    # opposite of what it forbids.
+    assert "by true tau_c" not in null_s, (
+        "null diagnostics are grouped by a tau_c that does not exist under H0")
+    assert "operating point" in null_s and "seed stream" in null_s
+    assert "true tau_c" in post_s, "post-change diagnostics are not grouped by the real tau_c"
+    for s in (null_s, post_s):
+        assert "switch counts" in s and "tie counts" in s
+    assert "EVALUATION STRATUM" in dg["store"]["stratification_caveat"]
+    assert "POST-CHANGE behaviour specifically" in dg["acceptance"], (
+        "the acceptance rule is not scoped to post-change behaviour")
+    assert "nothing to adapt to" in dg["acceptance"]

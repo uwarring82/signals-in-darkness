@@ -120,8 +120,13 @@
       }
     },
     "selection_rule": "for each true tau_c independently, the eligible member with the smallest mean delay on the selection stream; measured on the evaluation stream",
-    "licenses": "FINITE-CLASS regret language over these twelve members, never global",
-    "learner_ineligibility": "If the posterior policy itself fails the +-30 % calibration envelope, C HAS NO COMPARABLE LEARNER RESULT and must say so. The policy must NOT simply drop out of L3's eligible set while any domination or regret statement continues to be made about the remaining eleven: that would quietly restore the invalid e5f779a construction."
+    "licenses": "A COMPARISON WITH AN INDEPENDENTLY SELECTED BENCHMARK. Not finite-class regret. The reported L3 estimate is the out-of-sample performance of a NOISY SELECTION PROCEDURE, not the population best-in-class value, so the learner-minus-L3 difference is not a difference from the population target and must not be called regret.",
+    "learner_ineligibility": "If the posterior policy itself fails the +-30 % calibration envelope, C HAS NO COMPARABLE LEARNER RESULT and must say so. The policy must NOT simply drop out of L3's eligible set while any domination or regret statement continues to be made about the remaining eleven: that would quietly restore the invalid e5f779a construction.",
+    "regret_language": {
+      "permitted_when": "the difference from the POPULATION target is explicitly estimated or bounded -- for example by correcting the selection bias, or by a bound that holds uniformly over the twelve members",
+      "not_provided_by": "the diagnostic envelope, which is selected on the same sample it is scored on and is therefore optimistically biased downward; using it as a stand-in for the population target would understate regret by exactly the amount of that bias",
+      "status": "no such estimate or bound is attempted in C; regret language is unavailable"
+    }
   },
   "L4": {
     "name": "globally optimal dynamic controller",
@@ -140,13 +145,21 @@
   },
   "required_diagnostics": {
     "why": "A policy can be nominally adaptive and behaviourally constant. Pooled action frequencies hide that: a policy that reads mid-fringe in every long-tau_c run and the extremum in every short-tau_c run has the same pooled mixture as one that alternates at random, and both differ from one that simply always picks the extremum. The diagnostics must be able to tell those apart, so nothing is aggregated away.",
-    "store": [
-      "action frequency BY tau_c and separately for the null and post-change streams",
-      "per-run switch counts (how often theta changes between consecutive shots), not just means",
-      "the number of exact ties and which way each was broken, since the tie-break is part of the policy identity and a policy sitting on a tie is effectively arbitrary",
-      "the posterior weights at the moment of each switch, so a switch can be attributed to inference rather than to noise"
-    ],
-    "acceptance": "If the action frequency does not vary with tau_c, the policy is not using the posterior in any way that matters and no feedback claim may be made, whatever the delays show."
+    "store": {
+      "null_stream": [
+        "action frequency by OPERATING POINT, calibration replicate and seed stream",
+        "the posterior over the bank's components through the run -- the filter's hypotheses, which exist under H0 even though no true tau_c does",
+        "per-run switch counts, tie counts and their resolutions"
+      ],
+      "post_change_stream": [
+        "action frequency by TRUE tau_c, which exists only here",
+        "per-run switch counts, tie counts and their resolutions",
+        "the posterior weights at the moment of each switch, so a switch can be attributed to inference rather than to noise"
+      ],
+      "stratification_caveat": "Any null grouping aligned with a later tau_c experiment is an EVALUATION STRATUM -- a bookkeeping label matching null runs to the post-change runs they will be compared with -- and never a physical tau_c. It must be named as a stratum wherever it appears."
+    },
+    "acceptance": "Applies to POST-CHANGE behaviour specifically: if post-change action frequency does not vary with true tau_c, the policy is not using the posterior in any way that matters and no feedback claim may be made, whatever the delays show. Null-stream switching is not evidence of useful adaptation -- under H0 there is nothing to adapt to, and a policy that switches busily there is reacting to noise.",
+    "null_has_no_tau_c": "Under H0 there IS no tau_c: arl_of passes true_tcc=None and run_batch uses it only in the non-null branch. Grouping null diagnostics 'by tau_c' would be meaningless. What does exist under H0 is the BANK's tau_c components as the filter's hypotheses, and the posterior over them still moves because it is fitting noise -- which is precisely what determines the policy's null run length and therefore its calibration."
   },
-  "digest": "dbf17ef20e6f3a99"
+  "digest": "bc4d676c421392b4"
 }
