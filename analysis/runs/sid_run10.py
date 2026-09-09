@@ -137,18 +137,27 @@ def diagnostics(sched, stopping, label):
     # shots. At a fixed horizon every surviving run contributes the same number of shots.
     horizons = {}
     for H in FIXED_HORIZONS:
-        keep = np.nonzero(stop >= H)[0]
-        if len(keep) == 0 or steps < H:
-            horizons[str(H)] = {"runs": 0}
+        if steps < H:
+            horizons[str(H)] = {"runs": 0, "unavailable": "the batch ended before this horizon"}
             continue
+        # EVERY replicate, not only survivors. run_batch keeps simulating a run after it alarms,
+        # so its actions to H exist; restricting to stop >= H would compare different
+        # subpopulations -- at H = 2000 that was 13 surviving runs at tau_c = 20 against 57 at
+        # tau_c = 1, i.e. the slowest quarter of one arm against most of the other. The action
+        # frequency being measured is a property of the policy on the process, not of the
+        # trajectories that happened to survive.
         horizons[str(H)] = {
-            "runs": int(len(keep)),
-            "mean_fraction_at_mid_fringe": float(acts[:H, keep].mean()),
-            "se_fraction_at_mid_fringe": float(acts[:H, keep].mean(0).std(ddof=1)
-                                               / np.sqrt(len(keep))) if len(keep) > 1 else None,
-            "mean_posterior_implied_mid_probability": float(q[:H, keep].mean()),
-            "se_posterior_implied_mid_probability": float(q[:H, keep].mean(0).std(ddof=1)
-                                                          / np.sqrt(len(keep))) if len(keep) > 1 else None}
+            "runs": int(acts.shape[1]),
+            "all_replicates": True,
+            "survivors_to_horizon": int((stop >= H).sum()),
+            "mean_fraction_at_mid_fringe": float(acts[:H].mean()),
+            "se_fraction_at_mid_fringe": float(acts[:H].mean(0).std(ddof=1)
+                                               / np.sqrt(acts.shape[1])),
+            "mean_posterior_implied_mid_probability": float(q[:H].mean()),
+            "se_posterior_implied_mid_probability": float(q[:H].mean(0).std(ddof=1)
+                                                          / np.sqrt(q.shape[1])),
+            "per_run_fraction": [float(x) for x in acts[:H].mean(0)],
+            "per_run_q": [float(x) for x in q[:H].mean(0)]}
 
     # Transitions per AVAILABLE transition, not a raw count: a long run has more opportunities
     # to switch, so raw counts confound behaviour with survival.
