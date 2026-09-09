@@ -47,14 +47,25 @@ FIXED_HORIZONS = (100, 500, 2000, 10_000)
 POLICIES = ("greedy", "sampling")
 
 
-def build_policy(name, bank, op_name, phase):
+def build_policy(name, bank, op_name, phase, tcc=None):
     """Construct a learner. `phase` selects the predeclared ACTION seed family, which is run
-    provenance and deliberately not part of the policy digest."""
+    provenance and deliberately not part of the policy digest.
+
+    `phase` is REQUIRED and has no default. An earlier version hard-coded "calibration" inside
+    recording_policy, so the delay stage drew its actions from the calibration stream rather
+    than the preregistered evaluation family -- measuring a policy on the stream it was tuned
+    against. The phase now has to be passed at every call site.
+    """
     if name == "greedy":
         return make_posterior_theta(bank), None      # deterministic; no action stream
     off = SEED_OFFSET[op_name]
-    seed = ACTION_SEEDS["calibration"](off) if phase == "calibration" else None
-    if seed is None:
+    if phase == "calibration":
+        seed = ACTION_SEEDS["calibration"](off)
+    elif phase in ("evaluation", "selection"):
+        if tcc is None:
+            raise SystemExit(f"phase {phase!r} needs tau_c to pick its action seed")
+        seed = ACTION_SEEDS[phase](tcc, off)
+    else:
         raise SystemExit(f"no action-seed family declared for phase {phase!r}")
     return make_posterior_sampling_theta(bank, seed), seed
 T0 = time.time()
@@ -68,7 +79,7 @@ def _digest_of(path):
     return json.load(open(path, encoding="utf-8"))["digest"]
 
 
-def recording_policy(bank, policy_name="greedy", op_name="pilot"):
+def recording_policy(bank, policy_name, op_name, phase, tcc=None):
     """The posterior policy, wrapped so every action is recorded with its cause.
 
     The posterior vector is stored at the moment each run's action changes, together with the
@@ -83,7 +94,7 @@ def recording_policy(bank, policy_name="greedy", op_name="pilot"):
     early keeps being simulated; counting its later actions would inflate its switch count and
     could push its mid-fringe fraction above 1, which is how this was caught.
     """
-    inner, _ = build_policy(policy_name, bank, op_name, "calibration")
+    inner, action_seed = build_policy(policy_name, bank, op_name, phase, tcc)
     mid, ext = inner.rates
     prefers_mid = (mid > ext).astype(float)
     state = {"prev": None, "switches": [], "ties": 0, "actions": [], "q": []}
@@ -114,6 +125,7 @@ def recording_policy(bank, policy_name="greedy", op_name="pilot"):
     sched.needs_posterior = True
     sched.identity = inner.identity
     sched.state = state
+    sched.action_seed = action_seed
     return sched
 
 
@@ -259,7 +271,7 @@ def main(argv):
         # diagnostic null run at h*, recorded. Under H0 there is no tau_c: this is stratified by
         # operating point and seed stream only, and the posterior it reports is the filter's
         # belief while it fits noise.
-        rec = recording_policy(bank, policy_name, op_name)
+        rec = recording_policy(bank, policy_name, op_name, "calibration")
         stop = run_batch(bank, rec, None, h, DIAG_R, 900 + SEED_OFFSET[op_name], NULL_CAP, True)
         null_diag = diagnostics(rec, stop, f"null | operating point {op_name} | seed 900+offset")
         log(f"null diagnostics: {null_diag['mean_switches_per_run']:.1f} switches/run, "
@@ -300,12 +312,13 @@ def main(argv):
         if key in st["delays"]:
             cached += 1
             continue
-        rec = recording_policy(bank, policy_name, op_name)
+        rec = recording_policy(bank, policy_name, op_name, "evaluation", tcc)
         stop = run_batch(bank, rec, tcc, h, DELAY_R, 200 + int(tcc) + SEED_OFFSET[op_name],
                          DELAY_CAP, False)
         d = diagnostics(rec, stop, f"post-change | true tau_c/c = {tcc}")
         st["delays"][key] = [float(stop.mean()), float(stop.std() / np.sqrt(DELAY_R)),
                              int((stop >= DELAY_CAP).sum()), stop.tolist()]
+        d["action_seed"] = rec.action_seed          # run provenance, per tau_c
         st["post_change_diagnostics"][key] = d
         computed += 1
         log(f"tc/c={tcc:4.0f}: delay={stop.mean():7.0f} +- {stop.std()/np.sqrt(DELAY_R):5.0f} "

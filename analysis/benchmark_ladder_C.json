@@ -80,6 +80,9 @@
       "mid",
       "ext"
     ],
+    "estimand": "the population better of the two constant actions at each true tau_c",
+    "selection_rule": "for each true tau_c independently, the constant action with the smaller mean delay on the 700 + int(tau_c) + offset SELECTION stream; evaluated on 200 + int(tau_c) + offset. Both constants must be eligible; if one is not, L1 degenerates to the other and says so.",
+    "why_a_rule": "previously L1 had none. Taking the per-tau_c minimum on the EVALUATION stream would select and score on the same noise, biasing the benchmark downward and so the learner's margin upward -- the same defect the ladder corrects elsewhere.",
     "licenses": "improvement over CONSTANT operation"
   },
   "L2": {
@@ -95,12 +98,12 @@
     "licenses": "whether posterior FEEDBACK adds value over scheduling WITHOUT feedback -- the minimum bar to move card item 4 out of the appendix"
   },
   "L3": {
-    "name": "tau_c-knowing finite-class benchmark over 12 eligible policies",
+    "name": "tau_c-knowing finite-class benchmark over 13 candidate policies",
     "class_size": 13,
     "class": "the eleven frozen schedules AND both learners, each identified by its SEED-FREE policy digest: greedy posterior-expected-rate (pilot fa22bac9ac38d6d7, stress 1778e8ebd51c92cb) and posterior sampling (pilot 3a687899c8b1821d, stress a8654d2ebc97a762)",
     "three_distinct_objects": {
       "target": {
-        "what": "the POPULATION finite-class optimum over the 12 eligible policies at each tau_c",
+        "what": "the POPULATION finite-class optimum over the ELIGIBLE candidates at each operating point, drawn from the 13 declared ones, at each tau_c",
         "property": "includes the learner, so it is mathematically no worse than the learner. This is the only object with that property.",
         "observable": false,
         "note": "an estimand, not a measurement; nothing is reported as this"
@@ -112,8 +115,8 @@
         "note": "this is what a C result reports as L3"
       },
       "diagnostic_envelope": {
-        "what": "the minimum over all 12 candidates computed on the EVALUATION stream itself",
-        "property": "cannot exceed the learner IN THAT SAMPLE, because the learner is one of the minimands. This is the only rung carrying a hard falsifier.",
+        "what": "the minimum over ALL eligible candidates at that operating point -- both learners included -- computed on the EVALUATION stream itself",
+        "property": "cannot exceed EITHER learner IN THAT SAMPLE, because both are among the minimands. This is the only rung carrying a hard falsifier.",
         "observable": true,
         "optimistically_biased": true,
         "note": "selected on the same noise it is scored on, so it is NOT deployable performance and must never be reported as achievable"
@@ -126,7 +129,9 @@
       "permitted_when": "the difference from the POPULATION target is explicitly estimated or bounded -- for example by correcting the selection bias, or by a bound that holds uniformly over the twelve members",
       "not_provided_by": "the diagnostic envelope, which is selected on the same sample it is scored on and is therefore optimistically biased downward; using it as a stand-in for the population target would understate regret by exactly the amount of that bias",
       "status": "no such estimate or bound is attempted in C; regret language is unavailable"
-    }
+    },
+    "eligible_subset": "13 CANDIDATES are declared; the ELIGIBLE subset is determined separately at each operating point by the calibration envelope, so the two points may select over different sets. A candidate ineligible at one point is not thereby ineligible at the other.",
+    "why_the_learner_is_in_the_class": "BOTH learners are in the class. With them inside, the selector can always choose either, so the population target is at most each learner's value at every tau_c. That is a property of the TARGET, not of the selected estimate -- see three_distinct_objects."
   },
   "L4": {
     "name": "globally optimal dynamic controller",
@@ -208,5 +213,29 @@
     },
     "requirement": "calibration, selection and evaluation must not share an action seed, and none may reuse a design seed -- otherwise the policy would be measured on a stream it was tuned against, or a benchmark selected on the stream it is scored on"
   },
-  "digest": "f0b3e936c351871c"
+  "selection_phase": {
+    "order": [
+      "calibrate every candidate and freeze eligibility per operating point",
+      "generate and freeze L1/L2/L3 selections using ONLY the 700 + int(tau_c) streams",
+      "evaluate the frozen choices on the 200 + int(tau_c) streams",
+      "compute the diagnostic envelope separately, on the evaluation stream"
+    ],
+    "unmeasured_candidates": [
+      "interleave-B5",
+      "interleave-B50",
+      "switch@100",
+      "switch@600",
+      "switch@3000"
+    ],
+    "already_measured_in_B": [
+      "interleave-B1",
+      "interleave-B10",
+      "switch@300",
+      "switch@1000",
+      "mid",
+      "ext"
+    ],
+    "rule": "no selection may be generated before every candidate it ranges over has been calibrated"
+  },
+  "digest": "5aabb9c77c2dfd86"
 }

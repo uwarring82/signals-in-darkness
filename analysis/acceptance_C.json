@@ -35,7 +35,9 @@
         1.05,
         5.35,
         16.86
-      ]
+      ],
+      "SUPERSEDED": "This verdict was computed from delay runs whose ACTION stream came from the calibration family (6100 + offset) rather than the preregistered evaluation family (6200 + int(tau_c) + offset): recording_policy hard-coded phase='calibration'. The policy was therefore measured on the stream it was tuned against. Superseded; recomputed after the plumbing repair. The verdict text above is retained as the record of what was frozen.",
+      "status": "SUPERSEDED - awaiting recomputation on the evaluation stream"
     },
     "sampling/stress": {
       "action_gate": "PASSED",
@@ -44,7 +46,9 @@
         0.17,
         2.5,
         7.8
-      ]
+      ],
+      "SUPERSEDED": "This verdict was computed from delay runs whose ACTION stream came from the calibration family (6100 + offset) rather than the preregistered evaluation family (6200 + int(tau_c) + offset): recording_policy hard-coded phase='calibration'. The policy was therefore measured on the stream it was tuned against. Superseded; recomputed after the plumbing repair. The verdict text above is retained as the record of what was frozen.",
+      "status": "SUPERSEDED - awaiting recomputation on the evaluation stream"
     }
   },
   "clean_formulation": "Sampling turns posterior movement into changed action probabilities. Greedy learns something internally but fails to act on it within the detection horizon: inference occurs without control response.",
@@ -439,5 +443,6 @@
     }
   },
   "not_decided_here": "nothing about delays, ordering, L1/L2/L3, or whether feedback helps",
-  "digest": "98dcc73dfe6e1a2b"
+  "greedy_unaffected": "greedy is deterministic and draws no action stream, so its verdicts are unaffected by the seed defect and stand as frozen.",
+  "digest": "de3b2df1ff779612"
 }
