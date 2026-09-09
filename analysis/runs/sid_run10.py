@@ -33,9 +33,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import numpy as np
 
 import sid_repro
-from sid_policies import (ARL_ENVELOPE, CAL_BRACKET, GAMMA, SEED_OFFSET, THM, THX, Bank,
-                          calibrate_refined, make_posterior_theta, operating_point_from_argv,
-                          run_batch)
+from sid_policies import (ACTION_SEEDS, ARL_ENVELOPE, CAL_BRACKET, GAMMA, SEED_OFFSET,
+                          THM, THX, Bank, calibrate_refined, make_posterior_sampling_theta,
+                          make_posterior_theta, operating_point_from_argv, run_batch)
 
 BANK_TCCS = [1.0, 4.0, 10.0, 25.0]
 DELAY_TCCS = (20.0, 5.0, 1.0)
@@ -43,6 +43,19 @@ CAL_R, CONFIRM_R, MAX_SECANT = 32, 64, 4
 DIAG_R, DELAY_R = 64, 64
 NULL_CAP, DELAY_CAP = 150_000, 100_000
 MAX_SWITCH_RECORDS = 200          # per run; the total count is always kept
+POLICIES = ("greedy", "sampling")
+
+
+def build_policy(name, bank, op_name, phase):
+    """Construct a learner. `phase` selects the predeclared ACTION seed family, which is run
+    provenance and deliberately not part of the policy digest."""
+    if name == "greedy":
+        return make_posterior_theta(bank), None      # deterministic; no action stream
+    off = SEED_OFFSET[op_name]
+    seed = ACTION_SEEDS["calibration"](off) if phase == "calibration" else None
+    if seed is None:
+        raise SystemExit(f"no action-seed family declared for phase {phase!r}")
+    return make_posterior_sampling_theta(bank, seed), seed
 T0 = time.time()
 
 
@@ -54,7 +67,7 @@ def _digest_of(path):
     return json.load(open(path, encoding="utf-8"))["digest"]
 
 
-def recording_policy(bank):
+def recording_policy(bank, policy_name="greedy", op_name="pilot"):
     """The posterior policy, wrapped so every action is recorded with its cause.
 
     The posterior vector is stored at the moment each run's action changes, together with the
@@ -69,7 +82,7 @@ def recording_policy(bank):
     early keeps being simulated; counting its later actions would inflate its switch count and
     could push its mid-fringe fraction above 1, which is how this was caught.
     """
-    inner = make_posterior_theta(bank)
+    inner, _ = build_policy(policy_name, bank, op_name, "calibration")
     mid, ext = inner.rates
     state = {"prev": None, "switches": [], "ties": 0, "actions": []}
 
@@ -151,16 +164,26 @@ def main(argv):
         print(__doc__)
         return 2
     stage = positional[0]
-    state_name = f"res10_posterior_{op_name}.json"
+    state_name = None   # set after the policy is known
 
+    policy_name = next((a.split("=", 1)[1] for a in argv if a.startswith("--policy=")), "greedy")
+    if policy_name not in POLICIES:
+        raise SystemExit(f"unknown policy {policy_name!r}; choose one of {list(POLICIES)}")
     bank = Bank(BANK_TCCS, op)
-    probe = make_posterior_theta(bank)
+    probe, action_seed = build_policy(policy_name, bank, op_name, "calibration")
     cfg = config(op, op_name, probe.identity)
+    cfg["policy_name"] = policy_name
+    cfg["run_identity"] = getattr(probe, "run_identity",
+                                  {"policy_digest": probe.identity["digest"], "action_seed": None})
+    cfg["action_seed_family"] = ("greedy is deterministic; no action stream" if action_seed is None
+                                 else f"calibration = 6100 + offset -> {action_seed}")
     want = sid_repro.run_metadata(cfg)
 
-    sid_repro.print_banner(f"roadmap C {stage}", False, json.dumps(cfg["seeds"]))
+    state_name = f"res10_{policy_name}_{op_name}.json"
+    sid_repro.print_banner(f"roadmap C {stage} [{policy_name}]", False, json.dumps(cfg["seeds"]))
     print(f"# operating point : {op_name} ({op.label()})", flush=True)
-    print(f"# policy digest   : {cfg['policy_digest']}", flush=True)
+    print(f"# policy          : {policy_name} (seed-free digest {cfg['policy_digest']})", flush=True)
+    print(f"# action stream   : {cfg['action_seed_family']}", flush=True)
     print(f"# class / ladder  : {cfg['schedule_class_digest']} / "
           f"{cfg['benchmark_ladder_digest']}", flush=True)
 
@@ -186,7 +209,7 @@ def main(argv):
         # diagnostic null run at h*, recorded. Under H0 there is no tau_c: this is stratified by
         # operating point and seed stream only, and the posterior it reports is the filter's
         # belief while it fits noise.
-        rec = recording_policy(bank)
+        rec = recording_policy(bank, policy_name, op_name)
         stop = run_batch(bank, rec, None, h, DIAG_R, 900 + SEED_OFFSET[op_name], NULL_CAP, True)
         null_diag = diagnostics(rec, stop, f"null | operating point {op_name} | seed 900+offset")
         log(f"null diagnostics: {null_diag['mean_switches_per_run']:.1f} switches/run, "
@@ -227,7 +250,7 @@ def main(argv):
         if key in st["delays"]:
             cached += 1
             continue
-        rec = recording_policy(bank)
+        rec = recording_policy(bank, policy_name, op_name)
         stop = run_batch(bank, rec, tcc, h, DELAY_R, 200 + int(tcc) + SEED_OFFSET[op_name],
                          DELAY_CAP, False)
         d = diagnostics(rec, stop, f"post-change | true tau_c/c = {tcc}")
