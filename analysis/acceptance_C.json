@@ -444,5 +444,170 @@
   },
   "not_decided_here": "nothing about delays, ordering, L1/L2/L3, or whether feedback helps",
   "greedy_unaffected": "greedy is deterministic and draws no action stream, so its verdicts are unaffected by the seed defect and stand as frozen.",
-  "digest": "de3b2df1ff779612"
+  "recomputed_on_the_evaluation_stream": {
+    "when": "2026-09-09, after the action-seed plumbing repair",
+    "action_seeds_used": {
+      "sampling/pilot": [
+        6220,
+        6205,
+        6201
+      ],
+      "sampling/stress": [
+        13220,
+        13205,
+        13201
+      ]
+    },
+    "verdicts": {
+      "sampling/pilot": {
+        "action_gate": "PASSED",
+        "belief_adaptation": "resolved",
+        "action_contrasts_pp": [
+          2.89,
+          5.83,
+          16.05
+        ],
+        "note": "resolved at every horizon inspected, including H = 100"
+      },
+      "sampling/stress": {
+        "action_gate": "PASSED",
+        "belief_adaptation": "resolved",
+        "action_contrasts_pp": [
+          0.45,
+          2.11,
+          7.94,
+          20.76
+        ],
+        "note": "H = 100 not resolved; resolved from H = 500 onward"
+      }
+    },
+    "conclusion_unchanged": "the seed defect did not change the verdicts, only the numbers. That is reassuring but was not knowable in advance, which is why the frozen verdicts were superseded rather than quietly amended.",
+    "detail": {
+      "sampling/pilot": {
+        "detail": {
+          "f@100": {
+            "contrast_pp": 2.890625000000008,
+            "simultaneous_pp": [
+              0.21101620189960846,
+              5.570233798100407
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@100": {
+            "contrast_pp": 1.4651220696464962,
+            "simultaneous_pp": [
+              0.03000943879036943,
+              2.9002347005026228
+            ],
+            "resolved_simultaneous": true
+          },
+          "f@500": {
+            "contrast_pp": 5.828124999999995,
+            "simultaneous_pp": [
+              2.5602902678362636,
+              9.095959732163728
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@500": {
+            "contrast_pp": 5.361062557658602,
+            "simultaneous_pp": [
+              2.1216065957500585,
+              8.600518519567146
+            ],
+            "resolved_simultaneous": true
+          },
+          "f@2000": {
+            "contrast_pp": 16.0515625,
+            "simultaneous_pp": [
+              10.832422311962203,
+              21.270702688037797
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@2000": {
+            "contrast_pp": 15.699851125509051,
+            "simultaneous_pp": [
+              10.450715081592918,
+              20.948987169425184
+            ],
+            "resolved_simultaneous": true
+          }
+        },
+        "action_gate_passed": true,
+        "belief_adaptation_resolved": true
+      },
+      "sampling/stress": {
+        "detail": {
+          "f@100": {
+            "contrast_pp": 0.45312499999998757,
+            "simultaneous_pp": [
+              -1.6612029486949522,
+              2.5674529486949274
+            ],
+            "resolved_simultaneous": false
+          },
+          "q@100": {
+            "contrast_pp": 0.6731091761051133,
+            "simultaneous_pp": [
+              -0.13364741826643514,
+              1.4798657704766618
+            ],
+            "resolved_simultaneous": false
+          },
+          "f@500": {
+            "contrast_pp": 2.112500000000006,
+            "simultaneous_pp": [
+              0.25674144166778073,
+              3.968258558332231
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@500": {
+            "contrast_pp": 2.055454694833536,
+            "simultaneous_pp": [
+              0.45128582769175185,
+              3.6596235619753203
+            ],
+            "resolved_simultaneous": true
+          },
+          "f@2000": {
+            "contrast_pp": 7.939062500000016,
+            "simultaneous_pp": [
+              5.299786813954927,
+              10.578338186045105
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@2000": {
+            "contrast_pp": 8.005468089918466,
+            "simultaneous_pp": [
+              5.396353663893951,
+              10.614582515942981
+            ],
+            "resolved_simultaneous": true
+          },
+          "f@10000": {
+            "contrast_pp": 20.760156250000005,
+            "simultaneous_pp": [
+              16.888938322539122,
+              24.63137417746089
+            ],
+            "resolved_simultaneous": true
+          },
+          "q@10000": {
+            "contrast_pp": 20.761167949080473,
+            "simultaneous_pp": [
+              16.88346560315235,
+              24.638870295008598
+            ],
+            "resolved_simultaneous": true
+          }
+        },
+        "action_gate_passed": true,
+        "belief_adaptation_resolved": true
+      }
+    }
+  },
+  "digest": "cd0241306d175da6"
 }
