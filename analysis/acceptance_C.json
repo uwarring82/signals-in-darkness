@@ -1,0 +1,443 @@
+{
+  "record": "roadmap C acceptance verdicts, frozen BEFORE the delay comparisons were inspected",
+  "frozen": "2026-09-09",
+  "rule": "post-change action frequency must vary with true tau_c. Judged on the REALISED ACTION contrast f(tau_c=20) - f(tau_c=1) with replicate-level uncertainty, not on a floor.",
+  "estimator_choices": {
+    "all_replicates": "fixed-horizon statistics use every replicate. run_batch keeps simulating a run after it alarms, so its actions to any horizon exist; the earlier survivor-only version compared 13 surviving tau_c=20 runs against 57 tau_c=1 runs, i.e. different subpopulations.",
+    "simultaneous_coverage": "four horizons were inspected, so per-horizon 95 % intervals are Bonferroni-widened to 98.75 %. Reporting the horizon that happens to resolve would be selection on the outcome.",
+    "why_not_lifetime": "the lifetime contrast is SURVIVAL-CONFOUNDED: it describes the trajectories actually accumulated before alarm, which is a real property of them, but the two tau_c conditions contribute radically different observation lengths -- 7523 shots against 1358 for greedy/pilot -- so it cannot establish adaptation."
+  },
+  "verdicts": {
+    "greedy/pilot": {
+      "action_gate": "FAILED",
+      "belief_adaptation": "resolved",
+      "action_contrasts_pp": [
+        0.0,
+        0.12,
+        2.97
+      ],
+      "statement": "no resolved fixed-horizon action contrast, with estimates operationally near zero (0.00 to 2.97 pp). NOT exactly zero except at H = 100."
+    },
+    "greedy/stress": {
+      "action_gate": "FAILED",
+      "belief_adaptation": "resolved",
+      "action_contrasts_pp": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "statement": "action contrast exactly 0.00 pp at every horizon inspected"
+    },
+    "sampling/pilot": {
+      "action_gate": "PASSED",
+      "belief_adaptation": "resolved",
+      "action_contrasts_pp": [
+        1.05,
+        5.35,
+        16.86
+      ]
+    },
+    "sampling/stress": {
+      "action_gate": "PASSED",
+      "belief_adaptation": "resolved",
+      "action_contrasts_pp": [
+        0.17,
+        2.5,
+        7.8
+      ]
+    }
+  },
+  "clean_formulation": "Sampling turns posterior movement into changed action probabilities. Greedy learns something internally but fails to act on it within the detection horizon: inference occurs without control response.",
+  "consequences": {
+    "sampling": "a feedback claim is available at both operating points",
+    "greedy": "supports a BELIEF-adaptation statement only, and remains a valid NONRESPONSIVE baseline. No feedback claim, whatever its delays show."
+  },
+  "detail": {
+    "greedy/pilot": {
+      "detail": {
+        "f@100": {
+          "contrast_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "simultaneous_pp": [
+            0.0,
+            0.0
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "q@100": {
+          "contrast_pp": 3.2558928235592477,
+          "ci95_pp": [
+            1.5568644443061737,
+            4.954921202812322
+          ],
+          "simultaneous_pp": [
+            1.0907140154199482,
+            5.421071631698547
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "f@500": {
+          "contrast_pp": 0.11562499999999698,
+          "ci95_pp": [
+            -0.04195877027843645,
+            0.2732087702784304
+          ],
+          "simultaneous_pp": [
+            -0.08519391749421965,
+            0.31644391749421363
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 56,
+          "survivors_1": 62
+        },
+        "q@500": {
+          "contrast_pp": 10.328533178257015,
+          "ci95_pp": [
+            7.467905900411929,
+            13.189160456102103
+          ],
+          "simultaneous_pp": [
+            6.683055777403774,
+            13.974010579110258
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 56,
+          "survivors_1": 62
+        },
+        "f@2000": {
+          "contrast_pp": 2.9671875000000014,
+          "ci95_pp": [
+            0.24900991441821652,
+            5.685365085581787
+          ],
+          "simultaneous_pp": [
+            -0.4967572915803714,
+            6.431132291580374
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": false,
+          "survivors_20": 13,
+          "survivors_1": 57
+        },
+        "q@2000": {
+          "contrast_pp": 22.753748846174993,
+          "ci95_pp": [
+            19.538056108025074,
+            25.969441584324915
+          ],
+          "simultaneous_pp": [
+            18.65578917984469,
+            26.851708512505297
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 13,
+          "survivors_1": 57
+        }
+      },
+      "action_gate_passed": false,
+      "belief_adaptation_resolved": true
+    },
+    "greedy/stress": {
+      "detail": {
+        "f@100": {
+          "contrast_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "simultaneous_pp": [
+            0.0,
+            0.0
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "q@100": {
+          "contrast_pp": 1.0438213286511733,
+          "ci95_pp": [
+            0.32280529365282185,
+            1.7648373636495247
+          ],
+          "simultaneous_pp": [
+            0.1249852112736892,
+            1.9626574460286574
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "f@500": {
+          "contrast_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "simultaneous_pp": [
+            0.0,
+            0.0
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 62,
+          "survivors_1": 64
+        },
+        "q@500": {
+          "contrast_pp": 3.1498693889394636,
+          "ci95_pp": [
+            1.853524474077561,
+            4.446214303801366
+          ],
+          "simultaneous_pp": [
+            1.4978554661749317,
+            4.801883311703996
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 62,
+          "survivors_1": 64
+        },
+        "f@2000": {
+          "contrast_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "simultaneous_pp": [
+            0.0,
+            0.0
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 26,
+          "survivors_1": 60
+        },
+        "q@2000": {
+          "contrast_pp": 8.292110395521924,
+          "ci95_pp": [
+            6.683169802064552,
+            9.901050988979295
+          ],
+          "simultaneous_pp": [
+            6.24173612335088,
+            10.342484667692966
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 26,
+          "survivors_1": 60
+        }
+      },
+      "action_gate_passed": false,
+      "belief_adaptation_resolved": true
+    },
+    "sampling/pilot": {
+      "detail": {
+        "f@100": {
+          "contrast_pp": 1.0468750000000027,
+          "ci95_pp": [
+            -1.1406066786628346,
+            3.2343566786628397
+          ],
+          "simultaneous_pp": [
+            -1.7407705930158839,
+            3.8345205930158888
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "q@100": {
+          "contrast_pp": 0.8674768296823787,
+          "ci95_pp": [
+            -0.32476147953238826,
+            2.0597151388971455
+          ],
+          "simultaneous_pp": [
+            -0.6518674925698961,
+            2.3868211519346536
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "f@500": {
+          "contrast_pp": 5.35,
+          "ci95_pp": [
+            2.663392458849784,
+            8.036607541150214
+          ],
+          "simultaneous_pp": [
+            1.9262869031987928,
+            8.773713096801206
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 61,
+          "survivors_1": 64
+        },
+        "q@500": {
+          "contrast_pp": 5.1764408734704395,
+          "ci95_pp": [
+            2.613548586909108,
+            7.739333160031769
+          ],
+          "simultaneous_pp": [
+            1.9103859127841634,
+            8.442495834156716
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 61,
+          "survivors_1": 64
+        },
+        "f@2000": {
+          "contrast_pp": 16.85625000000001,
+          "ci95_pp": [
+            12.731129189138066,
+            20.981370810861957
+          ],
+          "simultaneous_pp": [
+            11.59934889713603,
+            22.11315110286399
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 22,
+          "survivors_1": 47
+        },
+        "q@2000": {
+          "contrast_pp": 16.78126539717921,
+          "ci95_pp": [
+            12.680735515927278,
+            20.88179527843115
+          ],
+          "simultaneous_pp": [
+            11.555702063780535,
+            22.00682873057789
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 22,
+          "survivors_1": 47
+        }
+      },
+      "action_gate_passed": true,
+      "belief_adaptation_resolved": true
+    },
+    "sampling/stress": {
+      "detail": {
+        "f@100": {
+          "contrast_pp": 0.17187500000001021,
+          "ci95_pp": [
+            -1.4853651054791979,
+            1.8291151054792183
+          ],
+          "simultaneous_pp": [
+            -1.940050380528107,
+            2.2838003805281275
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "q@100": {
+          "contrast_pp": 0.37208086669909823,
+          "ci95_pp": [
+            -0.2865219533769022,
+            1.0306836867750988
+          ],
+          "simultaneous_pp": [
+            -0.4672181623355023,
+            1.2113798957336988
+          ],
+          "resolved_nominal": false,
+          "resolved_simultaneous": false,
+          "survivors_20": 64,
+          "survivors_1": 64
+        },
+        "f@500": {
+          "contrast_pp": 2.4968749999999984,
+          "ci95_pp": [
+            1.035654616066186,
+            3.9580953839338107
+          ],
+          "simultaneous_pp": [
+            0.6347498889965368,
+            4.35900011100346
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 62,
+          "survivors_1": 63
+        },
+        "q@500": {
+          "contrast_pp": 2.6447001306122875,
+          "ci95_pp": [
+            1.3649823382519812,
+            3.9244179229725935
+          ],
+          "simultaneous_pp": [
+            1.0138751966371125,
+            4.2755250645874625
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 62,
+          "survivors_1": 63
+        },
+        "f@2000": {
+          "contrast_pp": 7.799218750000003,
+          "ci95_pp": [
+            5.850574872078099,
+            9.747862627921908
+          ],
+          "simultaneous_pp": [
+            5.315939199989357,
+            10.28249830001065
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 30,
+          "survivors_1": 59
+        },
+        "q@2000": {
+          "contrast_pp": 7.743300670109255,
+          "ci95_pp": [
+            5.859910496196521,
+            9.626690844021986
+          ],
+          "simultaneous_pp": [
+            5.343178022477934,
+            10.143423317740574
+          ],
+          "resolved_nominal": true,
+          "resolved_simultaneous": true,
+          "survivors_20": 30,
+          "survivors_1": 59
+        }
+      },
+      "action_gate_passed": true,
+      "belief_adaptation_resolved": true
+    }
+  },
+  "not_decided_here": "nothing about delays, ordering, L1/L2/L3, or whether feedback helps",
+  "digest": "98dcc73dfe6e1a2b"
+}
