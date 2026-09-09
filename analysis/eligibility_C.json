@@ -1,0 +1,60 @@
+{
+  "record": "roadmap C eligibility decisions, frozen before any delay measurement",
+  "frozen": "2026-09-09",
+  "rule": "eligible iff |ARL - 3e4|/3e4 <= 0.30, decided by the CALIBRATION alone, never by a delay result",
+  "confirmation_uncensored": "every decision below rests on a confirmation with 0 of 128 null runs capped. A censored ARL is a downward-biased lower bound and cannot establish compliance with a ceiling; uncensoring moved greedy/stress by +0.3 pp and sampling/pilot by +4.0 pp, both upward as it must.",
+  "decisions": {
+    "greedy/pilot": {
+      "h_star": 3.6145368059637843,
+      "ARL": 29335.1796875,
+      "se": 2435.937446516035,
+      "pct_off_target": -2.2160677083333336,
+      "capped": 0,
+      "inside_envelope": true,
+      "policy_digest": "fa22bac9ac38d6d7",
+      "action_seed": null,
+      "revision": "5024d59",
+      "run_id": "5c24ef17cc64"
+    },
+    "greedy/stress": {
+      "h_star": 3.0319513176698667,
+      "ARL": 38686.921875,
+      "se": 2957.647833062633,
+      "pct_off_target": 28.95640625,
+      "capped": 0,
+      "inside_envelope": true,
+      "policy_digest": "1778e8ebd51c92cb",
+      "action_seed": null,
+      "revision": "5024d59",
+      "run_id": "a7f9d0e88f40"
+    },
+    "sampling/pilot": {
+      "h_star": 3.5190812815020247,
+      "ARL": 34443.9375,
+      "se": 3327.5900431223,
+      "pct_off_target": 14.813125,
+      "capped": 0,
+      "inside_envelope": true,
+      "policy_digest": "3a687899c8b1821d",
+      "action_seed": 6100,
+      "revision": "5024d59",
+      "run_id": "8b2bb66c28e9"
+    },
+    "sampling/stress": {
+      "h_star": 2.60546875,
+      "ARL": 26937.328125,
+      "se": 2239.396451296153,
+      "pct_off_target": -10.20890625,
+      "capped": 0,
+      "inside_envelope": true,
+      "policy_digest": "a8654d2ebc97a762",
+      "action_seed": 13100,
+      "revision": "5024d59",
+      "run_id": "717dd3102c39"
+    }
+  },
+  "all_eligible": true,
+  "marginality": "greedy/stress qualifies at +29.0 % against a +30.0 % ceiling, with the boundary 0.11 sigma from the estimate (38687 +- 2958 against 39000). It is eligible under the predeclared rule, applied to the point estimate as written, but the decision is close to a coin flip and any result resting on that row inherits the fragility.",
+  "not_decided_here": "nothing about delays, ordering, or whether feedback helps. Eligibility only.",
+  "digest": "b005e0d417a33a22"
+}
