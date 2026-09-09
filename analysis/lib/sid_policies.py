@@ -93,6 +93,7 @@ SEED_OFFSET = {"pilot": 0, "stress": 7000, "pilot_recal": 0}
 #: rows; note 04 documented the breach and nothing enforced it. It is now a gate.
 ARL_ENVELOPE = 0.30
 NULL_CAP_DEFAULT = 150_000
+CONFIRM_CAP_DEFAULT = 1_000_000
 
 #: Action-randomness seed families for the posterior-sampling policy, predeclared so that a
 #: measurement's action stream is never one the policy was designed on, and so calibration,
@@ -282,7 +283,8 @@ def calibrate(bank, sched, gamma, R=48, lo=1.0, hi=6.0, iters=5, seed=100):
 
 
 def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=100,
-                      confirm_R=64, cap=NULL_CAP_DEFAULT, max_secant=4):
+                      confirm_R=64, cap=NULL_CAP_DEFAULT, max_secant=4,
+                      confirm_cap=CONFIRM_CAP_DEFAULT):
     """Bisection, then a secant root-find on ln(ARL), then confirmation.
 
     Plain bisection is not good enough at the pilot. Its probes use R=32, whose ARL estimate
@@ -340,7 +342,13 @@ def calibrate_refined(bank, sched, gamma, R=32, lo=1.0, hi=6.0, iters=5, seed=10
     if pts:
         h = min(pts, key=lambda pt: abs(pt[1] - target))[0]
 
-    m, se, nc = arl_of(bank, sched, h, 2 * confirm_R, seed + 99, cap=cap)
+    # The CONFIRMATION uses a larger cap than the search. A capped null run contributes the cap
+    # instead of its true larger stopping time, so a censored ARL is a downward-biased LOWER
+    # BOUND -- and an eligibility decision made on a lower bound cannot establish compliance
+    # with a ceiling. Measured 9 Sept 2026 on greedy/stress: 38607 with 3/128 capped at 150k,
+    # 38687 with 0/128 capped at 1e6. The search itself stays cheap; only the decision is
+    # uncensored.
+    m, se, nc = arl_of(bank, sched, h, 2 * confirm_R, seed + 99, cap=confirm_cap)
     return h, m, se, nc, endpoint, abs(m - gamma) / gamma <= ARL_ENVELOPE
 
 

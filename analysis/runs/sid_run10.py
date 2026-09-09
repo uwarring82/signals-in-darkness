@@ -41,8 +41,9 @@ BANK_TCCS = [1.0, 4.0, 10.0, 25.0]
 DELAY_TCCS = (20.0, 5.0, 1.0)
 CAL_R, CONFIRM_R, MAX_SECANT = 32, 64, 4
 DIAG_R, DELAY_R = 64, 64
-NULL_CAP, DELAY_CAP = 150_000, 100_000
+NULL_CAP, DELAY_CAP, CONFIRM_CAP = 150_000, 100_000, 1_000_000
 MAX_SWITCH_RECORDS = 200          # per run; the total count is always kept
+FIXED_HORIZONS = (100, 500, 2000, 10_000)
 POLICIES = ("greedy", "sampling")
 
 
@@ -84,7 +85,8 @@ def recording_policy(bank, policy_name="greedy", op_name="pilot"):
     """
     inner, _ = build_policy(policy_name, bank, op_name, "calibration")
     mid, ext = inner.rates
-    state = {"prev": None, "switches": [], "ties": 0, "actions": []}
+    prefers_mid = (mid > ext).astype(float)
+    state = {"prev": None, "switches": [], "ties": 0, "actions": [], "q": []}
 
     def sched(n, w, bk):
         th = inner(n, w, bk)
@@ -101,6 +103,11 @@ def recording_policy(bank, policy_name="greedy", op_name="pilot"):
                         "from": "mid" if abs(state["prev"][r] - THM) < 1e-12 else "ext",
                         "to": "mid" if abs(th[r] - THM) < 1e-12 else "ext"})
         state["actions"].append(np.abs(th - THM) < 1e-12)      # True = mid-fringe
+        # q_n: the posterior-implied probability of mid-fringe. For the sampling policy this is
+        # exactly its action probability; for the greedy policy it is the belief its threshold
+        # rule is applied to. Either way it measures ADAPTATION with far less sampling noise
+        # than the realised action, which for a randomised controller is a Bernoulli draw.
+        state["q"].append(w @ prefers_mid)
         state["prev"] = th
         return th
 
@@ -123,15 +130,49 @@ def diagnostics(sched, stopping, label):
     n_switch = (changed & alive[1:]).sum(0)
     # switch records past a run's stop are dropped, not merely uncounted
     kept = [rec for rec in s["switches"] if rec["step"] < int(stop[rec["run"]])]
+    q = np.asarray(s["q"], dtype=float)                         # (steps, R)
+
+    # Fixed shot horizons. Comparing mid-fringe fractions over each run's own lifetime confounds
+    # behaviour with stopping time: a policy that detects sooner is averaged over fewer, earlier
+    # shots. At a fixed horizon every surviving run contributes the same number of shots.
+    horizons = {}
+    for H in FIXED_HORIZONS:
+        keep = np.nonzero(stop >= H)[0]
+        if len(keep) == 0 or steps < H:
+            horizons[str(H)] = {"runs": 0}
+            continue
+        horizons[str(H)] = {
+            "runs": int(len(keep)),
+            "mean_fraction_at_mid_fringe": float(acts[:H, keep].mean()),
+            "se_fraction_at_mid_fringe": float(acts[:H, keep].mean(0).std(ddof=1)
+                                               / np.sqrt(len(keep))) if len(keep) > 1 else None,
+            "mean_posterior_implied_mid_probability": float(q[:H, keep].mean()),
+            "se_posterior_implied_mid_probability": float(q[:H, keep].mean(0).std(ddof=1)
+                                                          / np.sqrt(len(keep))) if len(keep) > 1 else None}
+
+    # Transitions per AVAILABLE transition, not a raw count: a long run has more opportunities
+    # to switch, so raw counts confound behaviour with survival.
+    opportunities = np.maximum(n_alive - 1, 0)
+    rate = np.where(opportunities > 0, n_switch / np.maximum(opportunities, 1), 0.0)
+
     return {"stratum": label,
             "steps_simulated": int(steps),
             "shots_before_alarm_total": int(n_alive.sum()),
             "ties": int(s["ties"]),
             "switches_per_run": n_switch.tolist(),
             "mean_switches_per_run": float(n_switch.mean()),
-            "switches_per_1000_shots": float(1000 * n_switch.sum() / max(n_alive.sum(), 1)),
+            "transition_rate_per_opportunity": [float(x) for x in rate],
+            "mean_transition_rate_per_opportunity": float(rate.mean()),
             "fraction_of_shots_at_mid_fringe": [float(x) for x in mid_frac],
             "mean_fraction_at_mid_fringe": float(mid_frac.mean()),
+            "mean_posterior_implied_mid_probability": float(
+                np.where(n_alive > 0, (q * alive).sum(0) / np.maximum(n_alive, 1), 0.0).mean()),
+            "at_fixed_horizons": horizons,
+            "switching_cost": ("OMITTED. This model prices no cost for changing the readout angle "
+                               "between shots -- no settling time, no overhead, no risk. A policy "
+                               "switching ~1e4 times per run is therefore free here and would not "
+                               "be on hardware. Any instrument claim must add that cost before "
+                               "comparing a randomised mixture controller with a constant one."),
             "switch_records": kept,
             "switch_records_truncated": bool(int(n_switch.sum()) > len(kept))}
 
@@ -148,7 +189,7 @@ def config(op, op_name, policy_identity):
         "gamma": GAMMA, "R": CAL_R, "confirm_R": CONFIRM_R, "max_secant": MAX_SECANT,
         "iters": iters, "bracket": [lo, hi], "seed_offset": SEED_OFFSET[op_name],
         "bank_tccs": BANK_TCCS, "delay_tccs": list(DELAY_TCCS),
-        "null_cap": NULL_CAP, "delay_cap": DELAY_CAP,
+        "null_cap": NULL_CAP, "confirm_cap": CONFIRM_CAP, "delay_cap": DELAY_CAP,
         "diag_R": DIAG_R, "delay_R": DELAY_R,
         "seeds": {"calibration_null": f"100 + {SEED_OFFSET[op_name]}",
                   "diagnostic_null": f"900 + {SEED_OFFSET[op_name]}",

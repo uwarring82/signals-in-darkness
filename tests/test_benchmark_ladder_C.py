@@ -124,29 +124,54 @@ def test_the_superseded_preregistration_is_kept_and_points_forward():
     assert "ALSO FALSE" in LADDER["supersedes"]["why"]
 
 
-def test_no_calibrated_or_confirmatory_delay_result_exists_yet():
-    """The guard, corrected 8 Sept 2026.
+def test_C_artifacts_bind_to_a_clean_revision_and_the_frozen_configuration():
+    """Replaces the no-measurement guard, deliberately, now that artifacts exist.
 
-    It first asserted that NOTHING had been measured, which stopped being true when an R=8
-    scouting table was produced. It then said "no confirmatory measurement", which is still
-    loose: R=8 AND R=32 design evidence both exist, for both policies. The accurate condition
-    is that no CALIBRATED or CONFIRMATORY DELAY result exists. Design evidence does, at
-    uncalibrated thresholds, and is recorded in analysis/scouting_C_greedy.json.
+    That guard was rewritten twice because it kept asserting a condition the work had moved
+    past -- first "nothing measured", then "no confirmatory measurement". A guard whose truth
+    depends on the project not progressing is not a guard. What should hold FOREVER is that any
+    C artifact names the commit it came from, was produced from a clean tree, cites the frozen
+    class and ladder digests, carries the SEED-FREE policy digest as identity with the realised
+    seed as provenance, and drew its action stream from a declared family.
     """
-    for name in os.listdir(os.path.join(ROOT, "analysis", "outputs")):
-        assert "posterior" not in name and "res10" not in name, (
-            f"{name} exists: roadmap C was measured before its ladder was frozen")
-    scout = json.load(open(os.path.join(ROOT, "analysis", "scouting_C_greedy.json"),
-                           encoding="utf-8"))
-    assert scout["status"] == "SCOUTING, not confirmatory"
-    assert "correction_appended_2026_09_08" in scout, "the correction was not appended"
-    # the original account must SURVIVE the correction, not be replaced by it
-    assert scout["scouting_measurement"]["results_mid_fringe_fraction"]["stress"]["1.0"] == 1.000, (
-        "the original R=8 account was overwritten; corrections are appended here")
-    assert scout["revision"], "the scouting run names no revision"
-    for field in ("R", "cap", "h", "seeds"):
-        assert field in scout["scouting_measurement"], f"scouting run does not record {field}"
-    assert scout["scouting_measurement"]["limitations"], "scouting run states no limitations"
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(ROOT, "analysis", "lib"))
+    from sid_policies import ACTION_SEEDS
+
+    repro = os.path.join(ROOT, "analysis", "reproduction")
+    outs = os.path.join(ROOT, "analysis", "outputs")
+    names = [(repro, n) for n in (os.listdir(repro) if os.path.isdir(repro) else [])
+             if n.startswith("res10_")]
+    names += [(outs, n) for n in os.listdir(outs) if n.startswith("res10_")]
+    if not names:
+        pytest.skip("no roadmap C artifact yet; this guard activates with the first one")
+
+    design = {ACTION_SEEDS["design"]}
+    declared = set()
+    for off in (0, 7000):
+        declared.add(ACTION_SEEDS["calibration"](off))
+        for tcc in (20.0, 5.0, 1.0):
+            declared.add(ACTION_SEEDS["selection"](tcc, off))
+            declared.add(ACTION_SEEDS["evaluation"](tcc, off))
+
+    for d, name in names:
+        doc = json.load(open(os.path.join(d, name), encoding="utf-8"))
+        meta = doc.get("meta", {})
+        cfg = meta.get("config", {})
+        assert meta.get("revision"), f"{name} names no revision"
+        assert not meta["revision"].endswith("+dirty"), (
+            f"{name} was produced from a dirty tree ({meta['revision']})")
+        assert cfg.get("schedule_class_digest") == CLASS["digest"], (
+            f"{name} cites schedule class {cfg.get('schedule_class_digest')}, frozen is "
+            f"{CLASS['digest']}")
+        assert cfg.get("benchmark_ladder_digest"), f"{name} cites no ladder digest"
+        run_id = cfg.get("run_identity", {})
+        assert run_id.get("policy_digest") == cfg.get("policy_digest"), (
+            f"{name}: run identity and policy identity disagree")
+        seed = run_id.get("action_seed")
+        if seed is not None:
+            assert seed not in design, f"{name} drew actions from the DESIGN stream {seed}"
+            assert seed in declared, f"{name} used undeclared action seed {seed}"
 
 
 def test_scouting_separates_deterministic_properties_from_measured_ones():
