@@ -31,6 +31,7 @@ Outputs  : analysis/reproduction/res11_<stage>_<point>.json (git-ignored).
 """
 import json
 import pathlib
+import subprocess
 import sys
 import time
 
@@ -106,7 +107,7 @@ def candidates(bank, op_name, phase, tcc=None, smoke=False):
     return out
 
 
-def stage_cal(bank, op_name, state, smoke):
+def stage_cal(bank, op_name, state, smoke, state_name):
     """Calibrate every frozen schedule. Learners are calibrated by sid_run10, not here."""
     lo, hi, iters = CAL_BRACKET[op_name]
     off = SEED_OFFSET[op_name]
@@ -128,6 +129,8 @@ def stage_cal(bank, op_name, state, smoke):
                               "inside_envelope": bool(inside), "pct": float(pct),
                               "cal_seed": int(seed)}
         computed += 1
+        if not smoke:
+            sid_repro.save_checkpoint(state_name, state)
         log(f"{name:16s} h*={h:.6f}  ARL={m:.0f} +- {se:.0f} ({pct:+.1f} %)  "
             f"capped {nc}/{2*(8 if smoke else CONFIRM_R)}  "
             f"{'INSIDE' if inside else 'OUTSIDE'} the +-{ARL_ENVELOPE:.0%} envelope")
@@ -145,7 +148,7 @@ def require_frozen_eligibility(op_name):
     return elig["operating_points"][op_name]
 
 
-def stage_delays(bank, op_name, state, phase, smoke):
+def stage_delays(bank, op_name, state, phase, smoke, state_name):
     """Delay runs for every candidate on THIS phase's stream. Per-replicate output is kept."""
     off = SEED_OFFSET[op_name]
     elig = None if smoke else require_frozen_eligibility(op_name)
@@ -171,6 +174,8 @@ def stage_delays(bank, op_name, state, phase, smoke):
                                     "phase": phase,
                                     "runs": [int(x) for x in runs]}
             computed += 1
+            if not smoke:
+                sid_repro.save_checkpoint(state_name, state)
             log(f"{name:16s} tc={tcc:4.0f}  delay={m:8.0f} +- {se:5.0f}  capped {nc}  "
                 f"data_seed={dseed}" + ("" if aseed is None else f"  action_seed={aseed}"))
     return computed
@@ -189,6 +194,14 @@ def main(argv):
               file=sys.stderr)
         return 2
     smoke = "--smoke" in argv[1:]
+    if not smoke:
+        dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
+                               capture_output=True, text=True).stdout.strip()
+        if dirty:
+            print("refusing to measure from a dirty tree: the artifact would be attributed to a "
+                  "revision that does not describe the code that produced it. Commit or stash "
+                  "first.\n" + dirty, file=sys.stderr)
+            return 2
     if not any(a.startswith("--operating-point=") for a in argv[1:]):
         print("--operating-point= is required. It is not defaulted here: the two points have "
               "different brackets, seed offsets and thresholds, and a silent default would "
@@ -229,9 +242,12 @@ def main(argv):
     st.setdefault("cal", {})
     st.setdefault("delays", {})
     st["config"] = cfg
+    # Captured at START, not at write time: a file created while the run is in flight must not
+    # retroactively relabel measurements that were produced from a clean tree.
+    st["meta"] = sid_repro.run_metadata(cfg)
 
     if stage == "cal":
-        computed = stage_cal(bank, op_name, st, smoke)
+        computed = stage_cal(bank, op_name, st, smoke, state_name)
         inside = [n for n, r in st["cal"].items() if r["inside_envelope"]]
         outside = [n for n, r in st["cal"].items() if not r["inside_envelope"]]
         log(f"calibrated {len(st['cal'])}/11: {len(inside)} inside the envelope, "
@@ -246,10 +262,12 @@ def main(argv):
                   f"availability. Run --stage=cal first.", file=sys.stderr)
             return 3
         st["_cal_source"] = cal_state.get("cal", {})
-        computed = stage_delays(bank, op_name, st, stage, smoke)
+        st["cal_source_digest"] = cal_state.get("meta", {}).get("digest")
+        computed = stage_delays(bank, op_name, st, stage, smoke, state_name)
 
     if not smoke:
-        sid_repro.save_checkpoint(state_name, st)
+        sid_repro.save_checkpoint(state_name, {k: v for k, v in st.items()
+                                               if not k.startswith("_")})
     log(f"stage {stage} complete at {op_name}: {computed} cells computed")
     return 0
 
