@@ -1,0 +1,704 @@
+{
+  "record": "roadmap C ladder: frozen selections measured on the evaluation stream",
+  "selections_digest": "578481f6ba9ea13b",
+  "eligibility_digest": "3ac8b99a6e1f7677",
+  "bootstrap": {
+    "draws": 10000,
+    "seed": 20260911,
+    "kind": "paired over replicate indices",
+    "why_paired": "candidates at one (point, tau_c) share a data seed, so replicates share the draw sequence; independent SEs would overstate the uncertainty of a difference"
+  },
+  "three_distinct_objects": {
+    "estimate": "frozen member's evaluation mean -- honest, noisy",
+    "envelope": "min over eligible candidates ON the evaluation sample -- optimistically biased, DIAGNOSTIC ONLY, not a benchmark",
+    "target": "population best-in-class -- not observed, not estimated here"
+  },
+  "revision": "83c3dfa",
+  "operating_points": {
+    "pilot": {
+      "cells": {
+        "20.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 13,
+          "means": {
+            "ext": 2017.84375,
+            "greedy": 1358.203125,
+            "interleave-B1": 1849.828125,
+            "interleave-B10": 2045.484375,
+            "interleave-B5": 2086.28125,
+            "interleave-B50": 1634.125,
+            "mid": 1258.390625,
+            "sampling": 1943.359375,
+            "switch@100": 1735.125,
+            "switch@1000": 1560.859375,
+            "switch@300": 1977.59375,
+            "switch@3000": 1287.71875,
+            "switch@600": 1725.734375
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "mid",
+              "mean": 1258.390625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0793175807392876,
+                  "ci95": [
+                    1.0438534205230243,
+                    1.1278784770585129
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.544321243651986,
+                  "ci95": [
+                    1.2952940405330007,
+                    1.8589391983060777
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L2": {
+              "member": "interleave-B10",
+              "mean": 2045.484375,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 0.6640007333226391,
+                  "ci95": [
+                    0.547806675446739,
+                    0.7962653402627348
+                  ],
+                  "resolved": true,
+                  "direction": "learner faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 0.95007295032503,
+                  "ci95": [
+                    0.7865691001020824,
+                    1.1410558900120453
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                }
+              }
+            },
+            "L3": {
+              "member": "mid",
+              "mean": 1258.390625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0793175807392876,
+                  "ci95": [
+                    1.0438534205230243,
+                    1.1278784770585129
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.544321243651986,
+                  "ci95": [
+                    1.2952940405330007,
+                    1.8589391983060777
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 1358.203125,
+              "se": 118.78464653240805
+            },
+            "sampling": {
+              "mean": 1943.359375,
+              "se": 178.07771005113833
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "mid",
+            "mean": 1258.390625,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        },
+        "5.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 13,
+          "means": {
+            "ext": 1968.765625,
+            "greedy": 2830.46875,
+            "interleave-B1": 2640.828125,
+            "interleave-B10": 2680.609375,
+            "interleave-B5": 2987.125,
+            "interleave-B50": 2587.703125,
+            "mid": 2847.21875,
+            "sampling": 2805.1875,
+            "switch@100": 2353.28125,
+            "switch@1000": 2768.953125,
+            "switch@300": 2722.78125,
+            "switch@3000": 2666.75,
+            "switch@600": 2669.34375
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "ext",
+              "mean": 1968.765625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.4376870024841073,
+                  "ci95": [
+                    1.1626501341730033,
+                    1.7630580653828396
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.4248458345568686,
+                  "ci95": [
+                    1.14552722980217,
+                    1.7807902340154307
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L2": {
+              "member": "interleave-B10",
+              "mean": 2680.609375,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0559049656386432,
+                  "ci95": [
+                    0.8664941923524896,
+                    1.2889543613198955
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.0464738078445317,
+                  "ci95": [
+                    0.8291507152223364,
+                    1.346130495125826
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                }
+              }
+            },
+            "L3": {
+              "member": "ext",
+              "mean": 1968.765625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.4376870024841073,
+                  "ci95": [
+                    1.1626501341730033,
+                    1.7630580653828396
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.4248458345568686,
+                  "ci95": [
+                    1.14552722980217,
+                    1.7807902340154307
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 2830.46875,
+              "se": 245.77492543502936
+            },
+            "sampling": {
+              "mean": 2805.1875,
+              "se": 329.334285889883
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "ext",
+            "mean": 1968.765625,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        },
+        "1.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 13,
+          "means": {
+            "ext": 2211.6875,
+            "greedy": 7522.546875,
+            "interleave-B1": 3588.203125,
+            "interleave-B10": 4582.78125,
+            "interleave-B5": 4088.765625,
+            "interleave-B50": 4538.328125,
+            "mid": 15779.484375,
+            "sampling": 3444.46875,
+            "switch@100": 2496.09375,
+            "switch@1000": 5821.328125,
+            "switch@300": 3720.78125,
+            "switch@3000": 11103.6875,
+            "switch@600": 4374.734375
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "ext",
+              "mean": 2211.6875,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 3.4012702404837936,
+                  "ci95": [
+                    2.6446867069738587,
+                    4.338099662764153
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.5573939582332494,
+                  "ci95": [
+                    1.3556252744385868,
+                    1.7922054234595381
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L2": {
+              "member": "interleave-B10",
+              "mean": 4582.78125,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.6414806783544382,
+                  "ci95": [
+                    1.301109967929353,
+                    2.077079294041119
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 0.751610989505554,
+                  "ci95": [
+                    0.6269256200605515,
+                    0.891263293912441
+                  ],
+                  "resolved": true,
+                  "direction": "learner faster"
+                }
+              }
+            },
+            "L3": {
+              "member": "ext",
+              "mean": 2211.6875,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 3.4012702404837936,
+                  "ci95": [
+                    2.6446867069738587,
+                    4.338099662764153
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.5573939582332494,
+                  "ci95": [
+                    1.3556252744385868,
+                    1.7922054234595381
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 7522.546875,
+              "se": 718.6158829079021
+            },
+            "sampling": {
+              "mean": 3444.46875,
+              "se": 266.81622198409167
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "ext",
+            "mean": 2211.6875,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        }
+      }
+    },
+    "stress": {
+      "cells": {
+        "20.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 12,
+          "means": {
+            "ext": 6531.234375,
+            "greedy": 2181.046875,
+            "interleave-B10": 4250.15625,
+            "interleave-B5": 3912.828125,
+            "interleave-B50": 2927.828125,
+            "mid": 2065.421875,
+            "sampling": 2463.890625,
+            "switch@100": 5885.96875,
+            "switch@1000": 2809.390625,
+            "switch@300": 4411.0625,
+            "switch@3000": 2059.484375,
+            "switch@600": 4231.890625
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "mid",
+              "mean": 2065.421875,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0559812992200444,
+                  "ci95": [
+                    1.020796470713926,
+                    1.1024341422993105
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.192923661176969,
+                  "ci95": [
+                    1.054579081566818,
+                    1.3532342615131794
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L2": {
+              "member": "switch@300",
+              "mean": 4411.0625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 0.4944493248508721,
+                  "ci95": [
+                    0.3982311251639246,
+                    0.6129695540111892
+                  ],
+                  "resolved": true,
+                  "direction": "learner faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 0.5585707808492851,
+                  "ci95": [
+                    0.4433760949841887,
+                    0.7008369103263739
+                  ],
+                  "resolved": true,
+                  "direction": "learner faster"
+                }
+              }
+            },
+            "L3": {
+              "member": "mid",
+              "mean": 2065.421875,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0559812992200444,
+                  "ci95": [
+                    1.020796470713926,
+                    1.1024341422993105
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.192923661176969,
+                  "ci95": [
+                    1.054579081566818,
+                    1.3532342615131794
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 2181.046875,
+              "se": 197.59079115397287
+            },
+            "sampling": {
+              "mean": 2463.890625,
+              "se": 240.7166251211495
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "switch@3000",
+            "mean": 2059.484375,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        },
+        "5.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 12,
+          "means": {
+            "ext": 5702.734375,
+            "greedy": 6209.484375,
+            "interleave-B10": 5822.625,
+            "interleave-B5": 6087.234375,
+            "interleave-B50": 5615.953125,
+            "mid": 5415.65625,
+            "sampling": 5806.171875,
+            "switch@100": 6074.171875,
+            "switch@1000": 5059.640625,
+            "switch@300": 5638.34375,
+            "switch@3000": 5249.625,
+            "switch@600": 5542.1875
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "mid",
+              "mean": 5415.65625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.146580227465508,
+                  "ci95": [
+                    1.0407086683795197,
+                    1.291193070559609
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.072108643343085,
+                  "ci95": [
+                    0.8564938659150353,
+                    1.3242639700080037
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                }
+              }
+            },
+            "L2": {
+              "member": "switch@300",
+              "mean": 5638.34375,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.101295814927921,
+                  "ci95": [
+                    0.8900032716096238,
+                    1.3578099409421212
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.0297655007288267,
+                  "ci95": [
+                    0.7823251372794695,
+                    1.338953933125231
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                }
+              }
+            },
+            "L3": {
+              "member": "sampling",
+              "mean": 5806.171875,
+              "is_a_learner": true,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 1.0694627215113228,
+                  "ci95": [
+                    0.8614745138015093,
+                    1.3378373074793803
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.0,
+                  "ci95": [
+                    1.0,
+                    1.0
+                  ],
+                  "resolved": false,
+                  "direction": "unresolved"
+                }
+              },
+              "caveat": "this rung selected a LEARNER, so it is not an independent benchmark for this cell: it is the learner re-measured on held-out data and cannot evidence that the learner beats a benchmark"
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 6209.484375,
+              "se": 678.8504566224009
+            },
+            "sampling": {
+              "mean": 5806.171875,
+              "se": 598.4998713527594
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "switch@1000",
+            "mean": 5059.640625,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        },
+        "1.0": {
+          "n_replicates": 64,
+          "eligible_candidates": 12,
+          "means": {
+            "ext": 5093.515625,
+            "greedy": 18702.65625,
+            "interleave-B10": 9112.171875,
+            "interleave-B5": 8975.84375,
+            "interleave-B50": 11453.953125,
+            "mid": 20207.78125,
+            "sampling": 10905.109375,
+            "switch@100": 5132.46875,
+            "switch@1000": 7510.390625,
+            "switch@300": 5889.578125,
+            "switch@3000": 13004.28125,
+            "switch@600": 6975.375
+          },
+          "benchmarks": {
+            "L1": {
+              "member": "ext",
+              "mean": 5093.515625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 3.6718560669969476,
+                  "ci95": [
+                    2.855338488513935,
+                    4.678924652406822
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 2.1409788793962914,
+                  "ci95": [
+                    1.7210221640933714,
+                    2.6478844951885674
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L2": {
+              "member": "switch@300",
+              "mean": 5889.578125,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 3.1755510926345,
+                  "ci95": [
+                    2.502314576937307,
+                    3.9940520752533337
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 1.85159431517007,
+                  "ci95": [
+                    1.5366238090972753,
+                    2.2158449543027388
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            },
+            "L3": {
+              "member": "ext",
+              "mean": 5093.515625,
+              "is_a_learner": false,
+              "vs_learner": {
+                "greedy": {
+                  "ratio_learner_over_benchmark": 3.6718560669969476,
+                  "ci95": [
+                    2.855338488513935,
+                    4.678924652406822
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                },
+                "sampling": {
+                  "ratio_learner_over_benchmark": 2.1409788793962914,
+                  "ci95": [
+                    1.7210221640933714,
+                    2.6478844951885674
+                  ],
+                  "resolved": true,
+                  "direction": "benchmark faster"
+                }
+              }
+            }
+          },
+          "learners": {
+            "greedy": {
+              "mean": 18702.65625,
+              "se": 1806.6766694420244
+            },
+            "sampling": {
+              "mean": 10905.109375,
+              "se": 908.2616256419095
+            }
+          },
+          "diagnostic_envelope": {
+            "member": "ext",
+            "mean": 5093.515625,
+            "status": "DIAGNOSTIC ONLY -- selected and scored on the same sample, so it is biased downward and is not comparable to a frozen benchmark",
+            "not_a_benchmark": true
+          }
+        }
+      }
+    }
+  },
+  "falsifier_check": "passed: no diagnostic envelope exceeds a learner's own value",
+  "calibration_confound_checked": {
+    "question": "is the learner's disadvantage an artifact of its calibrated threshold rather than its actions? The +-30 % envelope permits a wide ARL spread and CUSUM delay grows with the threshold.",
+    "answer": "no. h_sampling / h_benchmark spans 0.908 to 1.052 across all twelve learner-versus-benchmark cells, so calibration accounts for at most about 5 %, against observed gaps of 19 % to 114 %. At the STRESS point sampling holds the LOWER threshold and is still slower, so there the confound runs against the learner and the contrast is understated, not inflated."
+  },
+  "language": "no oracle, optimal or regret claim is made or licensed; L4 is not attempted, and the envelope is not a population quantity",
+  "digest": "79bee85a881494f8"
+}
