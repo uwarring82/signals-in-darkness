@@ -204,18 +204,21 @@ def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
     numbers are unaffected -- asserted by the pilot preservation evidence.
     """
     wants_posterior = getattr(sched, "needs_posterior", False)
+    wants_age = getattr(sched, "needs_age", False)
     STATS["run_batch_calls"] += 1
     r = np.random.default_rng(seed)
     C, s = bank.op.C_eff, bank.op.s        # read from the bank, never from module state
     alpha = [np.tile(bank.prior, (R, 1)) for _ in range(bank.K)]
     Lk = np.zeros((R, bank.K)); W = np.zeros(R); stop = np.full(R, max_steps); active = np.ones(R, bool)
+    age = np.zeros(R, int)          # shots since the last CUSUM reset, for age-based schedules
     if not null:
         a_true = math.exp(-1/true_tcc); sd = s*math.sqrt(1-a_true*a_true); eps = r.normal(0, s, R)
     logK = math.log(bank.K)
     for n in range(max_steps):
-        if wants_posterior:
-            # Per-run actions: the posterior differs between runs, so theta does too.
-            thv = sched(n, posterior_weights(bank, Lk), bank)
+        if wants_posterior or wants_age:
+            # Per-run actions: the posterior (or the segment age) differs between runs.
+            thv = (sched(n, posterior_weights(bank, Lk), bank) if wants_posterior
+                   else sched(n, age))
             e1arr = np.stack([bank.e1[float(x)] for x in np.unique(thv)])
             uniq = {float(x): i for i, x in enumerate(np.unique(thv))}
             e1 = e1arr[[uniq[float(x)] for x in thv]]                    # R x M
@@ -242,17 +245,18 @@ def run_batch(bank, sched, true_tcc, h, R, seed, max_steps, null):
         # mixture predictive: log sum_k pi_k exp(L_k + logz_k) - log sum_k pi_k exp(L_k)
         A = Lk + logz; mA = A.max(1, keepdims=True); num = mA[:, 0] + np.log(np.exp(A-mA).sum(1))
         mB = Lk.max(1, keepdims=True); den = mB[:, 0] + np.log(np.exp(Lk-mB).sum(1))
-        if wants_posterior:
+        if wants_posterior or wants_age:
             l0 = np.where(y, np.log(p0v), np.log(1-p0v))
         else:
             p0 = bank.p0(th); l0 = np.where(y, math.log(p0), math.log(1-p0))
         W += (num-den) - l0; Lk = A
+        age += 1
         hit = active & (W >= h); stop[hit] = n+1; active &= ~hit
         STATS["simulated_steps"] += 1
         if not active.any(): break
         rs = W < -1e-9
         if rs.any():
-            W[rs] = 0.0; Lk[rs] = 0.0
+            W[rs] = 0.0; Lk[rs] = 0.0; age[rs] = 0
             for k in range(bank.K): alpha[k][rs] = bank.prior
     return stop
 
@@ -509,6 +513,73 @@ def make_posterior_sampling_theta(bank, action_seed):
     sched.run_identity = {"policy_digest": sched.identity["digest"],
                           "action_seed": int(action_seed)}
     return sched
+
+
+# ---------------------------------------------------------------------------
+# DATA-seed families, keyed by phase. The action-seed families (ACTION_SEEDS, learners only)
+# are separate: a run's identity is the pair. Phase is MANDATORY everywhere -- there is no
+# default -- because the one defaulted phase in this codebase (recording_policy's hard-coded
+# "calibration") silently measured the sampling learner on the stream it had been tuned
+# against. A missing phase must be a crash, never a quiet fallback.
+DATA_SEEDS = {
+    "selection":  lambda tcc, off: 700 + int(tcc) + off,
+    "evaluation": lambda tcc, off: 200 + int(tcc) + off,
+}
+# Calibration runs under H0, where no tau_c exists, so its seed cannot be a function of one.
+# Each family keeps the base roadmap B used for it, so recalibrating an inherited member
+# reproduces B's published threshold exactly -- a check the campaign actually performs.
+CAL_SEED_BASE = {"constants": 100, "interleave": 100, "switch": 300}
+
+
+def data_seed(phase, tcc, off):
+    """Data seed for a post-change run. `phase` is required and validated."""
+    if phase not in DATA_SEEDS:
+        raise SystemExit(f"no data-seed family declared for phase {phase!r}; "
+                         f"declared phases are {sorted(DATA_SEEDS)}")
+    if tcc is None:
+        raise SystemExit(f"phase {phase!r} needs a true tau_c to pick its data seed")
+    return DATA_SEEDS[phase](tcc, off)
+
+
+def schedule_from_spec(kind, spec):
+    """Build one member of the frozen schedule class from its manifest entry.
+
+    ONE factory, driven by analysis/schedule_class_C.json. Roadmap B kept a hard-coded policy
+    list in build_policies and a separate hard-coded B_VALUES in sid_run8, and adding members
+    meant editing both -- which is how a class can drift from the manifest that froze it. Every
+    candidate now comes from the manifest, so the class and the code cannot disagree.
+    """
+    if kind == "constants":
+        th = THM if spec["theta"] == "THM" else THX
+        s = (lambda n: th)
+        s.label = spec["name"]
+        return s
+    if kind == "interleave":
+        B = int(spec["block"])
+        s = make_interleave(B)
+        s.label = spec["name"]
+        return s
+    if kind == "switch":
+        A = int(spec["age"])
+        def s(n, age, _A=A):
+            return np.where(age < _A, THM, THX)
+        s.needs_age = True
+        s.label = spec["name"]
+        return s
+    raise ValueError(f"unknown schedule kind {kind!r}")
+
+
+def frozen_schedule_class(path):
+    """Every member of the frozen class, in manifest order, as (name, schedule)."""
+    with open(path, encoding="utf-8") as fh:
+        cls = json.load(fh)
+    out = []
+    for kind, specs in cls["class"].items():
+        for spec in specs:
+            out.append((spec["name"], schedule_from_spec(kind, spec)))
+    if len(out) != cls["size"]:
+        raise ValueError(f"manifest declares {cls['size']} members, built {len(out)}")
+    return out
 
 
 def build_policies(op):
