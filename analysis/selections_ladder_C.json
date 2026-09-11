@@ -1,0 +1,304 @@
+{
+  "record": "roadmap C ladder selections, frozen from the SELECTION stream only",
+  "stream": "700 + int(tau_c) + operating-point offset",
+  "evaluation_stream_not_read": "200 + int(tau_c) + offset was not opened by this tool",
+  "why": "a member chosen on the sample it is then scored on is chosen partly by noise; the benchmark would be optimistically biased and the learner would look weaker than it is",
+  "eligibility_digest": "3ac8b99a6e1f7677",
+  "revision": "554f39f",
+  "operating_points": {
+    "pilot": {
+      "n_eligible": 13,
+      "eligible": [
+        "ext",
+        "greedy",
+        "interleave-B1",
+        "interleave-B10",
+        "interleave-B5",
+        "interleave-B50",
+        "mid",
+        "sampling",
+        "switch@100",
+        "switch@1000",
+        "switch@300",
+        "switch@3000",
+        "switch@600"
+      ],
+      "capped_selection_cells": [],
+      "L1": {
+        "20.0": {
+          "member": "mid",
+          "selection_mean": 1034.4375,
+          "considered": {
+            "mid": 1034.4375,
+            "ext": 1949.21875
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        },
+        "5.0": {
+          "member": "ext",
+          "selection_mean": 2075.390625,
+          "considered": {
+            "mid": 2884.8125,
+            "ext": 2075.390625
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        },
+        "1.0": {
+          "member": "ext",
+          "selection_mean": 2451.453125,
+          "considered": {
+            "mid": 17120.640625,
+            "ext": 2451.453125
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        }
+      },
+      "L2": {
+        "member": "interleave-B10",
+        "worst_case_ratio": 1.5687751493295832,
+        "rule": "smallest worst-case ratio to the best eligible member at each tau_c",
+        "ratio_denominator": "the best eligible member of L2's own four-schedule class at that tau_c. The predeclared rule says 'smallest worst-case delay ratio over tau_c' without naming a denominator; this is the within-class competitive ratio reading, recorded explicitly so the choice is auditable rather than implicit.",
+        "eligible_members": [
+          "interleave-B1",
+          "interleave-B10",
+          "switch@300",
+          "switch@1000"
+        ],
+        "excluded_as_ineligible": [],
+        "considered": {
+          "interleave-B1": 1.656674231770652,
+          "interleave-B10": 1.5687751493295832,
+          "switch@300": 1.595856365129976,
+          "switch@1000": 1.7491350552591294
+        },
+        "selection_means": {
+          "20.0": 1760.484375,
+          "5.0": 2773.3125,
+          "1.0": 4114.78125
+        }
+      },
+      "L3": {
+        "20.0": {
+          "member": "mid",
+          "selection_mean": 1034.4375,
+          "runner_up": "switch@3000",
+          "runner_up_margin_pct": 0.178236964533865,
+          "margin_in_se": 0.022033453735674065,
+          "considered": {
+            "ext": 1949.21875,
+            "greedy": 1175.578125,
+            "interleave-B1": 1859.125,
+            "interleave-B10": 1760.484375,
+            "interleave-B5": 1938.78125,
+            "interleave-B50": 1329.890625,
+            "mid": 1034.4375,
+            "sampling": 1593.515625,
+            "switch@100": 1801.921875,
+            "switch@1000": 1122.203125,
+            "switch@300": 1790.875,
+            "switch@3000": 1036.28125,
+            "switch@600": 1309.21875
+          },
+          "selected_a_learner": false
+        },
+        "5.0": {
+          "member": "ext",
+          "selection_mean": 2075.390625,
+          "runner_up": "switch@100",
+          "runner_up_margin_pct": 17.119518162996425,
+          "margin_in_se": 1.9545849105421644,
+          "considered": {
+            "ext": 2075.390625,
+            "greedy": 3210.859375,
+            "interleave-B1": 2897.78125,
+            "interleave-B10": 2773.3125,
+            "interleave-B5": 3210.328125,
+            "interleave-B50": 2815.328125,
+            "mid": 2884.8125,
+            "sampling": 3296.65625,
+            "switch@100": 2430.6875,
+            "switch@1000": 2913.234375,
+            "switch@300": 2882.15625,
+            "switch@3000": 3055.84375,
+            "switch@600": 2624.953125
+          },
+          "selected_a_learner": false
+        },
+        "1.0": {
+          "member": "ext",
+          "selection_mean": 2451.453125,
+          "runner_up": "switch@100",
+          "runner_up_margin_pct": 12.205133434888745,
+          "margin_in_se": 1.4625082576440172,
+          "considered": {
+            "ext": 2451.453125,
+            "greedy": 8597.828125,
+            "interleave-B1": 4328.84375,
+            "interleave-B10": 4114.78125,
+            "interleave-B5": 4244.375,
+            "interleave-B50": 4456.671875,
+            "mid": 17120.640625,
+            "sampling": 3300.125,
+            "switch@100": 2750.65625,
+            "switch@1000": 6177.34375,
+            "switch@300": 3531.65625,
+            "switch@3000": 11154.90625,
+            "switch@600": 3952.75
+          },
+          "selected_a_learner": false
+        }
+      }
+    },
+    "stress": {
+      "n_eligible": 12,
+      "eligible": [
+        "ext",
+        "greedy",
+        "interleave-B10",
+        "interleave-B5",
+        "interleave-B50",
+        "mid",
+        "sampling",
+        "switch@100",
+        "switch@1000",
+        "switch@300",
+        "switch@3000",
+        "switch@600"
+      ],
+      "capped_selection_cells": [],
+      "L1": {
+        "20.0": {
+          "member": "mid",
+          "selection_mean": 2455.015625,
+          "considered": {
+            "mid": 2455.015625,
+            "ext": 5079.4375
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        },
+        "5.0": {
+          "member": "mid",
+          "selection_mean": 4665.328125,
+          "considered": {
+            "mid": 4665.328125,
+            "ext": 4772.1875
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        },
+        "1.0": {
+          "member": "ext",
+          "selection_mean": 5176.875,
+          "considered": {
+            "mid": 22368.75,
+            "ext": 5176.875
+          },
+          "degenerate": false,
+          "degenerate_note": ""
+        }
+      },
+      "L2": {
+        "member": "switch@300",
+        "worst_case_ratio": 1.0984724651601334,
+        "rule": "smallest worst-case ratio to the best eligible member at each tau_c",
+        "ratio_denominator": "the best eligible member of L2's own four-schedule class at that tau_c. The predeclared rule says 'smallest worst-case delay ratio over tau_c' without naming a denominator; this is the within-class competitive ratio reading, recorded explicitly so the choice is auditable rather than implicit.",
+        "eligible_members": [
+          "interleave-B10",
+          "switch@300",
+          "switch@1000"
+        ],
+        "excluded_as_ineligible": [
+          "interleave-B1"
+        ],
+        "considered": {
+          "interleave-B10": 1.44628143694833,
+          "switch@300": 1.0984724651601334,
+          "switch@1000": 1.3458151856251297
+        },
+        "selection_means": {
+          "20.0": 3895.578125,
+          "5.0": 4643.75,
+          "1.0": 5800.921875
+        }
+      },
+      "L3": {
+        "20.0": {
+          "member": "mid",
+          "selection_mean": 2455.015625,
+          "runner_up": "greedy",
+          "runner_up_margin_pct": 4.450709962385678,
+          "margin_in_se": 0.46523105295300704,
+          "considered": {
+            "ext": 5079.4375,
+            "greedy": 2564.28125,
+            "interleave-B10": 4258.0,
+            "interleave-B5": 3623.828125,
+            "interleave-B50": 3855.171875,
+            "mid": 2455.015625,
+            "sampling": 2840.609375,
+            "switch@100": 4768.375,
+            "switch@1000": 3546.359375,
+            "switch@300": 3895.578125,
+            "switch@3000": 2606.03125,
+            "switch@600": 4024.46875
+          },
+          "selected_a_learner": false
+        },
+        "5.0": {
+          "member": "sampling",
+          "selection_mean": 4309.734375,
+          "runner_up": "switch@1000",
+          "runner_up_margin_pct": 2.6364733905439355,
+          "margin_in_se": 0.24606852855456754,
+          "considered": {
+            "ext": 4772.1875,
+            "greedy": 4926.046875,
+            "interleave-B10": 5517.671875,
+            "interleave-B5": 4926.9375,
+            "interleave-B50": 5126.71875,
+            "mid": 4665.328125,
+            "sampling": 4309.734375,
+            "switch@100": 4699.171875,
+            "switch@1000": 4423.359375,
+            "switch@300": 4643.75,
+            "switch@3000": 4566.859375,
+            "switch@600": 5004.875
+          },
+          "selected_a_learner": true
+        },
+        "1.0": {
+          "member": "ext",
+          "selection_mean": 5176.875,
+          "runner_up": "switch@100",
+          "runner_up_margin_pct": 6.107992273330918,
+          "margin_in_se": 0.7767567471766685,
+          "considered": {
+            "ext": 5176.875,
+            "greedy": 20653.59375,
+            "interleave-B10": 8389.765625,
+            "interleave-B5": 8879.71875,
+            "interleave-B50": 9583.890625,
+            "mid": 22368.75,
+            "sampling": 11533.203125,
+            "switch@100": 5493.078125,
+            "switch@1000": 7806.96875,
+            "switch@300": 5800.921875,
+            "switch@3000": 12299.75,
+            "switch@600": 6806.390625
+          },
+          "selected_a_learner": false
+        }
+      }
+    }
+  },
+  "L3_selected_a_learner_at": [
+    "stress/tau_c=5.0"
+  ],
+  "L3_learner_selection_meaning": "both learners are IN L3's class by design, so L3 selecting one is expected rather than an error. Where it happens the rung stops being an independent benchmark for that cell: it is the learner, re-measured on the evaluation stream, and cannot evidence that the learner beats a benchmark.",
+  "selection_noise_caveat": "L3 names the member with the smallest SELECTION-stream mean. That is a noisy procedure: where the runner-up sits within about one standard error, a different selection draw would often name a different member. The frozen choice is still evaluated honestly on the held-out stream -- this caveat bounds what the choice means, not whether it is valid.",
+  "digest": "578481f6ba9ea13b"
+}
