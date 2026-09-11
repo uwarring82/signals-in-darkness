@@ -65,13 +65,19 @@ def main(argv):
         "operating_points": {},
     }
 
-    problems, marginal = [], []
+    problems, marginal, cal_revs = [], [], {}
     for op in OPS:
         path = ROOT / "analysis" / "reproduction" / f"res11_cal_{op}.json"
         if not path.exists():
             problems.append(f"{op}: no calibration artifact at {path.name}")
             continue
-        cal = json.loads(path.read_text()).get("cal", {})
+        doc = json.loads(path.read_text())
+        cal = doc.get("cal", {})
+        cal_rev = doc.get("meta", {}).get("revision", "unrecorded")
+        if cal_rev.endswith("+dirty") or cal_rev == "unrecorded":
+            problems.append(f"{op}: calibration revision is {cal_rev!r}; an eligibility "
+                            f"decision must rest on measurements whose code state is pinned")
+        cal_revs[op] = cal_rev
         missing = [m for m in members if m not in cal]
         if missing:
             problems.append(f"{op}: {len(missing)} of 11 schedules uncalibrated: "
@@ -114,8 +120,19 @@ def main(argv):
             "candidates": 13, "eligible": sorted(eligible),
             "n_eligible": len(eligible), "ineligible": ineligible,
             "calibrations": rows,
+            "calibration_revision": cal_rev,
         }
 
+    # Both points must come from ONE revision. Roadmap B's pilot chain mixed two calibration
+    # algorithms across its halves (res6 at ec0d8e0, res8 at aab80b7, which changed how the
+    # threshold is picked), and the mixture was invisible in the artifacts. A ladder whose two
+    # operating points disagreed the same way would not be comparable between points.
+    if len(set(cal_revs.values())) > 1:
+        problems.append(f"calibrations come from different revisions {cal_revs}; the two "
+                        f"operating points would not be comparable")
+    record["calibration_revisions"] = cal_revs
+    record["revision_note"] = ("recorded revision is the one that MEASURED the calibrations, "
+                               "not HEAD at freeze time")
     record["marginality"] = (marginal if marginal else
                              "no candidate sits within one standard error of the envelope boundary")
     record["not_decided_here"] = ("nothing about delays, ordering, or whether feedback helps. "
@@ -136,7 +153,8 @@ def main(argv):
         for p in problems:
             print(f"    {p}", file=sys.stderr)
         return 3
-    print(f"\ndigest {record['digest']}  revision {head}")
+    print(f"\ndigest {record['digest']}  calibrated at {sorted(set(cal_revs.values()))}"
+          f"  frozen at HEAD {head}")
     if write:
         OUT.write_text(json.dumps(record, indent=2) + "\n")
         print(f"written to {OUT.relative_to(ROOT)}")
