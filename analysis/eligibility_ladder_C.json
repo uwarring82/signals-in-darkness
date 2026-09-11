@@ -1,0 +1,333 @@
+{
+  "record": "roadmap C ladder eligibility: 13 candidates at each of 2 operating points",
+  "rule": "eligible iff |ARL - 3e+04|/3e+04 <= 0.30, decided by the CALIBRATION alone, never by a delay result",
+  "why": "a policy outside the envelope is not held to the same false-alarm rate, so its delay ratio is not comparable to an eligible policy's",
+  "decided_per_operating_point": "a candidate ineligible at one point is NOT thereby ineligible at the other; the envelope is a property of the calibration, which is per point",
+  "revision": "7d0c111",
+  "supersedes": {
+    "file": "analysis/eligibility_C.json",
+    "why": "that file covered only the two learners at two points (4 rows). The ladder ranges over 13 candidates, so eligibility must cover all of them. The four learner rows below are carried over unchanged, not recomputed."
+  },
+  "operating_points": {
+    "pilot": {
+      "candidates": 13,
+      "eligible": [
+        "ext",
+        "greedy",
+        "interleave-B1",
+        "interleave-B10",
+        "interleave-B5",
+        "interleave-B50",
+        "mid",
+        "sampling",
+        "switch@100",
+        "switch@1000",
+        "switch@300",
+        "switch@3000",
+        "switch@600"
+      ],
+      "n_eligible": 13,
+      "ineligible": {},
+      "calibrations": {
+        "mid": {
+          "h_star": 3.34375,
+          "ARL": 24562.5546875,
+          "se": 1954.9875018584962,
+          "pct_off_target": -18.12481770833333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "ext": {
+          "h_star": 3.6628783160468923,
+          "ARL": 30393.015625,
+          "se": 2435.373586958422,
+          "pct_off_target": 1.3100520833333333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "interleave-B1": {
+          "h_star": 3.34375,
+          "ARL": 30353.8125,
+          "se": 2618.6948361244526,
+          "pct_off_target": 1.179375,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "interleave-B5": {
+          "h_star": 3.510963571273527,
+          "ARL": 34379.8984375,
+          "se": 3035.190124083814,
+          "pct_off_target": 14.599661458333333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "interleave-B10": {
+          "h_star": 3.5562713612835704,
+          "ARL": 37066.328125,
+          "se": 3694.584446730395,
+          "pct_off_target": 23.554427083333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "interleave-B50": {
+          "h_star": 3.6705375512676905,
+          "ARL": 33320.171875,
+          "se": 2765.1127090436153,
+          "pct_off_target": 11.067239583333333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 100
+        },
+        "switch@100": {
+          "h_star": 3.65625,
+          "ARL": 31125.5546875,
+          "se": 2332.6265389661357,
+          "pct_off_target": 3.7518489583333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 300
+        },
+        "switch@300": {
+          "h_star": 3.8125,
+          "ARL": 33840.109375,
+          "se": 2758.805455056041,
+          "pct_off_target": 12.800364583333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 300
+        },
+        "switch@600": {
+          "h_star": 3.474984042263818,
+          "ARL": 29099.5859375,
+          "se": 2301.880162080978,
+          "pct_off_target": -3.0013802083333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 300
+        },
+        "switch@1000": {
+          "h_star": 3.439270080909095,
+          "ARL": 26819.1640625,
+          "se": 2030.6556588949582,
+          "pct_off_target": -10.602786458333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 300
+        },
+        "switch@3000": {
+          "h_star": 3.3540157560381023,
+          "ARL": 27657.2421875,
+          "se": 2247.755613672699,
+          "pct_off_target": -7.809192708333334,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 300
+        },
+        "greedy": {
+          "h_star": 3.6145368059637843,
+          "ARL": 29335.1796875,
+          "se": 2435.937446516035,
+          "pct_off_target": -2.2160677083333336,
+          "capped": 0,
+          "inside_envelope": true,
+          "policy_digest": "fa22bac9ac38d6d7",
+          "carried_from": "analysis/eligibility_C.json @ 5024d59"
+        },
+        "sampling": {
+          "h_star": 3.5190812815020247,
+          "ARL": 34443.9375,
+          "se": 3327.5900431223,
+          "pct_off_target": 14.813125,
+          "capped": 0,
+          "inside_envelope": true,
+          "policy_digest": "3a687899c8b1821d",
+          "carried_from": "analysis/eligibility_C.json @ 5024d59"
+        }
+      },
+      "calibration_revision": "16395a8"
+    },
+    "stress": {
+      "candidates": 13,
+      "eligible": [
+        "ext",
+        "greedy",
+        "interleave-B10",
+        "interleave-B5",
+        "interleave-B50",
+        "mid",
+        "sampling",
+        "switch@100",
+        "switch@1000",
+        "switch@300",
+        "switch@3000",
+        "switch@600"
+      ],
+      "n_eligible": 12,
+      "ineligible": {
+        "interleave-B1": "ARL 41375 is +37.9 % off target"
+      },
+      "calibrations": {
+        "mid": {
+          "h_star": 2.868126349521597,
+          "ARL": 32138.8359375,
+          "se": 2546.597281248734,
+          "pct_off_target": 7.129453125,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7100
+        },
+        "ext": {
+          "h_star": 2.6328125,
+          "ARL": 37612.75,
+          "se": 2786.9158068074817,
+          "pct_off_target": 25.375833333333333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7100
+        },
+        "interleave-B1": {
+          "h_star": 2.55078125,
+          "ARL": 41374.5234375,
+          "se": 3315.7660787640943,
+          "pct_off_target": 37.915078125,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": false,
+          "cal_seed": 7100
+        },
+        "interleave-B5": {
+          "h_star": 2.55078125,
+          "ARL": 35514.375,
+          "se": 2883.4189620387338,
+          "pct_off_target": 18.38125,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7100
+        },
+        "interleave-B10": {
+          "h_star": 2.520965537025273,
+          "ARL": 29425.5703125,
+          "se": 2385.6225515998144,
+          "pct_off_target": -1.914765625,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7100
+        },
+        "interleave-B50": {
+          "h_star": 2.6875,
+          "ARL": 27306.3203125,
+          "se": 2263.335213072747,
+          "pct_off_target": -8.978932291666666,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7100
+        },
+        "switch@100": {
+          "h_star": 2.703472226074815,
+          "ARL": 34371.6171875,
+          "se": 2929.472854285267,
+          "pct_off_target": 14.572057291666667,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7300
+        },
+        "switch@300": {
+          "h_star": 2.811454696594906,
+          "ARL": 29821.859375,
+          "se": 2420.392710393536,
+          "pct_off_target": -0.5938020833333333,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7300
+        },
+        "switch@600": {
+          "h_star": 2.87890625,
+          "ARL": 33022.6484375,
+          "se": 2826.731073706921,
+          "pct_off_target": 10.075494791666667,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7300
+        },
+        "switch@1000": {
+          "h_star": 2.7762220608016532,
+          "ARL": 25224.484375,
+          "se": 2051.0727245539647,
+          "pct_off_target": -15.918385416666666,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7300
+        },
+        "switch@3000": {
+          "h_star": 2.807259121861357,
+          "ARL": 24057.4921875,
+          "se": 2052.5725890096605,
+          "pct_off_target": -19.808359375,
+          "capped": 0,
+          "bracket_endpoint": false,
+          "inside_envelope": true,
+          "cal_seed": 7300
+        },
+        "greedy": {
+          "h_star": 3.0319513176698667,
+          "ARL": 38686.921875,
+          "se": 2957.647833062633,
+          "pct_off_target": 28.95640625,
+          "capped": 0,
+          "inside_envelope": true,
+          "policy_digest": "1778e8ebd51c92cb",
+          "carried_from": "analysis/eligibility_C.json @ 5024d59"
+        },
+        "sampling": {
+          "h_star": 2.60546875,
+          "ARL": 26937.328125,
+          "se": 2239.396451296153,
+          "pct_off_target": -10.20890625,
+          "capped": 0,
+          "inside_envelope": true,
+          "policy_digest": "a8654d2ebc97a762",
+          "carried_from": "analysis/eligibility_C.json @ 5024d59"
+        }
+      },
+      "calibration_revision": "16395a8"
+    }
+  },
+  "calibration_revisions": {
+    "pilot": "16395a8",
+    "stress": "16395a8"
+  },
+  "revision_note": "recorded revision is the one that MEASURED the calibrations, not HEAD at freeze time",
+  "marginality": [
+    "pilot/interleave-B10: +23.6 %, 0.52 sigma from the boundary",
+    "stress/ext: +25.4 %, 0.50 sigma from the boundary",
+    "stress/interleave-B1: +37.9 %, 0.72 sigma from the boundary",
+    "stress/greedy: +29.0 %, 0.11 sigma from the boundary"
+  ],
+  "not_decided_here": "nothing about delays, ordering, or whether feedback helps. Eligibility only.",
+  "digest": "3ac8b99a6e1f7677"
+}

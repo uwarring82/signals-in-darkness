@@ -1,0 +1,730 @@
+{
+  "record": "roadmap C: per-member reconciliation of fresh calibrations against roadmap B",
+  "why": "roadmap B is a historically mixed calibration chain -- three routines produced its archived thresholds. Its delays remain valid evidence FOR B but cannot be imported into C's matched comparison, because they were measured at thresholds a different procedure chose.",
+  "conditional_property": {
+    "statement": "the enlarged confirmation cap is applied only after h is selected",
+    "verified_by": "tests/test_calibration_cap_independence.py",
+    "also_requires": "the SEARCH cap unchanged: NULL_CAP_DEFAULT = 150_000 at ec0d8e0, aab80b7, 5024d59 and HEAD",
+    "without_it": "no exact-reproduction prediction is logically licensed"
+  },
+  "variants": {
+    "plain_bisection": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+    "last_iterate": "refined: last secant iterate (pre-aab80b7)",
+    "best_of_measured": "refined: best of measured (aab80b7 and later)"
+  },
+  "stress_point_was_never_refined": "every archived STRESS threshold is plain bisection: both drivers gate refinement on op_name.endswith('_recal') and the stress runs used op_name='stress'. There is no res6_policies_stress_recal artifact.",
+  "rows": [
+    {
+      "operating_point": "pilot",
+      "member": "mid",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by refined: last secant iterate (pre-aab80b7), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_pilot_recal.json",
+        "archived_name": "learner-mid(bank)",
+        "revision": "ec0d8e0",
+        "variant": "refined: last secant iterate (pre-aab80b7)",
+        "h": 3.34314439319318,
+        "arl": 24562.546875,
+        "capped": 0,
+        "capped_recorded": true,
+        "pct_off_target": -18.12484375
+      },
+      "fresh": {
+        "h": 3.34375,
+        "arl": 24562.5546875,
+        "se": 1954.9875018584962,
+        "capped": 0,
+        "pct_off_target": -18.12481770833333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.822290262271897,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": 0.0006056068068200915,
+        "h_identical": false,
+        "arl_delta": 0.0078125,
+        "arl_delta_pct": 3.180655507654884e-05,
+        "archived_censored": false,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "ext",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "B ran the extremum schedule only on an oracle bank; no learner-bank counterpart",
+      "archived": null,
+      "fresh": {
+        "h": 3.6628783160468923,
+        "arl": 30393.015625,
+        "se": 2435.373586958422,
+        "capped": 0,
+        "pct_off_target": 1.3100520833333333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.534153618603298,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "interleave-B1",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by refined: last secant iterate (pre-aab80b7), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_pilot_recal.json",
+        "archived_name": "learner-interleave-B1(bank)",
+        "revision": "ec0d8e0",
+        "variant": "refined: last secant iterate (pre-aab80b7)",
+        "h": 3.3665578318568685,
+        "arl": 30610.234375,
+        "capped": 1,
+        "capped_recorded": true,
+        "pct_off_target": 2.0341145833333334
+      },
+      "fresh": {
+        "h": 3.34375,
+        "arl": 30353.8125,
+        "se": 2618.6948361244526,
+        "capped": 0,
+        "pct_off_target": 1.179375,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.301716328579911,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": -0.02280783185686852,
+        "h_identical": false,
+        "arl_delta": -256.421875,
+        "arl_delta_pct": -0.8376998093468535,
+        "archived_censored": true,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "interleave-B5",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 3.510963571273527,
+        "arl": 34379.8984375,
+        "se": 3035.190124083814,
+        "capped": 0,
+        "pct_off_target": 14.599661458333333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.522178635809379,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "interleave-B10",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by refined: last secant iterate (pre-aab80b7), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_pilot_recal.json",
+        "archived_name": "learner-interleave-B10(bank)",
+        "revision": "ec0d8e0",
+        "variant": "refined: last secant iterate (pre-aab80b7)",
+        "h": 3.5421051512675836,
+        "arl": 34922.7578125,
+        "capped": 3,
+        "capped_recorded": true,
+        "pct_off_target": 16.409192708333332
+      },
+      "fresh": {
+        "h": 3.5562713612835704,
+        "arl": 37066.328125,
+        "se": 3694.584446730395,
+        "capped": 0,
+        "pct_off_target": 23.554427083333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 0.5233800723410845,
+        "marginal": true,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": 0.014166210015986724,
+        "h_identical": false,
+        "arl_delta": 2143.5703125,
+        "arl_delta_pct": 6.138032752192171,
+        "archived_censored": true,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "interleave-B50",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 3.6705375512676905,
+        "arl": 33320.171875,
+        "se": 2765.1127090436153,
+        "capped": 0,
+        "pct_off_target": 11.067239583333333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.0541036560366877,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "switch@100",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 3.65625,
+        "arl": 31125.5546875,
+        "se": 2332.6265389661357,
+        "capped": 0,
+        "pct_off_target": 3.7518489583333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.3757848420905403,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "switch@300",
+      "predicted": "EXACT_H",
+      "prediction_reason": "archived under the same selection rule as HEAD; the only later change to the search was 5024d59's confirmation cap, which cannot alter h (measured: tests/test_calibration_cap_independence.py), and the search cap NULL_CAP_DEFAULT is 150_000 at both revisions",
+      "archived": {
+        "file": "res8_switch_pilot_recal.json",
+        "archived_name": "300",
+        "revision": "aab80b7",
+        "variant": "refined: best of measured (aab80b7 and later)",
+        "h": 3.8125,
+        "arl": 45718.921875,
+        "capped": null,
+        "capped_recorded": false,
+        "pct_off_target": 52.39640625
+      },
+      "fresh": {
+        "h": 3.8125,
+        "arl": 33840.109375,
+        "se": 2758.805455056041,
+        "capped": 0,
+        "pct_off_target": 12.800364583333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.8703350812734945,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": 0.0,
+        "h_identical": true,
+        "arl_delta": -11878.8125,
+        "arl_delta_pct": -25.982267325720922,
+        "archived_censored": null,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "switch@600",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 3.474984042263818,
+        "arl": 29099.5859375,
+        "se": 2301.880162080978,
+        "capped": 0,
+        "pct_off_target": -3.0013802083333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.518682714645622,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "switch@1000",
+      "predicted": "EXACT_H",
+      "prediction_reason": "archived under the same selection rule as HEAD; the only later change to the search was 5024d59's confirmation cap, which cannot alter h (measured: tests/test_calibration_cap_independence.py), and the search cap NULL_CAP_DEFAULT is 150_000 at both revisions",
+      "archived": {
+        "file": "res8_switch_pilot_recal.json",
+        "archived_name": "1000",
+        "revision": "aab80b7",
+        "variant": "refined: best of measured (aab80b7 and later)",
+        "h": 3.439270080909095,
+        "arl": 26718.078125,
+        "capped": null,
+        "capped_recorded": false,
+        "pct_off_target": -10.939739583333333
+      },
+      "fresh": {
+        "h": 3.439270080909095,
+        "arl": 26819.1640625,
+        "se": 2030.6556588949582,
+        "capped": 0,
+        "pct_off_target": -10.602786458333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.8656577184861916,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": 0.0,
+        "h_identical": true,
+        "arl_delta": 101.0859375,
+        "arl_delta_pct": 0.37834284721779554,
+        "archived_censored": null,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "pilot",
+      "member": "switch@3000",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 3.3540157560381023,
+        "arl": 27657.2421875,
+        "se": 2247.755613672699,
+        "capped": 0,
+        "pct_off_target": -7.809192708333334,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.961728644789129,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "mid",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by plain bisection (sid_policies.calibrate; driver refines only for *_recal), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_stress.json",
+        "archived_name": "learner-mid(bank)",
+        "revision": "5ea5806",
+        "variant": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+        "h": 3.029296875,
+        "arl": 36562.21875,
+        "capped": 0,
+        "capped_recorded": true,
+        "pct_off_target": 21.8740625
+      },
+      "fresh": {
+        "h": 2.868126349521597,
+        "arl": 32138.8359375,
+        "se": 2546.597281248734,
+        "capped": 0,
+        "pct_off_target": 7.129453125,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.6942477764429253,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": -0.16117052547840283,
+        "h_identical": false,
+        "arl_delta": -4423.3828125,
+        "arl_delta_pct": -12.098234088980172,
+        "archived_censored": false,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "ext",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "B ran the extremum schedule only on an oracle bank; no learner-bank counterpart",
+      "archived": null,
+      "fresh": {
+        "h": 2.6328125,
+        "arl": 37612.75,
+        "se": 2786.9158068074817,
+        "capped": 0,
+        "pct_off_target": 25.375833333333333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 0.4977724826173159,
+        "marginal": true,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "interleave-B1",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by plain bisection (sid_policies.calibrate; driver refines only for *_recal), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_stress.json",
+        "archived_name": "learner-interleave-B1(bank)",
+        "revision": "5ea5806",
+        "variant": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+        "h": 2.564453125,
+        "arl": 39542.75,
+        "capped": 1,
+        "capped_recorded": true,
+        "pct_off_target": 31.809166666666666
+      },
+      "fresh": {
+        "h": 2.55078125,
+        "arl": 41374.5234375,
+        "se": 3315.7660787640943,
+        "capped": 0,
+        "pct_off_target": 37.915078125,
+        "endpoint": false,
+        "inside_envelope": false
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": false,
+        "sigma_from_boundary": 0.716131168814258,
+        "marginal": true,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": -0.013671875,
+        "h_identical": false,
+        "arl_delta": 1831.7734375,
+        "arl_delta_pct": 4.6323875742076615,
+        "archived_censored": true,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "interleave-B5",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 2.55078125,
+        "arl": 35514.375,
+        "se": 2883.4189620387338,
+        "capped": 0,
+        "pct_off_target": 18.38125,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.2088513829899605,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "interleave-B10",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by plain bisection (sid_policies.calibrate; driver refines only for *_recal), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res6_policies_stress.json",
+        "archived_name": "learner-interleave-B10(bank)",
+        "revision": "5ea5806",
+        "variant": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+        "h": 2.509765625,
+        "arl": 32761.875,
+        "capped": 1,
+        "capped_recorded": true,
+        "pct_off_target": 9.20625
+      },
+      "fresh": {
+        "h": 2.520965537025273,
+        "arl": 29425.5703125,
+        "se": 2385.6225515998144,
+        "capped": 0,
+        "pct_off_target": -1.914765625,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.5318119820965626,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": 0.01119991202527304,
+        "h_identical": false,
+        "arl_delta": -3336.3046875,
+        "arl_delta_pct": -10.183497395982373,
+        "archived_censored": true,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "interleave-B50",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 2.6875,
+        "arl": 27306.3203125,
+        "se": 2263.335213072747,
+        "capped": 0,
+        "pct_off_target": -8.978932291666666,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.786295320319971,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "switch@100",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 2.703472226074815,
+        "arl": 34371.6171875,
+        "se": 2929.472854285267,
+        "capped": 0,
+        "pct_off_target": 14.572057291666667,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.5799370885890092,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "switch@300",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by plain bisection (sid_policies.calibrate; driver refines only for *_recal), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res8_switch_stress.json",
+        "archived_name": "300",
+        "revision": "5ea5806",
+        "variant": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+        "h": 2.837890625,
+        "arl": 38951.5625,
+        "capped": null,
+        "capped_recorded": false,
+        "pct_off_target": 29.838541666666668
+      },
+      "fresh": {
+        "h": 2.811454696594906,
+        "arl": 29821.859375,
+        "se": 2420.392710393536,
+        "capped": 0,
+        "pct_off_target": -0.5938020833333333,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 3.644804967854013,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": -0.0264359284050939,
+        "h_identical": false,
+        "arl_delta": -9129.703125,
+        "arl_delta_pct": -23.43860564001765,
+        "archived_censored": null,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "switch@600",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 2.87890625,
+        "arl": 33022.6484375,
+        "se": 2826.731073706921,
+        "capped": 0,
+        "pct_off_target": 10.075494791666667,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.114580908703641,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "switch@1000",
+      "predicted": "H_DIFFERS",
+      "prediction_reason": "archived by plain bisection (sid_policies.calibrate; driver refines only for *_recal), a different rule for choosing h than HEAD's best-of-measured",
+      "archived": {
+        "file": "res8_switch_stress.json",
+        "archived_name": "1000",
+        "revision": "5ea5806",
+        "variant": "plain bisection (sid_policies.calibrate; driver refines only for *_recal)",
+        "h": 2.919921875,
+        "arl": 33809.40625,
+        "capped": null,
+        "capped_recorded": false,
+        "pct_off_target": 12.698020833333333
+      },
+      "fresh": {
+        "h": 2.7762220608016532,
+        "arl": 25224.484375,
+        "se": 2051.0727245539647,
+        "capped": 0,
+        "pct_off_target": -15.918385416666666,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "PREDICTION_HELD",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 2.0596463130865703,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      },
+      "difference": {
+        "h_delta": -0.14369981419834676,
+        "h_identical": false,
+        "arl_delta": -8584.921875,
+        "arl_delta_pct": -25.39211073841322,
+        "archived_censored": null,
+        "fresh_censored": false
+      }
+    },
+    {
+      "operating_point": "stress",
+      "member": "switch@3000",
+      "predicted": "NOT_APPLICABLE_NO_ARCHIVE",
+      "prediction_reason": "never calibrated in roadmap B; this is a new class member",
+      "archived": null,
+      "fresh": {
+        "h": 2.807259121861357,
+        "arl": 24057.4921875,
+        "se": 2052.5725890096605,
+        "capped": 0,
+        "pct_off_target": -19.808359375,
+        "endpoint": false,
+        "inside_envelope": true
+      },
+      "fresh_revision": "16395a8",
+      "outcome": "NO_COMPARISON",
+      "eligibility": {
+        "eligible": true,
+        "sigma_from_boundary": 1.4895902848313882,
+        "marginal": false,
+        "decided_by": "fresh calibration alone, never by a delay result"
+      }
+    }
+  ],
+  "completed": 22,
+  "total": 22,
+  "frozen_at_head": "7d0c111",
+  "digest": "9cfba7b5bac31a3b"
+}
