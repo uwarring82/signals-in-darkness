@@ -73,8 +73,8 @@ precedent rather than claiming it.
 **C27 — and the best policy depends on where you stand.** Given a false-alarm budget, which
 detection strategy raises the alarm soonest in its *worst* case is not a fixed answer. At the first
 operating point the simple fixed choice — always read at the dark extremum — wins, and no hedging
-schedule beats it. At a second point it loses badly, and four of five hedges beat it, the best by
-nearly a factor of two. That second point is the part that is established; whether the *first*
+schedule beats it. At a second point it loses badly, and three of five hedges beat it by a resolved
+margin, the best by nearly a factor of two. That second point is the part that is established; whether the *first*
 point really behaves the other way is still open, because one strategy there is mis-tuned. What makes this more than a numerical curiosity is the cleanest pair in it:
 two strategies calibrated to the *same* accuracy, 1.9× apart. A caution the record insists on: every
 schedule tested was **fixed in advance**. None of them watches the data and decides what to do next.

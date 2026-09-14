@@ -73,6 +73,10 @@ def main():
     ap.add_argument("res8")
     ap.add_argument("--draws", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=20260908)
+    ap.add_argument("--write", help="emit the structured result to this JSON path, so counts "
+                                    "quoted in prose can be GENERATED from it rather than "
+                                    "transcribed as literals")
+    ap.add_argument("--label", default="", help="operating-point key for the written record")
     a = ap.parse_args()
 
     six, eight = load(a.res6, a.res8)
@@ -113,6 +117,53 @@ def main():
                    "RESOLVED worse" if hi < 0 else "not resolved")
         print(f"  {p:30s} {point[ref]-v:+6.2f}  [{lo:+6.2f}, {hi:+6.2f}]  "
               f"P(better) = {frac:.3f}   {verdict}")
+
+    if a.write:
+        # A count repeated as a literal in prose drifts from the measurement behind it. This
+        # repository has had "four of five", "two of five" and "three of five" in circulation
+        # simultaneously for the same comparison. The structured record below is the single
+        # source those counts must be generated from.
+        rows = {}
+        for p, v in point.items():
+            if p == ref:
+                continue
+            d = draws[ref] - draws[p]
+            lo, hi = np.percentile(d, [2.5, 97.5])
+            rows[p] = {"worst_case_ratio": float(v),
+                       "difference_from_reference": float(point[ref] - v),
+                       "ci95": [float(lo), float(hi)],
+                       "p_better": float((d > 0).mean()),
+                       "resolved_better": bool(lo > 0),
+                       "resolved_worse": bool(hi < 0),
+                       "better_on_point_estimate": bool(point[ref] - v > 0)}
+        rec = {"record": "paired bootstrap over per-replicate stopping times; the single source "
+                         "for any hedge count quoted in prose",
+               "operating_point": a.label, "reference": ref,
+               "reference_worst_case": float(point[ref]),
+               "draws": a.draws, "seed": a.seed,
+               "inputs": {"res6": os.path.basename(a.res6), "res8": os.path.basename(a.res8)},
+               "policies": rows,
+               "n_candidates": len(rows),
+               "n_resolved_better": sum(r["resolved_better"] for r in rows.values()),
+               "n_resolved_worse": sum(r["resolved_worse"] for r in rows.values()),
+               "n_better_on_point_estimate": sum(r["better_on_point_estimate"]
+                                                 for r in rows.values()),
+               "counting_rule": "a hedge 'beats' the reference only when its difference "
+                                "interval excludes zero; a point-estimate count is NOT an "
+                                "ordering and must never be quoted as one"}
+        existing = {}
+        if os.path.exists(a.write):
+            with open(a.write, encoding="utf-8") as fh:
+                existing = json.load(fh)
+        existing.setdefault("operating_points", {})[a.label or "unlabelled"] = rec
+        existing["record"] = rec["record"]
+        existing["counting_rule"] = rec["counting_rule"]
+        with open(a.write, "w", encoding="utf-8") as fh:
+            json.dump(existing, fh, indent=2)
+            fh.write("\n")
+        print(f"\nstructured result written to {a.write} under {a.label or 'unlabelled'}: "
+              f"{rec['n_resolved_better']} of {rec['n_candidates']} resolved better, "
+              f"{rec['n_better_on_point_estimate']} better on the point estimate alone")
     return 0
 
 

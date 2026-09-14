@@ -1,0 +1,164 @@
+{
+  "operating_points": {
+    "pilot": {
+      "record": "paired bootstrap over per-replicate stopping times; the single source for any hedge count quoted in prose",
+      "operating_point": "pilot",
+      "reference": "extremum-only",
+      "reference_worst_case": 1.63187648456057,
+      "draws": 20000,
+      "seed": 20260908,
+      "inputs": {
+        "res6": "res6_policies_pilot_recal.json",
+        "res8": "res8_switch_pilot_recal.json"
+      },
+      "policies": {
+        "learner-mid(bank)": {
+          "worst_case_ratio": 6.979515249528312,
+          "difference_from_reference": -5.347638764967742,
+          "ci95": [
+            -7.770870868133217,
+            -3.456416697895103
+          ],
+          "p_better": 0.0,
+          "resolved_better": false,
+          "resolved_worse": true,
+          "better_on_point_estimate": false
+        },
+        "learner-interleave-B10(bank)": {
+          "worst_case_ratio": 2.0239748985783694,
+          "difference_from_reference": -0.39209841401779943,
+          "ci95": [
+            -0.9185740384204555,
+            0.10575559107001375
+          ],
+          "p_better": 0.0655,
+          "resolved_better": false,
+          "resolved_worse": false,
+          "better_on_point_estimate": false
+        },
+        "learner-interleave-B1(bank)": {
+          "worst_case_ratio": 1.5996143559121727,
+          "difference_from_reference": 0.03226212864839728,
+          "ci95": [
+            -0.35954360272652547,
+            0.38785422504108347
+          ],
+          "p_better": 0.54975,
+          "resolved_better": false,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        },
+        "switch@300": {
+          "worst_case_ratio": 1.6274802512906636,
+          "difference_from_reference": 0.004396233269906347,
+          "ci95": [
+            -0.4693342888658353,
+            0.4664055730044782
+          ],
+          "p_better": 0.5035,
+          "resolved_better": false,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        },
+        "switch@1000": {
+          "worst_case_ratio": 2.5478979632739662,
+          "difference_from_reference": -0.9160214787133962,
+          "ci95": [
+            -1.5816392537662718,
+            -0.29384395043296546
+          ],
+          "p_better": 0.00195,
+          "resolved_better": false,
+          "resolved_worse": true,
+          "better_on_point_estimate": false
+        }
+      },
+      "n_candidates": 5,
+      "n_resolved_better": 0,
+      "n_resolved_worse": 2,
+      "n_better_on_point_estimate": 2,
+      "counting_rule": "a hedge 'beats' the reference only when its difference interval excludes zero; a point-estimate count is NOT an ordering and must never be quoted as one"
+    },
+    "stress": {
+      "record": "paired bootstrap over per-replicate stopping times; the single source for any hedge count quoted in prose",
+      "operating_point": "stress",
+      "reference": "extremum-only",
+      "reference_worst_case": 2.880158546852532,
+      "draws": 20000,
+      "seed": 20260908,
+      "inputs": {
+        "res6": "res6_policies_stress.json",
+        "res8": "res8_switch_stress.json"
+      },
+      "policies": {
+        "learner-mid(bank)": {
+          "worst_case_ratio": 4.952710062727717,
+          "difference_from_reference": -2.072551515875185,
+          "ci95": [
+            -3.688554238876767,
+            -0.5652083794093745
+          ],
+          "p_better": 0.00335,
+          "resolved_better": false,
+          "resolved_worse": true,
+          "better_on_point_estimate": false
+        },
+        "learner-interleave-B10(bank)": {
+          "worst_case_ratio": 2.0085457349555575,
+          "difference_from_reference": 0.8716128118969744,
+          "ci95": [
+            0.22395153859923925,
+            1.5455750569661622
+          ],
+          "p_better": 0.9956,
+          "resolved_better": true,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        },
+        "learner-interleave-B1(bank)": {
+          "worst_case_ratio": 1.8658396874882621,
+          "difference_from_reference": 1.0143188593642698,
+          "ci95": [
+            0.2042440676658265,
+            1.6165506348984124
+          ],
+          "p_better": 0.99435,
+          "resolved_better": true,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        },
+        "switch@300": {
+          "worst_case_ratio": 2.190747956697636,
+          "difference_from_reference": 0.6894105901548961,
+          "ci95": [
+            -0.022638842742728364,
+            1.4934712440308573
+          ],
+          "p_better": 0.97105,
+          "resolved_better": false,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        },
+        "switch@1000": {
+          "worst_case_ratio": 1.5069707896680815,
+          "difference_from_reference": 1.3731877571844504,
+          "ci95": [
+            0.552668766349791,
+            2.1804828444027793
+          ],
+          "p_better": 0.9999,
+          "resolved_better": true,
+          "resolved_worse": false,
+          "better_on_point_estimate": true
+        }
+      },
+      "n_candidates": 5,
+      "n_resolved_better": 3,
+      "n_resolved_worse": 1,
+      "n_better_on_point_estimate": 4,
+      "counting_rule": "a hedge 'beats' the reference only when its difference interval excludes zero; a point-estimate count is NOT an ordering and must never be quoted as one"
+    }
+  },
+  "record": "paired bootstrap over per-replicate stopping times; the single source for any hedge count quoted in prose",
+  "counting_rule": "a hedge 'beats' the reference only when its difference interval excludes zero; a point-estimate count is NOT an ordering and must never be quoted as one"
+}

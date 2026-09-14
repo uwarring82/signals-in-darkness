@@ -9,8 +9,10 @@ This must run, and its output must be frozen, BEFORE any selection delay: a sele
 partially calibrated class is made by availability rather than performance.
 
 A censored confirmation is refused. A capped null run contributes the cap instead of its true
-larger stopping time, so a censored ARL is a downward-biased LOWER BOUND -- it cannot establish
-compliance with a ceiling, only violation of a floor.
+larger stopping time, so a censored ARL is a downward-biased LOWER BOUND: measured <= true. A
+lower bound can only settle the two directions that point the same way as the bound -- violation
+of a CEILING (measured above it implies true above it) and compliance with a FLOOR. It cannot
+establish compliance with a ceiling, which is exactly what eligibility requires.
 
 Usage: python tools/freeze_ladder_eligibility.py [--write]
 """

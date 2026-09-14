@@ -609,5 +609,13 @@
       }
     }
   },
-  "digest": "cd0241306d175da6"
+  "digest": "7769e5ce338ab0ea",
+  "clean_formulation_correction": {
+    "corrects": "clean_formulation",
+    "why": "'fails to act on it' asserts ABSENCE of a control response. That is established at the STRESS point, where greedy's fixed-horizon action contrast is exactly 0.00 pp at every horizon with interval [0.0, 0.0]. It is NOT established at the PILOT, where the contrasts are 0.00 / 0.12 / 2.97 pp -- unresolved and operationally small, but an unresolved contrast is not a demonstrated zero. The per-verdict statements already say this correctly; the summary sentence generalised past them.",
+    "corrected_statement": "Sampling turns posterior movement into changed action probabilities. Greedy shows INFERENCE WITHOUT DEMONSTRATED CONTROL RESPONSE: it fails the action gate at both operating points, and the phrasing holds across both because it claims only what each shows. At the stress point the action contrast is exactly 0.00 pp at every horizon, so no action response is present in the tested horizons. At the pilot the contrasts are 0.00 / 0.12 / 2.97 pp -- a small response that is not resolved, which fails the gate without establishing that the response is absent.",
+    "original_retained": "the sentence above is kept as the record of what was frozen, not overwritten",
+    "why_this_phrasing": "'without control response' asserts absence and is true only at stress. 'without DEMONSTRATED control response' is true at both, because it describes the state of the evidence rather than the state of the policy."
+  },
+  "supersedes_digest": "cd0241306d175da6"
 }

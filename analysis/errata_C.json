@@ -1,0 +1,30 @@
+{
+  "record": "errata against frozen roadmap C preregistrations",
+  "why_not_edited_in_place": "analysis/benchmark_ladder_C.json is a FROZEN preregistration. Its digest is stamped into every res10 and res11 measurement artifact as the ladder the run was measured against. Editing it would silently invalidate those bindings and destroy the record of what was actually frozen before measurement. Following this repository's rule for corrections to frozen records -- supersession, never in-place rewrite -- the erroneous text is left exactly as frozen and corrected here.",
+  "target_file": "analysis/benchmark_ladder_C.json",
+  "target_digest": "5aabb9c77c2dfd86",
+  "errata": [
+    {
+      "id": "EC-1",
+      "path": "L3.regret_language.not_provided_by",
+      "frozen_text": "the diagnostic envelope, which is selected on the same sample it is scored on and is therefore optimistically biased downward; using it as a stand-in for the population target would understate regret by exactly the amount of that bias",
+      "defect": "the sign is reversed. Regret is learner minus target. The envelope is biased DOWNWARD relative to the target, as the same sentence says, so substituting it gives learner - envelope = (learner - target) + (target - envelope) = regret + bias. The envelope therefore OVERSTATES regret by the bias, not understates it.",
+      "correction": "... would OVERSTATE regret by exactly the amount of that bias",
+      "affects_any_computation": false,
+      "why_harmless_in_practice": "regret_language.status already records that no such estimate is attempted in C and that regret language is unavailable, so nothing was computed or claimed on the basis of this sentence",
+      "severity": "substantive prose defect, no numerical consequence"
+    },
+    {
+      "id": "EC-2",
+      "path": "L3.regret_language.permitted_when",
+      "frozen_text": "... or by a bound that holds uniformly over the twelve members",
+      "defect": "stale cardinality. L3's comparison class is THIRTEEN candidates -- the eleven frozen schedules plus both learners -- as L3.class_size and L3.class state in the same file. 'Twelve' predates the correction that put BOTH learners in the class rather than one.",
+      "correction": "... or by a bound that holds uniformly over the thirteen candidates",
+      "affects_any_computation": false,
+      "severity": "stale count, no numerical consequence"
+    }
+  ],
+  "found_by": "a systematic audit of direction-of-inequality prose and overclaims across the roadmap C artifacts, run after review caught a reversed falsifier statement in the reported summary. One reversal is reason to check the rest.",
+  "not_errata": "the falsifier direction itself is correct everywhere it appears in the frozen ladder: the envelope cannot exceed either learner, and no learner beats it.",
+  "digest": "9b608ad9bb9647b3"
+}
