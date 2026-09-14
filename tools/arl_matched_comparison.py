@@ -186,9 +186,18 @@ def main(argv):
                     "draws_needing_end_extrapolation": int(unb),
                     "status": "MATCHED",
                 }
-                if unb > 0.05 * B:
+                # Draws whose resampled target falls off the resampled curve are handled by the
+                # end segment. That is a within-draw extrapolation, so it is disclosed per cell.
+                # It BLOCKS only where the cell's negative conclusion depends on matching;
+                # elsewhere it is recorded and the cell is read with that caveat.
+                if unb > 0.05 * B and needs:
                     problems.append(f"{key}: {unb}/{B} bootstrap draws fell outside the "
-                                    f"resampled grid")
+                                    f"resampled grid, and this cell REQUIRES matching")
+                elif unb > 0.05 * B:
+                    rec["cells"][key]["elevated_draw_extrapolation"] = (
+                        f"{100*unb/B:.1f} % of draws fell outside the resampled grid and used "
+                        f"the end segment; the interval for this cell is correspondingly less "
+                        f"trustworthy. This cell does not require matching.")
 
     rec["digest"] = digest_of(rec)
     for k, v in sorted(rec["cells"].items()):

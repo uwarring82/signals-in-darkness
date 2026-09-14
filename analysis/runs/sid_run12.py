@@ -49,9 +49,16 @@ CONFIRM_R, DELAY_R = 64, 64
 # Extended outward per the frozen bracketing rule (analysis/sensitivity_protocol_C.json): the
 # first grids left pilot/interleave-B10 (ARL 37066) and stress/ext (37613) outside, and the
 # protocol forbids extrapolating to them.
+# Extended a SECOND time, both ends, still inside the protocol's three-steps-per-end budget.
+# The first extension bracketed every target's POINT estimate, but the joint bootstrap resamples
+# the target and the curve together, and where the headroom is smaller than the standard error
+# the two cross constantly: pilot/mid had only +788 of headroom against a +-1955 benchmark SE,
+# and 39 % of draws fell outside the resampled grid. Headroom must exceed the noise, not just
+# the point.
 H_GRID = {
-    "pilot": (3.30, 3.38, 3.45, 3.5190812815020247, 3.58, 3.64),
-    "stress": (2.60546875, 2.68, 2.76, 2.84, 2.90, 2.96),
+    "pilot": (3.12, 3.18, 3.24, 3.30, 3.38, 3.45, 3.5190812815020247, 3.58, 3.64,
+              3.70, 3.76, 3.82),
+    "stress": (2.425, 2.485, 2.545, 2.60546875, 2.68, 2.76, 2.84, 2.90, 2.96, 3.02),
 }
 # Benchmarks whose own null runs are needed per replicate, so the bootstrap can resample the
 # TARGET ARL as well as the curve. These are the members L1 and L2 actually selected.
