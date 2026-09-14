@@ -1,0 +1,44 @@
+{
+  "record": "roadmap C: protocol for the post-unblinding ARL-matched sensitivity analysis",
+  "status": "POST-UNBLINDING SENSITIVITY ANALYSIS -- NOT PART OF THE PREREGISTERED RESULT",
+  "why_not_preregistered": "it was motivated by the observed comparison and reuses the frozen selection and evaluation streams. It can establish that the negative L1 comparison is ROBUST to the calibration band; it cannot serve as independent confirmation. Independent confirmation would require an independently seeded repetition.",
+  "frozen_before": "inspecting the extended curves and before any matched ratio was computed under this rule",
+  "disclosure": {
+    "what": "the FIRST pilot curve (4 grid points, no null per-replicate runs) had already been inspected before this rule was frozen, under a different rule: linear interpolation of delay against log ARL directly.",
+    "why_it_matters": "a rule chosen after seeing curves can be chosen to favour an outcome.",
+    "mitigation": "this rule was PRESCRIBED EXTERNALLY in review, not selected by me from goodness of fit, and both rules are low-flexibility and monotone. Results under BOTH rules are reported so the choice is auditable. Under the earlier rule the pilot matched ratios were 1.504 / 1.384 / 1.504 for tau_c 20/5/1."
+  },
+  "interpolation_rule": {
+    "step_1": "linear interpolation of log(ARL_hat) against h, inverted to solve for the matched threshold h_matched at which sampling's null ARL equals the benchmark's ARL",
+    "step_2": "linear interpolation of delay against h, evaluated at h_matched",
+    "why_this_form": "low flexibility and monotone in both stages; h is the independent variable actually set by the experimenter, so both stages interpolate against it",
+    "forbidden": "selecting a functional form by goodness of fit to the measured curves"
+  },
+  "bracketing_rule": {
+    "requirement": "every target benchmark ARL MUST be bracketed by the measured grid; no extrapolation is permitted",
+    "outward_extension": "if a target lies outside the grid, EXTEND the grid by measuring additional thresholds in steps of 0.06 in h beyond the offending end, up to 3 additional points per end, until the target is bracketed",
+    "if_still_unbracketed": "the cell is reported as NOT MATCHABLE. It is never extrapolated."
+  },
+  "uncertainty": {
+    "joint": "inside every bootstrap draw: resample the sampling-policy NULL runs at each grid threshold, resample the BENCHMARK's null runs, and resample the paired post-change stopping times; then solve for h_matched from the resampled curve and the resampled target, and recompute the delay ratio",
+    "captures": "uncertainty in the target ARL AND in the sampling curve, not only sampling error in the delays",
+    "pairing": "post-change replicate indices are resampled jointly across sampling and benchmark because they share the evaluation data seed",
+    "draws": 10000
+  },
+  "cells_requiring_this_analysis": [
+    "pilot/tau_c=20.0/L1 (benchmark mid)",
+    "pilot/tau_c=5.0/L1 (benchmark ext)",
+    "pilot/tau_c=1.0/L1 (benchmark ext)"
+  ],
+  "cells_not_requiring_it": "stress/tau_c=20.0/L1, stress/tau_c=1.0/L1 and stress/tau_c=1.0/L2 are directionally robust: sampling holds the SHORTER null ARL, is easier to trip, and is still slower, so the mismatch runs against the negative conclusion. They are measured anyway for uniformity.",
+  "withdrawn_permanently": "the cross-policy THRESHOLD-RATIO argument is withdrawn and stays withdrawn regardless of what these matched comparisons show. Different policies have different null increment distributions, so an h ratio bounds no delay effect.",
+  "report_per_cell": [
+    "benchmark_arl",
+    "h_sampling_matched",
+    "delay_sampling_matched",
+    "delay_benchmark",
+    "ratio",
+    "ci95"
+  ],
+  "digest": "44de924a2f584472"
+}

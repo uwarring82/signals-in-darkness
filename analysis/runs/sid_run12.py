@@ -36,8 +36,9 @@ sys.path.insert(0, str(ROOT / "analysis" / "lib"))
 
 import sid_repro                                                            # noqa: E402
 from sid_policies import (ACTION_SEEDS, Bank, CONFIRM_CAP_DEFAULT, GAMMA, SEED_OFFSET,
-                          arl_of, data_seed, delay_of, make_posterior_sampling_theta,
-                          operating_point_from_argv)                        # noqa: E402
+                          data_seed, delay_of, frozen_schedule_class,
+                          make_posterior_sampling_theta, operating_point_from_argv,
+                          run_batch)                                        # noqa: E402
 
 BANK_TCCS = [1.0, 4.0, 10.0, 25.0]
 DELAY_TCCS = (20.0, 5.0, 1.0)
@@ -45,10 +46,17 @@ CONFIRM_R, DELAY_R = 64, 64
 
 # Grids bracket the benchmark ARLs that must be matched, and INCLUDE each point's own calibrated
 # threshold so the curve can be checked against the frozen measurements.
+# Extended outward per the frozen bracketing rule (analysis/sensitivity_protocol_C.json): the
+# first grids left pilot/interleave-B10 (ARL 37066) and stress/ext (37613) outside, and the
+# protocol forbids extrapolating to them.
 H_GRID = {
-    "pilot": (3.30, 3.38, 3.45, 3.5190812815020247),
-    "stress": (2.60546875, 2.68, 2.76, 2.84),
+    "pilot": (3.30, 3.38, 3.45, 3.5190812815020247, 3.58, 3.64),
+    "stress": (2.60546875, 2.68, 2.76, 2.84, 2.90, 2.96),
 }
+# Benchmarks whose own null runs are needed per replicate, so the bootstrap can resample the
+# TARGET ARL as well as the curve. These are the members L1 and L2 actually selected.
+BENCHMARKS = {"pilot": ("mid", "ext", "interleave-B10"),
+              "stress": ("mid", "ext", "switch@300")}
 T0 = time.time()
 
 
@@ -106,10 +114,12 @@ def main(argv):
             log(f"h={h:.6f} cached")
             continue
         sched = make_posterior_sampling_theta(bank, null_action)
-        m, se, nc = arl_of(bank, sched, h, 2 * CONFIRM_R, 100 + off + 99,
-                           cap=CONFIRM_CAP_DEFAULT)
-        rec = {"h": float(h), "arl": float(m), "arl_se": float(se), "arl_capped": int(nc),
-               "delays": {}}
+        stop = run_batch(bank, sched, None, h, 2 * CONFIRM_R, 100 + off + 99,
+                         CONFIRM_CAP_DEFAULT, True)
+        m = float(stop.mean()); se = float(stop.std() / np.sqrt(2 * CONFIRM_R))
+        nc = int((stop >= CONFIRM_CAP_DEFAULT).sum())
+        rec = {"h": float(h), "arl": m, "arl_se": se, "arl_capped": nc,
+               "null_runs": [int(x) for x in stop], "delays": {}}
         log(f"h={h:.6f}  ARL={m:8.0f} +- {se:5.0f}  capped {nc}/{2*CONFIRM_R}")
         for tcc in DELAY_TCCS:
             aseed = ACTION_SEEDS["evaluation"](tcc, off)
@@ -124,8 +134,35 @@ def main(argv):
         st["points"][key] = rec
         sid_repro.save_checkpoint(state_name, st)
 
+    # ---- benchmark null runs, so the bootstrap can resample the TARGET ARL too ----
+    st.setdefault("benchmark_nulls", {})
+    cal = json.loads((ROOT / "analysis" / "eligibility_ladder_C.json").read_text())
+    cal = cal["operating_points"][op_name]["calibrations"]
+    sched_by_name = dict(frozen_schedule_class(ROOT / "analysis" / "schedule_class_C.json"))
+    for name in BENCHMARKS[op_name]:
+        if name in st["benchmark_nulls"]:
+            log(f"benchmark null {name} cached")
+            continue
+        row = cal[name]
+        stop = run_batch(bank, sched_by_name[name], None, row["h_star"], 2 * CONFIRM_R,
+                         row["cal_seed"] + 99, CONFIRM_CAP_DEFAULT, True)
+        m = float(stop.mean())
+        st["benchmark_nulls"][name] = {
+            "h": row["h_star"], "arl": m,
+            "arl_se": float(stop.std() / np.sqrt(2 * CONFIRM_R)),
+            "capped": int((stop >= CONFIRM_CAP_DEFAULT).sum()),
+            "seed": row["cal_seed"] + 99,
+            "runs": [int(x) for x in stop],
+            "reproduces_frozen_arl": bool(abs(m - row["ARL"]) < 1e-6)}
+        ok = st["benchmark_nulls"][name]["reproduces_frozen_arl"]
+        log(f"benchmark null {name:16s} ARL={m:8.0f}  reproduces frozen: {ok}")
+        if not ok:
+            log(f"  ** {name} does NOT reproduce its frozen ARL {row['ARL']:.4f} **")
+        sid_repro.save_checkpoint(state_name, st)
+
     sid_repro.save_checkpoint(state_name, st)
-    log(f"sensitivity curve complete at {op_name}: {len(st['points'])} grid points")
+    log(f"sensitivity curve complete at {op_name}: {len(st['points'])} grid points, "
+        f"{len(st['benchmark_nulls'])} benchmark nulls")
     return 0
 
 
