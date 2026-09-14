@@ -66,7 +66,18 @@ def main(argv):
                "envelope": "min over eligible candidates ON the evaluation sample -- "
                            "optimistically biased, DIAGNOSTIC ONLY, not a benchmark",
                "target": "population best-in-class -- not observed, not estimated here"},
-           "revision": head, "operating_points": {}}
+           "revision": head, "operating_points": {},
+           "supersedes": {
+               "digest": "79bee85a881494f8",
+               "why": "that version argued the calibration confound from cross-policy THRESHOLD "
+                      "ratios, which cannot bound a delay effect because different policies have "
+                      "different null increment distributions. It is replaced by a per-cell "
+                      "comparison of measured null ARLs plus, where the mismatch runs the "
+                      "dangerous way, a measured delay-versus-ARL curve. That version also "
+                      "concluded the thirteen-member class 'offers nothing beyond the two "
+                      "constant endpoints', which overstates what a noisy independently selected "
+                      "procedure establishes; see conclusions.NOT_supported. The NUMBERS are "
+                      "unchanged -- delays, ratios, intervals and the falsifier all stand."}}
     problems = []
 
     for op in OPS:
@@ -143,16 +154,78 @@ def main(argv):
     rec["falsifier_check"] = ("passed: no diagnostic envelope exceeds a learner's own value"
                               if not any(p.startswith("FALSIFIER") for p in problems)
                               else [p for p in problems if p.startswith("FALSIFIER")])
-    rec["calibration_confound_checked"] = {
-        "question": "is the learner's disadvantage an artifact of its calibrated threshold "
-                    "rather than its actions? The +-30 % envelope permits a wide ARL spread and "
-                    "CUSUM delay grows with the threshold.",
-        "answer": "no. h_sampling / h_benchmark spans 0.908 to 1.052 across all twelve "
-                  "learner-versus-benchmark cells, so calibration accounts for at most about "
-                  "5 %, against observed gaps of 19 % to 114 %. At the STRESS point sampling "
-                  "holds the LOWER threshold and is still slower, so there the confound runs "
-                  "against the learner and the contrast is understated, not inflated.",
+    rec["conclusions"] = {
+        "supported": [
+            "posterior sampling is resolvedly SLOWER than the independently selected fixed-"
+            "endpoint benchmark L1 in five of six cells",
+            "against L2, the best eligible robust precommitted schedule, the evidence is mixed: "
+            "faster at two cells, slower at one, unresolved at three",
+            "the independently selected L3 procedure found no robust schedule advantage: it "
+            "selected endpoints in five cells and sampling in one",
+        ],
+        "NOT_supported": [
+            "that the thirteen-member class contains no improvement beyond the two endpoints. "
+            "The class is not exhausted by what an L3 selection happened to pick: the evaluation "
+            "envelope is minimised by switch@3000 at stress/tau_c=20 and switch@1000 at "
+            "stress/tau_c=5. That envelope is optimistically biased and is NOT a benchmark, but "
+            "it is precisely what forbids the stronger claim -- a schedule did attain the sample "
+            "minimum in two cells. Selection margins were also a fraction of a standard error in "
+            "several cells, so the selection is noisy rather than decisive.",
+        ],
+        "corrected_from": "an earlier reading of these same numbers said the class 'offers "
+                          "nothing beyond the two constant endpoints', which overstates what an "
+                          "independently selected, noisy procedure can establish",
     }
+    # ---- calibration confound, classified per cell from MEASURED null ARLs ----
+    # A threshold ratio cannot settle this: different policies have different null increment
+    # distributions, so equal h is not equal false-alarm rate and a 5 % difference in h does not
+    # imply a 5 % difference in delay. Compare the ARLs the calibrations actually bought.
+    confound = {"method": "per-cell comparison of MEASURED null ARLs, not threshold ratios",
+                "why_not_h_ratios": "different policies have different null increment "
+                                    "distributions, so h is not a common currency and an h "
+                                    "ratio does not bound a delay effect",
+                "intervals_condition_on_thresholds": "the bootstrap intervals elsewhere in this "
+                                                     "artifact hold the calibrated thresholds "
+                                                     "fixed and omit calibration uncertainty",
+                "cells": {}}
+    for op in OPS:
+        cal = elig["operating_points"][op]["calibrations"]
+        sa = cal["sampling"]["ARL"]
+        for t in TCCS:
+            cell = rec["operating_points"][op]["cells"][str(t)]
+            for rung in ("L1", "L2"):
+                e = cell["benchmarks"][rung]
+                if e["is_a_learner"]:
+                    continue
+                ba = cal[e["member"]]["ARL"]
+                v = e["vs_learner"]["sampling"]
+                slower = v["ci95"][0] > 1.0
+                if not slower:
+                    status, note = "not_a_negative_cell", "sampling is not resolvedly slower here"
+                elif sa < ba:
+                    status = "directionally_robust"
+                    note = ("sampling holds the SHORTER null ARL -- it is easier to trip -- and "
+                            "is still slower, so the mismatch runs AGAINST the negative "
+                            "conclusion and understates the contrast")
+                else:
+                    status = "requires_measured_sensitivity"
+                    note = ("sampling holds the LONGER null ARL, which is the direction that "
+                            "could manufacture this result; resolved by the measured "
+                            "delay-versus-ARL curve, not by argument")
+                confound["cells"][f"{op}/tau_c={t}/{rung}"] = {
+                    "benchmark": e["member"], "sampling_arl": sa, "benchmark_arl": ba,
+                    "sampling_arl_shorter": bool(sa < ba),
+                    "ratio_learner_over_benchmark": v["ratio_learner_over_benchmark"],
+                    "status": status, "note": note}
+    pending = [k for k, v in confound["cells"].items()
+               if v["status"] == "requires_measured_sensitivity"]
+    confound["unresolved_without_measurement"] = pending
+    confound["status"] = ("every negative cell is directionally robust" if not pending else
+                          f"{len(pending)} negative cells await the measured sensitivity curve; "
+                          f"until it lands, their contrast is CONDITIONAL on the policy-specific "
+                          f"calibrations lying where they do inside the +-30 % envelope")
+    rec["calibration_confound_checked"] = confound
+
     rec["language"] = ("no oracle, optimal or regret claim is made or licensed; L4 is not "
                        "attempted, and the envelope is not a population quantity")
     rec["digest"] = digest_of(rec)

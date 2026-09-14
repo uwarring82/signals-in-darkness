@@ -13,7 +13,7 @@
     "envelope": "min over eligible candidates ON the evaluation sample -- optimistically biased, DIAGNOSTIC ONLY, not a benchmark",
     "target": "population best-in-class -- not observed, not estimated here"
   },
-  "revision": "83c3dfa",
+  "revision": "8f3dfbd",
   "operating_points": {
     "pilot": {
       "cells": {
@@ -694,11 +694,143 @@
       }
     }
   },
+  "supersedes": {
+    "digest": "79bee85a881494f8",
+    "why": "that version argued the calibration confound from cross-policy THRESHOLD ratios, which cannot bound a delay effect because different policies have different null increment distributions. It is replaced by a per-cell comparison of measured null ARLs plus, where the mismatch runs the dangerous way, a measured delay-versus-ARL curve. That version also concluded the thirteen-member class 'offers nothing beyond the two constant endpoints', which overstates what a noisy independently selected procedure establishes; see conclusions.NOT_supported. The NUMBERS are unchanged -- delays, ratios, intervals and the falsifier all stand."
+  },
   "falsifier_check": "passed: no diagnostic envelope exceeds a learner's own value",
+  "conclusions": {
+    "supported": [
+      "posterior sampling is resolvedly SLOWER than the independently selected fixed-endpoint benchmark L1 in five of six cells",
+      "against L2, the best eligible robust precommitted schedule, the evidence is mixed: faster at two cells, slower at one, unresolved at three",
+      "the independently selected L3 procedure found no robust schedule advantage: it selected endpoints in five cells and sampling in one"
+    ],
+    "NOT_supported": [
+      "that the thirteen-member class contains no improvement beyond the two endpoints. The class is not exhausted by what an L3 selection happened to pick: the evaluation envelope is minimised by switch@3000 at stress/tau_c=20 and switch@1000 at stress/tau_c=5. That envelope is optimistically biased and is NOT a benchmark, but it is precisely what forbids the stronger claim -- a schedule did attain the sample minimum in two cells. Selection margins were also a fraction of a standard error in several cells, so the selection is noisy rather than decisive."
+    ],
+    "corrected_from": "an earlier reading of these same numbers said the class 'offers nothing beyond the two constant endpoints', which overstates what an independently selected, noisy procedure can establish"
+  },
   "calibration_confound_checked": {
-    "question": "is the learner's disadvantage an artifact of its calibrated threshold rather than its actions? The +-30 % envelope permits a wide ARL spread and CUSUM delay grows with the threshold.",
-    "answer": "no. h_sampling / h_benchmark spans 0.908 to 1.052 across all twelve learner-versus-benchmark cells, so calibration accounts for at most about 5 %, against observed gaps of 19 % to 114 %. At the STRESS point sampling holds the LOWER threshold and is still slower, so there the confound runs against the learner and the contrast is understated, not inflated."
+    "method": "per-cell comparison of MEASURED null ARLs, not threshold ratios",
+    "why_not_h_ratios": "different policies have different null increment distributions, so h is not a common currency and an h ratio does not bound a delay effect",
+    "intervals_condition_on_thresholds": "the bootstrap intervals elsewhere in this artifact hold the calibrated thresholds fixed and omit calibration uncertainty",
+    "cells": {
+      "pilot/tau_c=20.0/L1": {
+        "benchmark": "mid",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 24562.5546875,
+        "sampling_arl_shorter": false,
+        "ratio_learner_over_benchmark": 1.544321243651986,
+        "status": "requires_measured_sensitivity",
+        "note": "sampling holds the LONGER null ARL, which is the direction that could manufacture this result; resolved by the measured delay-versus-ARL curve, not by argument"
+      },
+      "pilot/tau_c=20.0/L2": {
+        "benchmark": "interleave-B10",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 37066.328125,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 0.95007295032503,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "pilot/tau_c=5.0/L1": {
+        "benchmark": "ext",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 30393.015625,
+        "sampling_arl_shorter": false,
+        "ratio_learner_over_benchmark": 1.4248458345568686,
+        "status": "requires_measured_sensitivity",
+        "note": "sampling holds the LONGER null ARL, which is the direction that could manufacture this result; resolved by the measured delay-versus-ARL curve, not by argument"
+      },
+      "pilot/tau_c=5.0/L2": {
+        "benchmark": "interleave-B10",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 37066.328125,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 1.0464738078445317,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "pilot/tau_c=1.0/L1": {
+        "benchmark": "ext",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 30393.015625,
+        "sampling_arl_shorter": false,
+        "ratio_learner_over_benchmark": 1.5573939582332494,
+        "status": "requires_measured_sensitivity",
+        "note": "sampling holds the LONGER null ARL, which is the direction that could manufacture this result; resolved by the measured delay-versus-ARL curve, not by argument"
+      },
+      "pilot/tau_c=1.0/L2": {
+        "benchmark": "interleave-B10",
+        "sampling_arl": 34443.9375,
+        "benchmark_arl": 37066.328125,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 0.751610989505554,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "stress/tau_c=20.0/L1": {
+        "benchmark": "mid",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 32138.8359375,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 1.192923661176969,
+        "status": "directionally_robust",
+        "note": "sampling holds the SHORTER null ARL -- it is easier to trip -- and is still slower, so the mismatch runs AGAINST the negative conclusion and understates the contrast"
+      },
+      "stress/tau_c=20.0/L2": {
+        "benchmark": "switch@300",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 29821.859375,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 0.5585707808492851,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "stress/tau_c=5.0/L1": {
+        "benchmark": "mid",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 32138.8359375,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 1.072108643343085,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "stress/tau_c=5.0/L2": {
+        "benchmark": "switch@300",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 29821.859375,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 1.0297655007288267,
+        "status": "not_a_negative_cell",
+        "note": "sampling is not resolvedly slower here"
+      },
+      "stress/tau_c=1.0/L1": {
+        "benchmark": "ext",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 37612.75,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 2.1409788793962914,
+        "status": "directionally_robust",
+        "note": "sampling holds the SHORTER null ARL -- it is easier to trip -- and is still slower, so the mismatch runs AGAINST the negative conclusion and understates the contrast"
+      },
+      "stress/tau_c=1.0/L2": {
+        "benchmark": "switch@300",
+        "sampling_arl": 26937.328125,
+        "benchmark_arl": 29821.859375,
+        "sampling_arl_shorter": true,
+        "ratio_learner_over_benchmark": 1.85159431517007,
+        "status": "directionally_robust",
+        "note": "sampling holds the SHORTER null ARL -- it is easier to trip -- and is still slower, so the mismatch runs AGAINST the negative conclusion and understates the contrast"
+      }
+    },
+    "unresolved_without_measurement": [
+      "pilot/tau_c=20.0/L1",
+      "pilot/tau_c=5.0/L1",
+      "pilot/tau_c=1.0/L1"
+    ],
+    "status": "3 negative cells await the measured sensitivity curve; until it lands, their contrast is CONDITIONAL on the policy-specific calibrations lying where they do inside the +-30 % envelope"
   },
   "language": "no oracle, optimal or regret claim is made or licensed; L4 is not attempted, and the envelope is not a population quantity",
-  "digest": "79bee85a881494f8"
+  "digest": "028b49eccae9429c"
 }

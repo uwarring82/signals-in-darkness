@@ -44,7 +44,13 @@ def test_envelope_is_labelled_and_never_called_a_benchmark():
 
 
 def test_hard_falsifier_holds():
-    """The envelope cannot beat a learner: each learner is inside the minimised set."""
+    """No learner beats the envelope: the envelope is never SLOWER than either learner.
+
+    Lower delay is better, so the envelope -- a minimum over a set that CONTAINS each learner --
+    always beats or ties every learner. The inequality is D_envelope <= D_learner. Saying the
+    envelope "cannot beat a learner" states the reverse and is wrong; the assertion below has
+    always tested the correct direction, but the prose described the opposite.
+    """
     assert isinstance(RES["falsifier_check"], str), RES["falsifier_check"]
     for blk in RES["operating_points"].values():
         for t in TCCS:
@@ -93,5 +99,38 @@ def test_no_oracle_or_regret_language():
         assert word not in blob, f"{word!r} used outside the disclaimer"
 
 
-def test_the_calibration_confound_is_addressed_not_ignored():
-    assert RES["calibration_confound_checked"]["answer"].startswith("no.")
+def test_the_calibration_confound_is_classified_per_cell():
+    """Every resolved-negative cell must be classified from MEASURED ARLs, never from h ratios."""
+    c = RES["calibration_confound_checked"]
+    assert "not threshold ratios" in c["method"]
+    seen = set()
+    for op, blk in RES["operating_points"].items():
+        for t in TCCS:
+            for rung in ("L1", "L2"):
+                e = blk["cells"][t]["benchmarks"][rung]
+                if e["is_a_learner"]:
+                    continue
+                key = f"{op}/tau_c={float(t)}/{rung}"
+                assert key in c["cells"], f"{key} unclassified"
+                row = c["cells"][key]
+                seen.add(key)
+                slower = e["vs_learner"]["sampling"]["ci95"][0] > 1.0
+                if not slower:
+                    assert row["status"] == "not_a_negative_cell"
+                elif row["sampling_arl_shorter"]:
+                    assert row["status"] == "directionally_robust"
+                else:
+                    assert row["status"] == "requires_measured_sensitivity"
+    assert seen == set(c["cells"])
+
+
+def test_conditional_cells_are_declared_conditional():
+    """A cell whose mismatch runs the dangerous way may not be reported as settled."""
+    c = RES["calibration_confound_checked"]
+    pending = c["unresolved_without_measurement"]
+    if pending:
+        assert "CONDITIONAL" in c["status"]
+        for k in pending:
+            assert c["cells"][k]["status"] == "requires_measured_sensitivity"
+    else:
+        assert "directionally robust" in c["status"]
