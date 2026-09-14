@@ -226,6 +226,10 @@ def test_imports_the_tested_library_rather_than_restating_formulas(name):
         (r"def\s+I_ext_exact\s*\(", "extremum divergence must come from sid_lib"),
         (r"def\s+rk_exact\s*\(", "lag correlation must come from sid_lib"),
         (r"def\s+hmm_rate\s*\(", "HMM rate must come from sid_lib"),
+        (r"def\s+(?:ramsey_probability|ramsey_mean|gp_rate_geom|I_mid_gp)\s*\(",
+         "readout and comparator formulas must come from sid_lib"),
+        (r"def\s+(?:s2_of|class_b_infimum|information_at|dephased_probability|class_a_margin)\s*\(",
+         "identifiability formulas must come from sid_identifiability"),
     ):
         assert not re.search(forbidden, code), f"{name}: {why}"
 

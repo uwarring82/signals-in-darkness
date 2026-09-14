@@ -23,6 +23,12 @@ def _text(value):
     return value if isinstance(value, str) else "".join(value or [])
 
 
+def test_every_notebook_is_registered_once_on_the_site():
+    sources = [spec["source"] for spec in build_site.TUTORIALS]
+    assert len(sources) == len(set(sources))
+    assert set(sources) == {p.name for p in (ROOT / "tutorials").glob("*.ipynb")}
+
+
 def test_each_notebook_has_a_current_readable_page():
     for spec in build_site.TUTORIALS:
         source, notebook = _notebook(spec)
@@ -81,6 +87,19 @@ def test_tutorial_landing_page_routes_to_readable_pages_and_shows_previews():
         assert spec["question"] in page
     assert page.count('class="tutorial-card"') == len(build_site.TUTORIALS)
     assert page.count('class="tutorial-card-image"') == len(build_site.TUTORIALS)
+
+
+def test_landing_draft_notice_follows_catalog_promotions(monkeypatch):
+    catalog = tuple(dict(spec) for spec in build_site.TUTORIALS)
+    monkeypatch.setattr(build_site, "TUTORIALS", catalog)
+    for spec in catalog:
+        spec["status"] = "Available now"
+    pages, _ = build_site.render_tutorials()
+    assert "draft" not in pages["tutorials/index"].lower()
+    # Also exercise a different draft, so the notice cannot hardcode 02 or 03.
+    catalog[0]["status"] = "Draft available"
+    pages, _ = build_site.render_tutorials()
+    assert "Draft notebooks: 00." in pages["tutorials/index"]
 
 
 def test_plain_language_status_cards_match_the_ledger():

@@ -8,8 +8,16 @@ tested code the research runs use, and every conclusion carries a status label.
 |---|---|---|
 | `00_how_many_coin_tosses.ipynb` | How many tosses to detect a change in a coin's bias? | available |
 | `01_when_the_coin_has_memory.ipynb` | What changes when the bias is an AR(1) process? | available |
-| `02_from_coin_to_quantum_sensor.ipynb` | The binary link, contrast, and the two operating points | deferred until roadmap B, so it teaches the final operating-point comparison |
-| `03_detection_is_not_identification.ipynb` | Why detecting a change is not interpreting it | planned |
+| [`02_from_coin_to_quantum_sensor.ipynb`](02_from_coin_to_quantum_sensor.ipynb) | The binary link, contrast, and the two operating points | executed draft, 14 Sept 2026 |
+| [`03_detection_is_not_identification.ipynb`](03_detection_is_not_identification.ipynb) | Why detecting a change is not interpreting it | executed draft, 14 Sept 2026 |
+
+Roadmap B's completion removes notebook 02's earlier deferral. It compares the pilot and stress
+parameter sets using the research comparator, with its approximation and point-sampling scope
+stated explicitly. Notebook 03 uses roadmap E's shared calculation and the corrected C26 result,
+including the small-but-nonzero boundary case that led to C13's withdrawal. Both drafts include
+questions to try, saved figures, and live numerical outputs; neither changes a claim's standing.
+The [tutorial review note](../notes/2026-09-14-note-24-tutorial-review.md) records scope corrections,
+the direction of the identifiability bounds, and the citation erratum for the locked B/E manifest.
 
 A single-shot quantum measurement **is** a Bernoulli observation, so the coin is not an analogy.
 The mathematical language does not change between notebook 00 and notebook 03; only the meaning

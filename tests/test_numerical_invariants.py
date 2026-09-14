@@ -19,6 +19,8 @@ import numpy as np
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import resolve_errata                                                   # noqa: E402
+sys.path.insert(0, str(ROOT / "analysis" / "lib"))
+from sid_identifiability import G, TAU_OVER_T2, s2_of
 
 RES = json.loads((ROOT / "analysis" / "ladder_results_C.json").read_text())
 LADDER = json.loads((ROOT / "analysis" / "benchmark_ladder_C.json").read_text())
@@ -27,6 +29,49 @@ HEDGE = json.loads((ROOT / "analysis" / "hedge_bootstrap_C.json").read_text())
 TCCS = ("20.0", "5.0", "1.0")
 LEARNERS = ("greedy", "sampling")
 GAMMA, ENVELOPE = 3.0e4, 0.30
+IDENT = json.loads((ROOT / "analysis/outputs/res9_identifiability_T2.json").read_text())["rows"]
+
+
+def test_nested_baseline_classes_cannot_reverse_the_information_order():
+    """B is a subset of A: I_A <= true infimum over B <= every feasible B candidate."""
+    strict = []
+    for row in IDENT:
+        for candidate in row["optimizer"]["starts"]:
+            # Verify feasibility before using the candidate as an upper bound.
+            assert all(1-row["eta_0"] <= x <= 1+row["eta_0"] for x in candidate["x"])
+            assert candidate["fun"] >= row["I_A"]
+        assert row["I_B"] >= row["I_A"]
+        assert row["I_B"] == min(c["fun"] for c in row["optimizer"]["starts"])
+        strict.append(row["I_B"] > row["I_A"])
+    assert any(strict), "the subset comparison must include a strict gap"
+
+
+def test_fast_noise_ratio_is_necessary_but_not_sufficient_for_scan_separation():
+    """The exact OU exponent lies below the fast-noise limit at every finite grid time."""
+    below_threshold = []
+    incomplete_scan = []
+    unseparated_scan = []
+    for row in IDENT:
+        v = row["tau_c_over_T2"]
+        exact = np.array([s2_of(u, v)/2 for u in TAU_OVER_T2])
+        fast = G*G*v*TAU_OVER_T2
+        assert np.all(exact < fast)
+        separated = exact > 2*row["eta_0"]*TAU_OVER_T2
+        assert int(separated.sum()) == row["class_A_points_passing"]
+        ratio = row["DeltaGamma_over_2eta0_Gamma_hat"]
+        if separated.any():
+            assert ratio > 1  # necessary
+        if ratio <= 1:
+            below_threshold.append(row)
+            assert not separated.any()
+            assert row["I_A"] == 0
+        elif not separated.all():
+            incomplete_scan.append(row)
+            if not separated.any():
+                unseparated_scan.append(row)
+    assert below_threshold, "the necessary-condition check would be vacuous"
+    assert incomplete_scan, "need a counterexample to separation at every time"
+    assert unseparated_scan, "ratio > 1 can even fail to separate anywhere on this finite scan"
 
 
 # --------------------------------------------------------------------------- errata reachability

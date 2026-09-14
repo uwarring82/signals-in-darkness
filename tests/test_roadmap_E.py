@@ -6,6 +6,8 @@ artifact, so a later edit that quietly violates one fails rather than drifts.
 import json
 import math
 import os
+import re
+import subprocess
 import sys
 
 import pytest
@@ -17,11 +19,16 @@ ART = json.load(open(os.path.join(ROOT, "analysis", "outputs", "res9_identifiabi
 ROWS = ART["rows"]
 
 
-def test_E_does_not_import_sid_policies():
+def test_E_does_not_import_sid_policies(tmp_path):
     """Requirement 1: E must be independent of roadmap G's operating-point refactor."""
-    src = open(os.path.join(ROOT, "analysis", "runs", "sid_run9.py"), encoding="utf-8").read()
-    body = src.split('"""', 2)[-1]          # the module docstring may discuss the independence
-    assert "sid_policies" not in body, "E has acquired a dependency on the stack G will refactor"
+    runs = os.path.abspath(os.path.join(ROOT, "analysis", "runs"))
+    script = (f"import sys; sys.path.insert(0, {runs!r}); import sid_run9; "
+              "assert 'sid_identifiability' in sys.modules; "
+              "assert 'sid_policies' not in sys.modules, "
+              "'E directly or indirectly imports the policy stack'")
+    proc = subprocess.run([sys.executable, "-c", script], cwd=tmp_path,
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
 
 
 def test_res7A_is_untouched_by_E():
@@ -41,9 +48,10 @@ def test_every_axis_is_dimensionless_in_T2_and_no_dead_time_survives():
         assert "tau_c_over_T2" in row and "DeltaGamma_over_Gamma_hat" in row
         for banned in ("tau_c", "T2", "td", "t_dead"):
             assert banned not in row or banned == "tau_c_over_T2"
-    src9 = open(os.path.join(ROOT, "analysis", "runs", "sid_run9.py"), encoding="utf-8").read()
-    body9 = src9.split('"""', 2)[-1]
-    assert "td" not in body9.replace("stdout", "").replace("stderr", ""), "td is back in E"
+    for rel in ("analysis/runs/sid_run9.py", "analysis/lib/sid_identifiability.py"):
+        src = open(os.path.join(ROOT, rel), encoding="utf-8").read()
+        body = src.split('"""', 2)[-1]
+        assert not re.search(r"\b(?:td|t_dead)\b", body), f"dead time is back in E: {rel}"
     src7 = open(os.path.join(ROOT, "analysis", "runs", "sid_run7.py"), encoding="utf-8").read()
     assert "T2, td = " not in src7, "sid_run7 still assigns the unused dead time"
     assert "PER SHOT" in ART["units"].upper()

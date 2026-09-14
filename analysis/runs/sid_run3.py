@@ -36,14 +36,6 @@ def gp_rate_num(rk, nf=4096):
     S = 1 + 2*np.sum(rk[:, None]*np.cos(2*np.pi*np.arange(1, K+1)[:, None]*f[None, :]), axis=0)
     return 0.5*np.mean(S-1-np.log(S))
 
-def gp_rate_geom(rho, a):
-    """Closed form for geometric correlations r_k = rho a^k (k>=1), unit variance:
-       S(w) = [alpha + beta cos w]/[1 - 2a cos w + a^2],  rate = -1/2 log kappa, alpha+beta cos w = kappa(1+b^2-2b cos w)."""
-    alpha = 1 + a*a - 2*rho*a*a; beta = 2*a*(rho-1)
-    if abs(beta) < 1e-14: return 0.0
-    b = (-alpha + math.sqrt(alpha*alpha - beta*beta))/beta
-    kappa = alpha/(1+b*b)
-    return -0.5*math.log(kappa)
 
 print("== closed-form GP (geometric fit r_k = r_1 a^(k-1)) vs numeric GP with exact r_k vs exact HMM ==")
 for C, s, tcc, hmm in [(r[0], r[1], r[2], r[6]) for r in res2["B2"]]:
@@ -52,9 +44,6 @@ for C, s, tcc, hmm in [(r[0], r[1], r[2], r[6]) for r in res2["B2"]]:
     print(f"C={C} s={s} tc/c={tcc:5.1f}: GP-num={num:.3e}  GP-closed={clo:.3e}  HMM={hmm:.3e}  closed/HMM={clo/hmm:.3f}")
 
 # ---------- exact-comparator crossover in (C, tau_c/c) at fixed s ----------
-def I_mid_gp(C, s, tcc):
-    a = math.exp(-1/tcc); r1 = rk_exact(C, s, a)
-    return gp_rate_geom(r1/a, a)
 
 # This is the COMPARATOR crossover: the first tau_c/c at which the Gaussian-process
 # closed form exceeds the exact extremum divergence. It is a different estimator from the

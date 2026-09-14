@@ -23,6 +23,19 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "figu
 
 
 # ---------- helpers ----------
+def ramsey_probability(C, theta, phase=0.0):
+    """Binary-link probability P(Y=1 | phase); theta=pi is the dark extremum."""
+    return 0.5*(1+C*np.cos(theta+phase))
+
+
+def ramsey_mean(C, s, theta):
+    """One-shot probability averaged over a zero-mean Gaussian phase of SD s.
+
+    This marginal contains no information about temporal ordering.
+    """
+    return ramsey_probability(C*np.exp(-s*s/2), theta)
+
+
 def DB(p, q):
     return p*np.log(p/q) + (1-p)*np.log((1-p)/(1-q))
 
@@ -76,7 +89,7 @@ def make_hmm(C, s, theta, a, M=121, L=5.0):
     g = np.linspace(-L*s, L*s, M)
     sd = s*np.sqrt(1-a*a)
     T = np.exp(-(g[None, :]-a*g[:, None])**2/(2*sd*sd)); T /= T.sum(1, keepdims=True)
-    e1 = 0.5*(1+C*np.cos(theta+g)); e0 = 1-e1
+    e1 = ramsey_probability(C, theta, g); e0 = 1-e1
     prior = np.exp(-g**2/(2*s*s)); prior /= prior.sum()
     return g, T, e1, e0, prior
 
@@ -85,7 +98,7 @@ def simulate(C, s, theta, a, N, rng):
     eta = rng.normal(0, 1, N); eps = np.empty(N); x = rng.normal(0, s)
     for n in range(N):
         x = a*x + sd*eta[n]; eps[n] = x
-    p = 0.5*(1+C*np.cos(theta+eps))
+    p = ramsey_probability(C, theta, eps)
     return (rng.random(N) < p).astype(np.int8)
 
 def hmm_rate(C, s, theta, a, N=100_000, seed=0, M=121):
@@ -93,7 +106,7 @@ def hmm_rate(C, s, theta, a, N=100_000, seed=0, M=121):
     r = np.random.default_rng(seed)
     g, T, e1, e0, prior = make_hmm(C, s, theta, a, M)
     y = simulate(C, s, theta, a, N, r)
-    p0 = 0.5*(1+C*np.cos(theta))
+    p0 = ramsey_probability(C, theta)
     alpha = prior.copy(); ll1 = 0.0
     for n in range(N):
         alpha = alpha @ T
@@ -101,4 +114,21 @@ def hmm_rate(C, s, theta, a, N=100_000, seed=0, M=121):
         z = alpha.sum(); ll1 += math.log(z); alpha /= z
     ll0 = np.sum(y*np.log(p0) + (1-y)*np.log(1-p0))
     return (ll1-ll0)/N
+
+
+# Shared with sid_run3; extracted without changing its numerical comparator.
+def gp_rate_geom(rho, a):
+    """Closed form for geometric correlations r_k = rho a^k (k>=1), unit variance:
+       S(w) = [alpha + beta cos w]/[1 - 2a cos w + a^2],  rate = -1/2 log kappa, alpha+beta cos w = kappa(1+b^2-2b cos w)."""
+    alpha = 1 + a*a - 2*rho*a*a; beta = 2*a*(rho-1)
+    if abs(beta) < 1e-14: return 0.0
+    b = (-alpha + math.sqrt(alpha*alpha - beta*beta))/beta
+    kappa = alpha/(1+b*b)
+    return -0.5*math.log(kappa)
+
+
+def I_mid_gp(C, s, tcc):
+    """Geometric-fit Gaussian comparator for point-sampled phase, not an exact binary rate."""
+    a = math.exp(-1/tcc); r1 = rk_exact(C, s, a)
+    return gp_rate_geom(r1/a, a)
 

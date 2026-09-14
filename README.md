@@ -1,13 +1,24 @@
 # Signals in Darkness — operating-point crossover in sequential quantum-clock detection
 
-**Status (5 Sept 2026):** card v1.1 frozen; card v2.0 seed open; repository released as [`repo-v0.1.0`](https://github.com/uwarring82/signals-in-darkness/releases/tag/repo-v0.1.0), certified at commit `d845a80` by a clean-checkout run of the whole analysis path in the pinned environment. C19 and C20 closed on that evidence (`notes/2026-09-05-note-10-certification-closure.md`). **C09, C11, C12 and C24 remain open**; C01, C15, C16, C17, C18 and C22 are withdrawn. No DOI is claimed for this release.
+**Status (14 Sept 2026):** card v1.1 frozen; card v2.0 seed open. Roadmap B (second operating
+point), C (posterior-driven action selection) and E (dimensionless identifiability) are complete.
+**D and F remain open; C24 is the sole open claim.** The ledger contains 22 results, one pilot
+and eight withdrawn claims. Posterior sampling responds to the data but does not deliver a
+consistent detection-delay advantage (C30–C32). See [`ledgers/status.yaml`](ledgers/status.yaml)
+and [`ledgers/roadmap.yaml`](ledgers/roadmap.yaml) for scope and qualifications.
+
+Release [`repo-v0.1.0`](https://github.com/uwarring82/signals-in-darkness/releases/tag/repo-v0.1.0)
+was certified at commit `d845a80` by a clean-checkout run of the whole analysis path in the pinned
+environment; C19 and C20 closed on that evidence
+(`notes/2026-09-05-note-10-certification-closure.md`). That certification applies to that release,
+not automatically to later work. No DOI is claimed for it.
 This README carries no thesis line until card v2.0 is frozen.
 
-## Results hierarchy (from notes/2026-09-03-note-03a-errata.md)
-1. Operating-point crossover and physical regime map — *result* at one parameter set; second parameter set open.
-2. Detection-versus-identification boundary under a shape-constrained dephasing baseline — *result* (numerical), general criterion ΔΓ_φ > 2η₀Γ̂ in the fast-noise limit.
-3. Extension to the independently randomised servo model via C_eff(κ) — *pilot* (supported, not proved).
-4. Policy comparison — *pilot*; explicitly not an adaptive-policy or minimax result.
+## Current results
+1. Operating-point crossover — *result* at C̄ = 0.4 under the stated comparator (C05), with the τ-optimised physical map (C08) and a separate validity check for the leading-order boundary (C23).
+2. Detection-versus-identification boundary — *result* (C26), distinguishing a pointwise uncertainty band from a shape-constrained baseline; the fast-noise criterion is ΔΓ_φ > 2η₀Γ̂.
+3. Extension to the independently randomised servo model via C_eff(κ) — *pilot* (C14, supported, not proved).
+4. Finite-delay comparisons at two parameter sets — *results* for the specified precommitted schedules (C11, C27–C28) and posterior-driven policies (C30–C32); no global optimality or oracle result is claimed.
 
 Claim-level status lives in `ledgers/status.yaml`. Anything on a website or in plain-language material is a projection of that ledger.
 
@@ -23,6 +34,10 @@ and arrives at the project's own machinery without changing mathematical languag
 quantum measurement *is* a Bernoulli observation, so the coin is not an analogy. The notebooks are
 committed with their outputs and read on GitHub without installing anything; see
 [`tutorials/`](tutorials/README.md).
+
+Executed drafts now continue through
+[`02 — From coin to quantum sensor`](tutorials/02_from_coin_to_quantum_sensor.ipynb) and
+[`03 — Detection is not identification`](tutorials/03_detection_is_not_identification.ipynb).
 
 ## Layout
 `cards/` preregistered and frozen task cards · `notes/` dated execution notes (append-only) · `labbook/` curated public entries · `ledgers/` machine-readable status, milestones, roadmap · `analysis/` library, run scripts, stored outputs, seeds · `tests/` · `figures/` · `references/` bibliography and verification ledger · `docs/` site source · `tools/` site generator.

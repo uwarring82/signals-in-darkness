@@ -35,8 +35,10 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 The central result is a quantitative crossover: depending on how long the hidden noise remembers
 itself, either contrast loss or temporal correlation can reveal a change sooner. The project has
 also established where its simplified boundary ceases to be trustworthy, and when detecting a
-change is easier than identifying its cause. The finite-delay policy comparison remains open and
-is now moving to a second operating point.
+change is easier than identifying its cause. Finite-delay policy comparisons now cover two
+parameter sets: posterior sampling's actions respond to the data, but it does not produce a
+consistent detection-delay advantage. A greedy posterior policy updates its beliefs without a
+demonstrated control response. The correlated-residual and finite-window likelihood checks remain open.
 
 **[Read the plain-language research state →](where-we-are.md)**
 
@@ -52,6 +54,12 @@ is now moving to a second operating point.
 - **[Tutorial 01 — When the coin has memory](tutorials/01-when-the-coin-has-memory.md)** — two records
   with identical head counts and different ordering, and why a sensor can detect a change in
   *balance* or a change in *memory*. [Notebook source](../tutorials/01_when_the_coin_has_memory.ipynb).
+- **[Tutorial 02 — From coin to quantum sensor](tutorials/02-from-coin-to-quantum-sensor.md)**
+  *(draft)* — the Ramsey fringe and a comparison of the two readouts at both parameter sets.
+  [Notebook source](../tutorials/02_from_coin_to_quantum_sensor.ipynb).
+- **[Tutorial 03 — Detection is not identification](tutorials/03-detection-is-not-identification.md)**
+  *(draft)* — two causes with the same one-shot probability, and what an interrogation-time scan
+  can resolve. [Notebook source](../tutorials/03_detection_is_not_identification.ipynb).
 - **[Browse the tutorial sequence](tutorials/index.md)** — readable pages with the committed figures
   and numerical outputs visible, while calculation code stays available on demand.
 

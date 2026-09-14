@@ -5,10 +5,10 @@ title: "Current research state"
 
 # Where we are
 
-*Plain-language status, 7 September 2026. Written for a reader with no background in sequential
+*Plain-language status, 14 September 2026. Written for a reader with no background in sequential
 detection or quantum sensing. Every claim identifier below is checked against
-[`ledgers/status.yaml`](status.md) by `tests/test_public_prose.py`, so this page cannot drift from
-the record without a test failing.*
+[`ledgers/status.yaml`](status.md) by `tests/test_public_prose.py`. Those checks cover identifiers
+and status labels; the surrounding interpretation still requires editorial review.*
 
 *This page is a **view**, not a source. Every number lives in the ledger or an output file; nothing
 is computed here. For the technical record see the [status table](status.md), the
@@ -72,11 +72,13 @@ precedent rather than claiming it.
 
 **C27 — and the best policy depends on where you stand.** Given a false-alarm budget, which
 detection strategy raises the alarm soonest in its *worst* case is not a fixed answer. At the first
-operating point the simple fixed choice — always read at the dark extremum — wins, and no hedging
-schedule beats it. At a second point it loses badly, and three of five hedges beat it by a resolved
-margin, the best by nearly a factor of two. That second point is the part that is established; whether the *first*
-point really behaves the other way is still open, because one strategy there is mis-tuned. What makes this more than a numerical curiosity is the cleanest pair in it:
-two strategies calibrated to the *same* accuracy, 1.9× apart. A caution the record insists on: every
+operating point no tested hedge is resolvedly better than the fixed dark-extremum choice (C11).
+At the second point, three of five hedges beat it by a resolved margin; the largest point-estimate
+gap is nearly a factor of two (switch@1000, 1.51 against 2.88). This does not resolve the ordering
+among those three hedges. Recalibration and a paired comparison settled the clearest reversal: switch@1000 is
+resolvedly worse at the pilot and better at the stress point (C28). Those two policies are inside
+the declared false-alarm calibration envelope at both points; this does not make every other row
+eligible or establish equality of false-alarm rates. A caution the record insists on: every
 schedule tested was **fixed in advance**. None of them watches the data and decides what to do next.
 So this says that committing to a robust schedule pays where a single fixed choice does not. It
 does not say that learning-on-the-fly works — that question is now answered separately, below.
@@ -192,9 +194,8 @@ measurement uncertainties showed that the apparent reversal was smaller than its
   superconducting qubit or NV centre. The model is a binary readout with a hidden drifting phase.
   Mapping it onto a real apparatus requires calibration work this project has not done.
 - **Experimental demonstration.** Nothing here has been run on hardware.
-- **Generality across operating points.** The policy and delay comparisons rest on a single
-  operating point. B narrows this specifically: it adds one further point inside the same
-  parity regime, for the finite-γ policy and delay comparison. That is a second data point, not a
+- **Generality across operating points.** The policy and delay comparisons cover two parameter
+  sets in the same parity regime, through roadmaps B and C. That is a second data point, not a
   demonstration of generality, and it does not touch the identifiability result or the physical map,
   which are established on their own terms.
 
@@ -236,6 +237,9 @@ of kind behind what looked like a change of degree.
   [Notebook 00](../tutorials/00_how_many_coin_tosses.ipynb) asks how many tosses it takes to notice a
   change; [notebook 01](../tutorials/01_when_the_coin_has_memory.ipynb) asks what changes when the
   coin remembers.
+- **[Notebook 02](../tutorials/02_from_coin_to_quantum_sensor.ipynb)** and
+  **[notebook 03](../tutorials/03_detection_is_not_identification.ipynb)** — executed drafts connect
+  the coin to the quantum readout, then distinguish detection from physical identification.
 - **[The status table](status.md)** — every claim, its standing, and its errata.
 - **[The roadmap](roadmap.md)** — what is planned and what gates what.
 - **[Reproduce](reproduce.md)** — how to recompute the results yourself.

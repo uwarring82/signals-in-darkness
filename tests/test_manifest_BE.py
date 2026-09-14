@@ -2,15 +2,26 @@
 
 A manifest that merely records values drifts the moment the code moves; this file
 asserts that every constant it declares as source=code is still what the code holds,
-and that the three hazards it names are still real. If one of these fails, the fix is
-to update analysis/manifest_BE.json and its note -- not to relax the assertion.
+and that the three hazards it names are still real. The locked artifact's bytes are pinned;
+corrections belong in errata rather than in-place edits or relaxed assertions.
 """
+import hashlib
 import json, math, os, sys
 import pytest
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, os.path.join(ROOT, "analysis", "lib"))
 MANIFEST = json.load(open(os.path.join(ROOT, "analysis", "manifest_BE.json"), encoding="utf-8"))
+# Pin the current LOCKED artifact, verified byte-for-byte against commit 76c0add.
+MANIFEST_SHA256 = "afa74c6c7a7b21d80768d4717c4828171bcbb15981d7cfc4d8fddf1f2082ae12"
+
+
+def test_locked_manifest_bytes_are_preserved():
+    with open(os.path.join(ROOT, "analysis", "manifest_BE.json"), "rb") as source:
+        digest = hashlib.sha256(source.read()).hexdigest()
+    assert digest == MANIFEST_SHA256, (
+        "locked B/E manifest changed; preserve the record and append an erratum "
+        "as in notes/2026-09-14-note-24-tutorial-review.md")
 
 
 def test_manifest_is_strict_json_and_declares_its_record():
@@ -89,6 +100,7 @@ def test_identifiability_stack_matches_run7():
 def test_u_is_tau_over_tau_c_not_c_over_tau_c():
     """The distinction the manifest exists to protect: rho_1 = F(tau/tau_c) exp(-c/tau_c),
     so the AR(1) reduction is exact as tau/tau_c -> 0, not as c/tau_c -> 0."""
+    # Citation erratum: notes/2026-09-14-note-24-tutorial-review.md, section 3.
     for f in ("sid_run3.py", "sid_run4.py"):
         src = open(os.path.join(ROOT, "analysis", "runs", f), encoding="utf-8").read()
         assert "u = taus/tc" in src, f"{f} no longer defines u = tau/tau_c"

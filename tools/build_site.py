@@ -47,6 +47,22 @@ TUTORIALS = (
                     'tutorial shows how correlation becomes evidence, why count-only power can '
                     'plateau, and how the two sensor readouts acquire different strengths.'),
     },
+    {
+        'source': '02_from_coin_to_quantum_sensor.ipynb',
+        'slug': '02-from-coin-to-quantum-sensor',
+        'question': 'How does a quantum readout turn phase noise into balance or memory?',
+        'summary': ('Explore the Ramsey fringe and compare the two readouts at both parameter sets, then '
+                    'separate information per shot from calibrated detection delay.'),
+        'status': 'Draft available',
+    },
+    {
+        'source': '03_detection_is_not_identification.ipynb',
+        'slug': '03-detection-is-not-identification',
+        'question': 'When does changed contrast identify a cause?',
+        'summary': ('Construct two causes with the same one-shot probability, scan interrogation '
+                    'time, and see how calibration assumptions separate impossible from difficult.'),
+        'status': 'Draft available',
+    },
 )
 
 
@@ -274,19 +290,24 @@ def render_tutorials():
             f'{html.escape(meta["title"].split("—", 1)[-1].strip())}</a></h2>',
             f'      <p><strong>{html.escape(spec["question"])}</strong></p>',
             f'      <p>{html.escape(spec["summary"])}</p>',
-            f'      <p class="tutorial-meta">Available now · {meta["figures"]} committed figures</p>',
+            f'      <p class="tutorial-meta">{spec.get("status", "Available now")} · {meta["figures"]} committed figures</p>',
             '    </div>',
             '  </article>',
         ))
+    draft_ids = [spec['slug'].split('-', 1)[0] for spec in TUTORIALS
+                 if spec.get('status', '').lower().startswith('draft')]
+    availability = f'All {len(TUTORIALS)} notebooks are available.'
+    if draft_ids:
+        availability += ' Draft notebooks: ' + ', '.join(draft_ids) + '.'
     landing.extend((
         '</div>',
         '',
-        '## What follows',
+        '## From tutorials to the research record',
         '',
-        '- **02 — From coin to quantum sensor** is deferred until roadmap B settles the second',
-        '  operating point.',
-        '- **03 — Detection is not identification** will explain why noticing changed contrast does',
-        '  not by itself identify its physical cause.',
+        availability + ' Roadmap B has settled the second',
+        'operating-point comparison, and roadmap E supplies the corrected identifiability result.',
+        'For the current evidence and remaining model checks, read the',
+        '[research state]({{ \'/where-we-are.html\' | relative_url }}).',
         '',
         f'[Notebook files and execution instructions]({REPOSITORY_URL}/tree/main/tutorials)',
         '',
