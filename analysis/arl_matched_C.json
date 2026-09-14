@@ -1,0 +1,394 @@
+{
+  "record": "sampling versus each benchmark at the benchmark's own null ARL",
+  "status": "POST-UNBLINDING SENSITIVITY ANALYSIS -- NOT PART OF THE PREREGISTERED RESULT",
+  "protocol_digest": "44de924a2f584472",
+  "ladder_results_digest": "028b49eccae9429c",
+  "eligibility_digest": "3ac8b99a6e1f7677",
+  "revision": "3532b28",
+  "cells": {
+    "pilot/tau_c=20.0/L1": {
+      "benchmark": "mid",
+      "benchmark_arl": 24562.5546875,
+      "h_sampling_matched": 3.3261135708928844,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 1892.3598434848348,
+      "delay_sampling_as_calibrated": 1943.359375,
+      "delay_benchmark": 1258.390625,
+      "ratio": 1.5037936598461505,
+      "ci95": [
+        1.2405982216531266,
+        1.797434922597482
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 1.544321243651986,
+      "frozen_ci95": [
+        1.2952940405330007,
+        1.8589391983060777
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": true,
+      "draws_needing_end_extrapolation": 326,
+      "status": "MATCHED"
+    },
+    "pilot/tau_c=20.0/L2": {
+      "benchmark": "interleave-B10",
+      "benchmark_arl": 37066.328125,
+      "h_sampling_matched": 3.5841654809829855,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 1969.9547227813482,
+      "delay_sampling_as_calibrated": 1943.359375,
+      "delay_benchmark": 2045.484375,
+      "ratio": 0.9630749307392525,
+      "ci95": [
+        0.7942001604121528,
+        1.168958120691371
+      ],
+      "resolved": false,
+      "direction": "unresolved",
+      "frozen_ratio_at_own_calibration": 0.95007295032503,
+      "frozen_ci95": [
+        0.7865691001020824,
+        1.1410558900120453
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 384,
+      "status": "MATCHED"
+    },
+    "pilot/tau_c=5.0/L1": {
+      "benchmark": "ext",
+      "benchmark_arl": 30393.015625,
+      "h_sampling_matched": 3.4588434763039895,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 2725.3191716231613,
+      "delay_sampling_as_calibrated": 2805.1875,
+      "delay_benchmark": 1968.765625,
+      "ratio": 1.3842781167124254,
+      "ci95": [
+        1.1152792333667743,
+        1.7449133673470731
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 1.4248458345568686,
+      "frozen_ci95": [
+        1.14552722980217,
+        1.7807902340154307
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": true,
+      "draws_needing_end_extrapolation": 4,
+      "status": "MATCHED"
+    },
+    "pilot/tau_c=5.0/L2": {
+      "benchmark": "interleave-B10",
+      "benchmark_arl": 37066.328125,
+      "h_sampling_matched": 3.5841654809829855,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 2860.154966849794,
+      "delay_sampling_as_calibrated": 2805.1875,
+      "delay_benchmark": 2680.609375,
+      "ratio": 1.0669793941348855,
+      "ci95": [
+        0.8376393905609595,
+        1.37605214670158
+      ],
+      "resolved": false,
+      "direction": "unresolved",
+      "frozen_ratio_at_own_calibration": 1.0464738078445317,
+      "frozen_ci95": [
+        0.8291507152223364,
+        1.346130495125826
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 389,
+      "status": "MATCHED"
+    },
+    "pilot/tau_c=1.0/L1": {
+      "benchmark": "ext",
+      "benchmark_arl": 30393.015625,
+      "h_sampling_matched": 3.4588434763039895,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 3326.7780948449113,
+      "delay_sampling_as_calibrated": 3444.46875,
+      "delay_benchmark": 2211.6875,
+      "ratio": 1.5041809002605075,
+      "ci95": [
+        1.305431524768045,
+        1.7514003013614718
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 1.5573939582332494,
+      "frozen_ci95": [
+        1.3556252744385868,
+        1.7922054234595381
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": true,
+      "draws_needing_end_extrapolation": 5,
+      "status": "MATCHED"
+    },
+    "pilot/tau_c=1.0/L2": {
+      "benchmark": "interleave-B10",
+      "benchmark_arl": 37066.328125,
+      "h_sampling_matched": 3.5841654809829855,
+      "h_sampling_as_calibrated": 3.5190812815020247,
+      "delay_sampling_matched": 3469.1178786220053,
+      "delay_sampling_as_calibrated": 3444.46875,
+      "delay_benchmark": 4582.78125,
+      "ratio": 0.7569896290864866,
+      "ci95": [
+        0.6332666373659313,
+        0.9166108295342132
+      ],
+      "resolved": true,
+      "direction": "sampling faster",
+      "frozen_ratio_at_own_calibration": 0.751610989505554,
+      "frozen_ci95": [
+        0.6269256200605515,
+        0.891263293912441
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 366,
+      "status": "MATCHED"
+    },
+    "stress/tau_c=20.0/L1": {
+      "benchmark": "mid",
+      "benchmark_arl": 32138.8359375,
+      "h_sampling_matched": 2.692526016985164,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 2531.9075803941214,
+      "delay_sampling_as_calibrated": 2463.890625,
+      "delay_benchmark": 2065.421875,
+      "ratio": 1.225854926318199,
+      "ci95": [
+        1.0754390708358852,
+        1.405817193208939
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 1.192923661176969,
+      "frozen_ci95": [
+        1.054579081566818,
+        1.3532342615131794
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 13,
+      "status": "MATCHED"
+    },
+    "stress/tau_c=20.0/L2": {
+      "benchmark": "switch@300",
+      "benchmark_arl": 29821.859375,
+      "h_sampling_matched": 2.6503580954067463,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 2501.072554497286,
+      "delay_sampling_as_calibrated": 2463.890625,
+      "delay_benchmark": 4411.0625,
+      "ratio": 0.5670000265236065,
+      "ci95": [
+        0.4492958203533763,
+        0.7112755323588528
+      ],
+      "resolved": true,
+      "direction": "sampling faster",
+      "frozen_ratio_at_own_calibration": 0.5585707808492851,
+      "frozen_ci95": [
+        0.4433760949841887,
+        0.7008369103263739
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 22,
+      "status": "MATCHED"
+    },
+    "stress/tau_c=5.0/L1": {
+      "benchmark": "mid",
+      "benchmark_arl": 32138.8359375,
+      "h_sampling_matched": 2.692526016985164,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 6055.858458379842,
+      "delay_sampling_as_calibrated": 5806.171875,
+      "delay_benchmark": 5415.65625,
+      "ratio": 1.1182132282453936,
+      "ci95": [
+        0.898222849268977,
+        1.4352679973147984
+      ],
+      "resolved": false,
+      "direction": "unresolved",
+      "frozen_ratio_at_own_calibration": 1.072108643343085,
+      "frozen_ci95": [
+        0.8564938659150353,
+        1.3242639700080037
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 18,
+      "status": "MATCHED"
+    },
+    "stress/tau_c=5.0/L2": {
+      "benchmark": "switch@300",
+      "benchmark_arl": 29821.859375,
+      "h_sampling_matched": 2.6503580954067463,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 5937.564965266036,
+      "delay_sampling_as_calibrated": 5806.171875,
+      "delay_benchmark": 5638.34375,
+      "ratio": 1.0530689912735518,
+      "ci95": [
+        0.7916707562905544,
+        1.4010070031064326
+      ],
+      "resolved": false,
+      "direction": "unresolved",
+      "frozen_ratio_at_own_calibration": 1.0297655007288267,
+      "frozen_ci95": [
+        0.7823251372794695,
+        1.338953933125231
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 17,
+      "status": "MATCHED"
+    },
+    "stress/tau_c=1.0/L1": {
+      "benchmark": "ext",
+      "benchmark_arl": 37612.75,
+      "h_sampling_matched": 2.8545222750694212,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 13269.882769045924,
+      "delay_sampling_as_calibrated": 10905.109375,
+      "delay_benchmark": 5093.515625,
+      "ratio": 2.6052502330442784,
+      "ci95": [
+        1.9756058088151005,
+        3.2852814148063074
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 2.1409788793962914,
+      "frozen_ci95": [
+        1.7210221640933714,
+        2.6478844951885674
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 537,
+      "status": "MATCHED",
+      "elevated_draw_extrapolation": "5.4 % of draws fell outside the resampled grid and used the end segment; the interval for this cell is correspondingly less trustworthy. This cell does not require matching."
+    },
+    "stress/tau_c=1.0/L2": {
+      "benchmark": "switch@300",
+      "benchmark_arl": 29821.859375,
+      "h_sampling_matched": 2.6503580954067463,
+      "h_sampling_as_calibrated": 2.60546875,
+      "delay_sampling_matched": 11228.952593896634,
+      "delay_sampling_as_calibrated": 10905.109375,
+      "delay_benchmark": 5889.578125,
+      "ratio": 1.9065801243440734,
+      "ci95": [
+        1.5662403703236953,
+        2.434317117853813
+      ],
+      "resolved": true,
+      "direction": "sampling slower",
+      "frozen_ratio_at_own_calibration": 1.85159431517007,
+      "frozen_ci95": [
+        1.5366238090972753,
+        2.2158449543027388
+      ],
+      "conclusion_survives_matching": true,
+      "required_matching": false,
+      "draws_needing_end_extrapolation": 13,
+      "status": "MATCHED"
+    }
+  },
+  "reproduction_check": {
+    "pilot": {
+      "sampling_null_reproduces": true,
+      "sampling_delays_reproduce": true,
+      "benchmark_nulls_reproduce": true
+    },
+    "stress": {
+      "sampling_null_reproduces": true,
+      "sampling_delays_reproduce": true,
+      "benchmark_nulls_reproduce": true
+    }
+  },
+  "curves": {
+    "pilot": {
+      "h": [
+        3.12,
+        3.18,
+        3.24,
+        3.3,
+        3.38,
+        3.45,
+        3.519081282,
+        3.58,
+        3.64,
+        3.7,
+        3.76,
+        3.82
+      ],
+      "arl": [
+        19828.0703125,
+        21853.765625,
+        22479.4609375,
+        23775.0390625,
+        26271.046875,
+        29839.828125,
+        34443.9375,
+        36893.640625,
+        39460.609375,
+        40411.203125,
+        44108.171875,
+        47116.625
+      ],
+      "monotone_in_h": true
+    },
+    "stress": {
+      "h": [
+        2.425,
+        2.485,
+        2.545,
+        2.60546875,
+        2.68,
+        2.76,
+        2.84,
+        2.9,
+        2.96,
+        3.02
+      ],
+      "arl": [
+        21087.1875,
+        22637.8203125,
+        24244.1640625,
+        26937.328125,
+        31893.953125,
+        33490.65625,
+        37156.1328125,
+        39079.3046875,
+        42049.25,
+        45131.0078125
+      ],
+      "monotone_in_h": true
+    }
+  },
+  "resolves": {
+    "what": "the three cells that ladder_results_C.json declares CONDITIONAL under calibration_confound_checked.unresolved_without_measurement",
+    "cells": [
+      "pilot/tau_c=1.0/L1",
+      "pilot/tau_c=20.0/L1",
+      "pilot/tau_c=5.0/L1"
+    ],
+    "outcome": "every one survives ARL matching: sampling remains resolvedly slower than its L1 benchmark at the benchmark's own null ARL",
+    "ladder_results_text_left_as_frozen": "ladder_results_C.json still reads CONDITIONAL, and is not edited. Its digest is bound into this artifact, so amending it would break the binding that makes this resolution auditable. The conditional statement plus this artifact is the record."
+  },
+  "digest": "c1f57f7a2394dca6"
+}

@@ -199,6 +199,21 @@ def main(argv):
                         f"the end segment; the interval for this cell is correspondingly less "
                         f"trustworthy. This cell does not require matching.")
 
+    req = {k: v for k, v in rec["cells"].items() if v.get("required_matching")}
+    rec["resolves"] = {
+        "what": ("the three cells that ladder_results_C.json declares CONDITIONAL under "
+                 "calibration_confound_checked.unresolved_without_measurement"),
+        "cells": sorted(req),
+        "outcome": ("every one survives ARL matching: sampling remains resolvedly slower than "
+                    "its L1 benchmark at the benchmark's own null ARL"
+                    if all(v.get("conclusion_survives_matching") and v["ci95"][0] > 1.0
+                           for v in req.values())
+                    else "at least one conditional cell CHANGES under matching"),
+        "ladder_results_text_left_as_frozen": (
+            "ladder_results_C.json still reads CONDITIONAL, and is not edited. Its digest is "
+            "bound into this artifact, so amending it would break the binding that makes this "
+            "resolution auditable. The conditional statement plus this artifact is the record."),
+    }
     rec["digest"] = digest_of(rec)
     for k, v in sorted(rec["cells"].items()):
         if v.get("status") != "MATCHED":
