@@ -19,7 +19,7 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 
 <div class="status-grid" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">19</strong><span>supported results</span>
+    <strong data-status-count="result">22</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>

@@ -16,7 +16,7 @@ is computed here. For the technical record see the [status table](status.md), th
 
 <div class="status-grid compact" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
-    <strong data-status-count="result">19</strong><span>supported results</span>
+    <strong data-status-count="result">22</strong><span>supported results</span>
   </a>
   <a class="status-card status-pilot" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="pilot">1</strong><span>pilot result</span>
@@ -78,8 +78,8 @@ margin, the best by nearly a factor of two. That second point is the part that i
 point really behaves the other way is still open, because one strategy there is mis-tuned. What makes this more than a numerical curiosity is the cleanest pair in it:
 two strategies calibrated to the *same* accuracy, 1.9× apart. A caution the record insists on: every
 schedule tested was **fixed in advance**. None of them watches the data and decides what to do next.
-So this says that committing to a robust schedule pays where a single fixed choice does not — it
-does not say that learning-on-the-fly works, which remains untested.
+So this says that committing to a robust schedule pays where a single fixed choice does not. It
+does not say that learning-on-the-fly works — that question is now answered separately, below.
 
 **C26 — detecting a change is not the same as explaining it.** Suppose contrast is falling. That
 could be new frequency noise, or it could be that the qubit's coherence time has simply got worse.
@@ -94,6 +94,32 @@ two explanations at all, and no amount of averaging helps. Against a **shape-con
 a baseline restricted to a simple parametric form — a small amount of information survives, so the
 question becomes answerable but slow. The distinction is not a technicality: one says impossible, the
 other says expensive.
+
+**C30, C31, C32 — a sensor can respond intelligently without detecting sooner.** The obvious next
+move is to let the detector watch its own data and choose where to read next, instead of following
+a schedule fixed in advance. We built that and measured it, and the answer is a clean negative that
+is more interesting than a win would have been.
+
+The adaptive policy genuinely *responds*. Its choice of readout shifts with the noise's correlation
+time, by margins large enough to be resolved at both operating points — that is **C30**. A second,
+greedier policy exposes how easily this can be faked: it updates its internal beliefs perfectly
+well and then barely changes what it actually does. Belief is not behaviour, and the two have to be
+measured separately or a policy can look adaptive while acting almost constant.
+
+But responding is not the same as detecting sooner. Against the best *single fixed* readout angle
+for each correlation time, the adaptive policy is **slower** in five of six cases — **C31** — by
+roughly 20 % to a factor of two. The comparison is deliberately unkind: that fixed benchmark is
+told the correlation time, while the adaptive policy has to work it out from the data. It is a
+measure of what the inference costs, not a fair fight. Against the fixed *schedules* of C27 the
+picture is genuinely mixed — faster twice, slower once, undecided three times — and a procedure
+that got to pick the best of thirteen strategies for each correlation time mostly picked a plain
+fixed angle. That is **C32**, and it stops well short of saying no adaptive scheme could ever win:
+a couple of the fixed schedules did come out best on the measured sample, and the fully optimal
+controller was never attempted.
+
+The useful message is the one in the heading. Responsiveness is real, measurable, and did not pay
+for itself inside the detection horizon. A sensor can behave intelligently and still raise the
+alarm later than a well-chosen fixed setting.
 
 Supporting these are the model's closed forms (C02, C03, C04, C07, C08, C21), the endpoint result
 that says only the two extreme readout angles are worth considering (C06), and the reproducibility
@@ -134,17 +160,19 @@ contribution to what it does with it.
 
 ## What remains open
 
-**Roadmap items.** **G** replaces a mutable global variable holding the operating point with an
-explicit, serialised configuration. This is **provenance-critical**, not housekeeping: while the
-operating point lives in a mutable global, a stored result does not carry the parameters it was
-computed at, and a checkpoint cannot refuse to be reused under the wrong ones. Two claims have
-already been withdrawn over calibration whose provenance could not be established, and G is what
-stops that recurring. **B** then adds a second operating point — a deliberate upper-bound stress
-test at the parity ceiling, not a realistic setting. **F** checks the comparator against an exact
-treatment of a subtlety in the noise model: the phase accumulated over a finite measurement window
-is not quite the simple process the simulator assumes. F is not expected to move any published
-number, but it has not been run, so that expectation is not a guarantee; what it certainly gates is
-how strongly the manuscript may word one claim.
+**Roadmap items.** Two remain. **D** takes the correlated oscillator residual — the phase drift
+between interrogations — into the four-outcome likelihood the servo actually sees, rather than the
+two-outcome idealisation used so far. **F** checks the comparator against an exact treatment of a
+subtlety in the noise model: the phase accumulated over a finite measurement window is not quite
+the simple process the simulator assumes. F is not expected to move any published number, but it
+has not been run, so that expectation is not a guarantee; what it certainly gates is how strongly
+the manuscript may word one claim. **G** (provenance), **B** (the second operating point) and **C**
+(posterior-driven action selection) are complete. G was **provenance-critical** rather than
+housekeeping: while the operating point lived in a mutable global variable, a stored result did
+not carry the parameters it was computed at, and a checkpoint could not refuse to be reused
+under the wrong ones. Two claims had already been withdrawn over calibration whose provenance
+could not be established. That is why it came first, and the record of C depends on it — every
+artifact in this roadmap names the revision and operating point that produced it.
 
 **Open claims.** One remains: **C24**, a small extra correlation effect whose proposed ceiling is
 not yet established. **C09**, **C11** and **C28** were open until 8 September because one of the
