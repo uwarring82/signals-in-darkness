@@ -33,9 +33,13 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 </div>
 
 The central result is a quantitative crossover: depending on how long the hidden noise remembers
-itself, either contrast loss or temporal correlation can reveal a change sooner. The project has
+itself, either contrast loss or temporal correlation can reveal a change sooner.
+[Tutorial 02 shows how the readout exposes those two clues](tutorials/02-from-coin-to-quantum-sensor.md).
+The project has
 also established where its simplified boundary ceases to be trustworthy, and when detecting a
-change is easier than identifying its cause. Finite-delay policy comparisons now cover two
+change is easier than identifying its cause.
+[Tutorial 03 works through that distinction](tutorials/03-detection-is-not-identification.md),
+starting with two causes that give the same one-shot probability. Finite-delay policy comparisons now cover two
 parameter sets: posterior sampling's actions respond to the data, but it does not produce a
 consistent detection-delay advantage. A greedy posterior policy updates its beliefs without a
 demonstrated control response. The correlated-residual and finite-window likelihood checks remain open.
@@ -46,7 +50,13 @@ demonstrated control response. The correlated-residual and finite-window likelih
 
 ## Learn through the coin
 
-**New to the subject?** Start with a coin toss. No physics required.
+**New to the subject?** Follow one question through four tutorials: how much evidence does a
+binary record contain, what does its ordering add, which quantum readout reveals the change,
+and when does that change identify a cause? Start with a coin toss; no physics is required.
+
+Already comfortable with the statistical setup? Begin with
+[the quantum readout in 02](tutorials/02-from-coin-to-quantum-sensor.md), then continue to
+[physical identification in 03](tutorials/03-detection-is-not-identification.md).
 
 - **[Tutorial 00 — How many coin tosses?](tutorials/00-how-many-coin-tosses.md)** — how much evidence
   one binary observation carries, and why “how many samples?” is an underspecified question.

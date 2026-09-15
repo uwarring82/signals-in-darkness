@@ -8,6 +8,15 @@ title: "01 — When the coin has memory"
   <a href="{{ '/tutorials/' | relative_url }}">Tutorials</a>
 </nav>
 
+<nav class="tutorial-sequence" aria-label="Tutorial sequence">
+<ol>
+<li><a href="{{ '/tutorials/00-how-many-coin-tosses.html' | relative_url }}"><span class="tutorial-step">00</span> Coin tosses</a></li>
+<li><a href="{{ '/tutorials/01-when-the-coin-has-memory.html' | relative_url }}" aria-current="page"><span class="tutorial-step">01</span> Memory</a></li>
+<li><a href="{{ '/tutorials/02-from-coin-to-quantum-sensor.html' | relative_url }}"><span class="tutorial-step">02</span> Quantum readout <span class="tutorial-draft">Draft</span></a></li>
+<li><a href="{{ '/tutorials/03-detection-is-not-identification.html' | relative_url }}"><span class="tutorial-step">03</span> Identification <span class="tutorial-draft">Draft</span></a></li>
+</ol>
+</nav>
+
 <div class="tutorial-note">
   <strong>Readable notebook view.</strong> Outputs below are the outputs committed with the
   notebook; calculation code is available behind each “Show calculation” control.
@@ -459,7 +468,8 @@ crossing fall?
 
 ---
 
-<nav class="tutorial-footer" aria-label="Tutorial navigation">
-  <a href="{{ '/tutorials/' | relative_url }}">All tutorials</a>
-  <a href="https://github.com/uwarring82/signals-in-darkness/blob/main/tutorials/01_when_the_coin_has_memory.ipynb">Notebook source</a>
+<nav class="tutorial-footer" aria-label="Continue reading">
+<a class="tutorial-previous" rel="prev" href="{{ '/tutorials/00-how-many-coin-tosses.html' | relative_url }}">← 00 · Coin tosses</a>
+<a class="tutorial-all" href="{{ '/tutorials/' | relative_url }}">All tutorials</a>
+<a class="tutorial-next" rel="next" href="{{ '/tutorials/02-from-coin-to-quantum-sensor.html' | relative_url }}">02 · Quantum readout →</a>
 </nav>

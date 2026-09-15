@@ -14,6 +14,10 @@ The project begins with one bit at a time. These readable versions preserve the 
 notebook outputs, keep the calculations available, and label teaching examples separately
 from research claims.
 
+Start with the coin in **00**, add memory in **01**, choose a quantum readout in **02**,
+then ask what the detected change means in **03**. If you already know the statistical
+setup, start with [the quantum readout]({{ '/tutorials/02-from-coin-to-quantum-sensor.html' | relative_url }}).
+
 <div class="tutorial-grid">
   <article class="tutorial-card">
     <a class="tutorial-card-image" href="{{ '/tutorials/00-how-many-coin-tosses.html' | relative_url }}"><img src="{{ '/assets/tutorials/00-how-many-coin-tosses-cell-07-output-00.png' | relative_url }}" alt="Preview from 00 — How many coin tosses?"></a>

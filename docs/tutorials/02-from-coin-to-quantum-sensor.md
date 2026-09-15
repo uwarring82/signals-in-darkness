@@ -8,6 +8,15 @@ title: "02 — From coin to quantum sensor"
   <a href="{{ '/tutorials/' | relative_url }}">Tutorials</a>
 </nav>
 
+<nav class="tutorial-sequence" aria-label="Tutorial sequence">
+<ol>
+<li><a href="{{ '/tutorials/00-how-many-coin-tosses.html' | relative_url }}"><span class="tutorial-step">00</span> Coin tosses</a></li>
+<li><a href="{{ '/tutorials/01-when-the-coin-has-memory.html' | relative_url }}"><span class="tutorial-step">01</span> Memory</a></li>
+<li><a href="{{ '/tutorials/02-from-coin-to-quantum-sensor.html' | relative_url }}" aria-current="page"><span class="tutorial-step">02</span> Quantum readout <span class="tutorial-draft">Draft</span></a></li>
+<li><a href="{{ '/tutorials/03-detection-is-not-identification.html' | relative_url }}"><span class="tutorial-step">03</span> Identification <span class="tutorial-draft">Draft</span></a></li>
+</ol>
+</nav>
+
 <div class="tutorial-note">
   <strong>Readable notebook view.</strong> Outputs below are the outputs committed with the
   notebook; calculation code is available behind each “Show calculation” control.
@@ -18,7 +27,7 @@ title: "02 — From coin to quantum sensor"
 
 # 02 — From coin to quantum sensor
 
-**Draft tutorial · 14 September 2026.** Read [notebook 01](https://github.com/uwarring82/signals-in-darkness/blob/main/tutorials/01_when_the_coin_has_memory.ipynb)
+**Draft tutorial · 14 September 2026.** Read [notebook 01]({{ '/tutorials/01-when-the-coin-has-memory.html' | relative_url }})
 first. This notebook connects its coin with memory to a quantum measurement, then compares two
 readout settings at the project's two parameter sets.
 
@@ -355,12 +364,13 @@ cost must be stated.
 3. Suppose the dark-outcome probability rises. Give two physical explanations consistent with
    that observation before reading on.
 
-The last question opens [notebook 03 — Detection is not identification](https://github.com/uwarring82/signals-in-darkness/blob/main/tutorials/03_detection_is_not_identification.ipynb).
+The last question opens [notebook 03 — Detection is not identification]({{ '/tutorials/03-detection-is-not-identification.html' | relative_url }}).
 A changed probability can establish that the old model failed while leaving the cause ambiguous.
 
 ---
 
-<nav class="tutorial-footer" aria-label="Tutorial navigation">
-  <a href="{{ '/tutorials/' | relative_url }}">All tutorials</a>
-  <a href="https://github.com/uwarring82/signals-in-darkness/blob/main/tutorials/02_from_coin_to_quantum_sensor.ipynb">Notebook source</a>
+<nav class="tutorial-footer" aria-label="Continue reading">
+<a class="tutorial-previous" rel="prev" href="{{ '/tutorials/01-when-the-coin-has-memory.html' | relative_url }}">← 01 · Memory</a>
+<a class="tutorial-all" href="{{ '/tutorials/' | relative_url }}">All tutorials</a>
+<a class="tutorial-next" rel="next" href="{{ '/tutorials/03-detection-is-not-identification.html' | relative_url }}">03 · Identification →</a>
 </nav>

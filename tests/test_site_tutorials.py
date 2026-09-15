@@ -29,6 +29,40 @@ def test_every_notebook_is_registered_once_on_the_site():
     assert set(sources) == {p.name for p in (ROOT / "tutorials").glob("*.ipynb")}
 
 
+def test_tutorial_reading_path_stays_on_the_site_and_marks_the_current_lesson():
+    for index, spec in enumerate(build_site.TUTORIALS):
+        page = (ROOT / "docs/tutorials" / f"{spec['slug']}.md").read_text()
+        sequence = re.search(r'<nav class="tutorial-sequence".*?</nav>', page, re.S).group()
+        footer = re.search(r'<nav class="tutorial-footer".*?</nav>', page, re.S).group()
+        assert sequence.count('aria-current="page"') == 1
+        current_link = re.search(r'<a href="([^"]+)" aria-current="page">', sequence).group(1)
+        assert f"/tutorials/{spec['slug']}.html" in current_link
+        for lesson in build_site.TUTORIALS:
+            assert f"/tutorials/{lesson['slug']}.html" in sequence
+        assert ('rel="prev"' in footer) == (index > 0)
+        assert ('rel="next"' in footer) == (index + 1 < len(build_site.TUTORIALS))
+        if index:
+            assert build_site.TUTORIALS[index - 1]['slug'] + '.html' in footer
+        if index + 1 < len(build_site.TUTORIALS):
+            assert build_site.TUTORIALS[index + 1]['slug'] + '.html' in footer
+        else:
+            assert '/where-we-are.html' in footer
+
+
+def test_notebook_links_use_readable_routes_while_evidence_keeps_its_repository_link():
+    spec = build_site.TUTORIALS[2]
+    for prefix in ('', './', '../tutorials/'):
+        markdown = f"[Continue]({prefix}{spec['source']}#3-where-the-useful-channel-changes)"
+        rendered = build_site._rewrite_notebook_links(markdown, build_site.TUTORIALS[1]['source'])
+        assert f"/tutorials/{spec['slug']}.html" in rendered
+        assert '#3-where-the-useful-channel-changes' in rendered
+        assert 'github.com' not in rendered
+    evidence = build_site._rewrite_notebook_links('[Claim](../ledgers/status.yaml)', spec['source'])
+    assert build_site.REPOSITORY_URL + '/blob/main/ledgers/status.yaml' in evidence
+    external = '[Original](https://example.org/02_from_coin_to_quantum_sensor.ipynb)'
+    assert build_site._rewrite_notebook_links(external, spec['source']) == external
+
+
 def test_each_notebook_has_a_current_readable_page():
     for spec in build_site.TUTORIALS:
         source, notebook = _notebook(spec)

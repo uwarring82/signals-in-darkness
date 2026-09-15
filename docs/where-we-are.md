@@ -59,6 +59,9 @@ correlation time and the drift amplitude, and the boundary between them can be c
 established in the Ramsey-noise-spectroscopy literature, and the project cites it. What is ours is
 the sequential-detection boundary: the crossover locus, and how it moves.
 
+[Work through the readout comparison in tutorial 02](tutorials/02-from-coin-to-quantum-sensor.md).
+Its teaching examples distinguish the per-shot comparator from the physical map and measured delays.
+
 **C23 — and the *simplified* version of that boundary knows where it stops being trustworthy.**
 There are two crossover curves in play, and keeping them apart matters. C05's boundary is computed
 with the **exact** comparator. There is also a **leading-order** curve — a closed-form approximation
@@ -96,6 +99,9 @@ two explanations at all, and no amount of averaging helps. Against a **shape-con
 a baseline restricted to a simple parametric form — a small amount of information survives, so the
 question becomes answerable but slow. The distinction is not a technicality: one says impossible, the
 other says expensive.
+
+[Tutorial 03 constructs the ambiguity and scans interrogation time](tutorials/03-detection-is-not-identification.md).
+It explains the baseline assumptions and the direction of the numerical information bounds.
 
 **C30, C31, C32 — a sensor can respond intelligently without detecting sooner.** The obvious next
 move is to let the detector watch its own data and choose where to read next, instead of following
@@ -233,12 +239,12 @@ of kind behind what looked like a change of degree.
 
 ## Where to go next
 
-- **[The tutorial sequence](../tutorials/)** — starts with a coin toss and no physics.
-  [Notebook 00](../tutorials/00_how_many_coin_tosses.ipynb) asks how many tosses it takes to notice a
-  change; [notebook 01](../tutorials/01_when_the_coin_has_memory.ipynb) asks what changes when the
+- **[The tutorial sequence](tutorials/index.md)** — starts with a coin toss and no physics.
+  [Tutorial 00](tutorials/00-how-many-coin-tosses.md) asks how many tosses it takes to notice a
+  change; [tutorial 01](tutorials/01-when-the-coin-has-memory.md) asks what changes when the
   coin remembers.
-- **[Notebook 02](../tutorials/02_from_coin_to_quantum_sensor.ipynb)** and
-  **[notebook 03](../tutorials/03_detection_is_not_identification.ipynb)** — executed drafts connect
+- **[Tutorial 02](tutorials/02-from-coin-to-quantum-sensor.md)** and
+  **[tutorial 03](tutorials/03-detection-is-not-identification.md)** — executed drafts connect
   the coin to the quantum readout, then distinguish detection from physical identification.
 - **[The status table](status.md)** — every claim, its standing, and its errata.
 - **[The roadmap](roadmap.md)** — what is planned and what gates what.

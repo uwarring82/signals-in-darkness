@@ -22,6 +22,7 @@ import hashlib
 import html
 import json
 import pathlib
+import posixpath
 import re
 import sys
 
@@ -34,6 +35,7 @@ TUTORIALS = (
     {
         'source': '00_how_many_coin_tosses.ipynb',
         'slug': '00-how-many-coin-tosses',
+        'label': 'Coin tosses',
         'question': 'How many tosses does it take to notice that a coin changed?',
         'summary': ('Start with independent yes-or-no observations. Compare a fixed test with a '
                     'sequential alarm, then see why the answer depends on which delay you mean '
@@ -42,6 +44,7 @@ TUTORIALS = (
     {
         'source': '01_when_the_coin_has_memory.ipynb',
         'slug': '01-when-the-coin-has-memory',
+        'label': 'Memory',
         'question': 'What changes when the coin remembers its previous tosses?',
         'summary': ('Two records can have the same number of heads and different ordering. This '
                     'tutorial shows how correlation becomes evidence, why count-only power can '
@@ -50,6 +53,7 @@ TUTORIALS = (
     {
         'source': '02_from_coin_to_quantum_sensor.ipynb',
         'slug': '02-from-coin-to-quantum-sensor',
+        'label': 'Quantum readout',
         'question': 'How does a quantum readout turn phase noise into balance or memory?',
         'summary': ('Explore the Ramsey fringe and compare the two readouts at both parameter sets, then '
                     'separate information per shot from calibrated detection delay.'),
@@ -58,6 +62,7 @@ TUTORIALS = (
     {
         'source': '03_detection_is_not_identification.ipynb',
         'slug': '03-detection-is-not-identification',
+        'label': 'Identification',
         'question': 'When does changed contrast identify a cause?',
         'summary': ('Construct two causes with the same one-shot probability, scan interrogation '
                     'time, and see how calibration assumptions separate impossible from difficult.'),
@@ -126,25 +131,60 @@ def _title_from_notebook(notebook, fallback):
 
 
 def _rewrite_notebook_links(markdown, source_name):
-    """Route notebook links outside docs/ to the corresponding repository file."""
-    source_dir = pathlib.PurePosixPath('tutorials')
+    """Keep tutorial-to-tutorial reading on the site; link evidence back to the repository."""
+    source_dir = pathlib.PurePosixPath('tutorials', source_name).parent
+    routes = {f'tutorials/{spec["source"]}': spec['slug'] for spec in TUTORIALS}
 
     def replace(match):
         target = match.group(1)
-        if not target.startswith('../'):
+        if target.startswith(('#', '/', '//')) or re.match(r'[a-zA-Z][\w+.-]*:', target):
             return match.group(0)
-        path = source_dir.joinpath(target)
-        # PurePath does not collapse '..', and importing posixpath solely for this is needless.
-        parts = []
-        for part in path.parts:
-            if part == '..':
-                if parts:
-                    parts.pop()
-            elif part != '.':
-                parts.append(part)
-        return '](' + REPOSITORY_URL + '/blob/main/' + '/'.join(parts) + ')'
+        path, marker, fragment = target.partition('#')
+        resolved = posixpath.normpath(str(source_dir / path))
+        suffix = marker + fragment
+        if resolved in routes:
+            return "]({{ '/tutorials/" + routes[resolved] + ".html' | relative_url }}" + suffix + ')'
+        if target.startswith('../'):
+            return '](' + REPOSITORY_URL + '/blob/main/' + resolved + suffix + ')'
+        return match.group(0)
 
-    return re.sub(r'\]\((\.\./[^)]+)\)', replace, markdown)
+    return re.sub(r'\]\(([^)]+)\)', replace, markdown)
+
+
+def render_tutorial_sequence(current_source):
+    """One ordered reading path, with the current lesson and draft status visible."""
+    out = ['<nav class="tutorial-sequence" aria-label="Tutorial sequence">', '<ol>']
+    for spec in TUTORIALS:
+        current = ' aria-current="page"' if spec['source'] == current_source else ''
+        draft = (' <span class="tutorial-draft">Draft</span>'
+                 if spec.get('status', '').lower().startswith('draft') else '')
+        out.append(
+            f'<li><a href="{{{{ \'/tutorials/{spec["slug"]}.html\' | relative_url }}}}"{current}>'
+            f'<span class="tutorial-step">{spec["slug"][:2]}</span> '
+            f'{html.escape(spec["label"])}{draft}</a></li>')
+    out.extend(('</ol>', '</nav>', ''))
+    return '\n'.join(out)
+
+
+def render_tutorial_footer(spec):
+    index = next(i for i, item in enumerate(TUTORIALS) if item['source'] == spec['source'])
+    out = ['<nav class="tutorial-footer" aria-label="Continue reading">']
+    if index:
+        previous = TUTORIALS[index - 1]
+        out.append(f'<a class="tutorial-previous" rel="prev" '
+                   f'href="{{{{ \'/tutorials/{previous["slug"]}.html\' | relative_url }}}}">'
+                   f'← {previous["slug"][:2]} · {html.escape(previous["label"])}</a>')
+    out.append('<a class="tutorial-all" href="{{ \'/tutorials/\' | relative_url }}">All tutorials</a>')
+    if index + 1 < len(TUTORIALS):
+        following = TUTORIALS[index + 1]
+        out.append(f'<a class="tutorial-next" rel="next" '
+                   f'href="{{{{ \'/tutorials/{following["slug"]}.html\' | relative_url }}}}">'
+                   f'{following["slug"][:2]} · {html.escape(following["label"])} →</a>')
+    else:
+        out.append('<a class="tutorial-next" href="{{ \'/where-we-are.html\' | relative_url }}">'
+                   'Return to the research state →</a>')
+    out.append('</nav>')
+    return '\n'.join(out)
 
 
 def _render_output(output, asset_name, cell_number):
@@ -196,6 +236,7 @@ def render_notebook(spec):
         '  <a href="{{ \'/tutorials/\' | relative_url }}">Tutorials</a>',
         '</nav>',
         '',
+        render_tutorial_sequence(spec['source']),
         '<div class="tutorial-note">',
         '  <strong>Readable notebook view.</strong> Outputs below are the outputs committed with the',
         '  notebook; calculation code is available behind each “Show calculation” control.',
@@ -238,10 +279,7 @@ def render_notebook(spec):
     page.extend((
         '---',
         '',
-        '<nav class="tutorial-footer" aria-label="Tutorial navigation">',
-        '  <a href="{{ \'/tutorials/\' | relative_url }}">All tutorials</a>',
-        f'  <a href="{REPOSITORY_URL}/blob/main/tutorials/{spec["source"]}">Notebook source</a>',
-        '</nav>',
+        render_tutorial_footer(spec),
         '',
     ))
     assert calculation, f'{spec["source"]}: no code cells rendered'
@@ -275,6 +313,10 @@ def render_tutorials():
         'The project begins with one bit at a time. These readable versions preserve the committed',
         'notebook outputs, keep the calculations available, and label teaching examples separately',
         'from research claims.',
+        '',
+        'Start with the coin in **00**, add memory in **01**, choose a quantum readout in **02**,',
+        'then ask what the detected change means in **03**. If you already know the statistical',
+        'setup, start with [the quantum readout]({{ \'/tutorials/02-from-coin-to-quantum-sensor.html\' | relative_url }}).',
         '',
         '<div class="tutorial-grid">',
     ]
