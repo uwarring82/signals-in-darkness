@@ -1,51 +1,54 @@
-# Signals in Darkness — note 28 (15 Sept 2026, DRAFT r3): roadmap F protocol for review
+# Signals in Darkness — note 28 (15 Sept 2026, DRAFT r4): roadmap F protocol for review
 
-**Status:** DRAFT FOR REVIEW, revision 3, Gate 0 of the approved sequence. Revision 1 is commit
-`0a3584b` and revision 2 is `4f0b390`. The package is:
+**Status:** DRAFT FOR REVIEW, revision 4. The revisions so far are `0a3584b`, `4f0b390` and
+`a327ab5`. The package is:
 - this note;
-- [analysis/protocol_F.json](../analysis/protocol_F.json), with `status` DRAFT, `draft_revision` 3 and
+- [analysis/protocol_F.json](../analysis/protocol_F.json), with `status` DRAFT, `draft_revision` 4 and
   `digest` null;
-- [tools/build_protocol_F.py](../tools/build_protocol_F.py) and
-  [tests/test_protocol_F_draft.py](../tests/test_protocol_F_draft.py);
-- the execution-stack definition in [analysis/stack_F/](../analysis/stack_F/conda-osx-arm64.txt), with
-  both reviewed dry-run solves;
+- [tools/build_protocol_F.py](../tools/build_protocol_F.py), which builds the protocol, checks it and,
+  once approved, freezes it;
+- [tests/test_protocol_F_draft.py](../tests/test_protocol_F_draft.py);
+- the execution stack in [analysis/stack_F/](../analysis/stack_F/conda-osx-arm64.txt), now installed and
+  locked (commit `009deb5`);
 - [tools/lock_stack_F.py](../tools/lock_stack_F.py) and [tests/test_lock_stack_F.py](../tests/test_lock_stack_F.py).
 
-The note replaces [note 26](2026-09-15-note-26-F-plan-draft.md) as the proposed plan, and adopts
-[note 27 §3](2026-09-15-note-27-C08-fold-erratum-and-F-review.md#3-preferred-decisions-for-the-revised-plan).
+**The freeze is not yet done.** You approved the Gate-1 freeze once the bounded wording
+correction passed its checks. That correction does pass. But checking revision 4 on the newly
+installed execution stack exposed a separate defect in the design evidence, and fixing it
+changed protocol content you had not reviewed (§0). The freeze tooling is ready and tested on
+temporary copies, and the freeze waits for your confirmation.
 
 **What has and has not happened:**
-- **Ran:** two approved conda dry-run solves. They downloaded channel metadata into conda's cache
-  and installed nothing.
-- **Not run:** no ARMA likelihood evaluation, no latent-record simulation, no pilot and no
-  package installation.
-- **Still gated:** freezing (Gate 1), implementation, installation, the numerical checks with
-  pilots, and evaluation each keep their own approval. A driver must refuse to run anything from
-  the protocol while its status starts with DRAFT.
+- **Ran:** two approved dry-run solves, and the approved installation with its locking.
+- **Not run:** no ARMA likelihood evaluation, no latent-record simulation, no numerical check
+  from Gate 3, no pilot and no evaluation.
 
-**Evidence snapshot:** `4f0b390`. Every protocol number comes from the builder.
-`python tools/build_protocol_F.py --check` and `--markdown` are both read-only.
+**Evidence snapshot:** `009deb5`. `python tools/build_protocol_F.py --check` and `--markdown` are
+read-only.
 
 ## 0. Review history
 
-### Revision 3
+### Revision 4
 
-| Review item | Change |
+| Item | Change |
 |---|---|
-| Python patch: option (b) approved | The spec pins `python=3.12.14`. The protocol's `execution_stack.pins`, its stop condition ("python is not 3.12.14") and the driver refusal all use the exact patch. The second dry-run solve, with that pin, is recorded and is now the reviewed solve; the first is kept as superseded evidence (§10). A test ties the recorded solve's metadata to the protocol's solve command and checks it against every stop condition. |
-| Wording contradicted mixed outcomes | The OPEN and FAILED caveats no longer confine validation to C04 once any finite-window validation exists. Before evaluation, note 27's sentence is used verbatim. After evaluation, the caveat reports three things separately: the validation scope, the campaign status and the validated, failed and unresolved tuples. Fixtures cover both of your examples: E3 VALIDATED, E4 FAILED, E5 VALIDATED closes FAILED, and E3 VALIDATED, E4 UNRESOLVED, E5 VALIDATED stays OPEN. Both keep the E3 and E5 validations (§8). The numerical closure rule is unchanged. |
+| Scope correction (your request) | After evaluation, the scope sentence speaks only about the mandatory points. If K1 validated at any of them: "At the mandatory points E3–E5, the exact-r_k comparator (K1) is validated … at {validated tuples}." Otherwise: "No mandatory point E3–E5 validated K1 against the finite-window binary likelihood." Next comes "C04 supplies the earlier point-sampled validation; results at the conditional boundary points E1/E2 are reported separately." The pre-evaluation caveat and the numerical closure rule are unchanged (§8). |
+| Your fixture | E1/E2 VALIDATED with E3–E5 FAILED closes FAILED. The caveat then says no mandatory point validated and names neither boundary point. A further test runs all 64 combinations of mandatory verdicts, with and without boundary verdicts, and requires that no text confines validation to C04. |
+| **Unrequested: design evidence recorded as bounds** | On the installed execution stack (`sid-f`: Python 3.12.14, NumPy 2.4.4, SciPy 1.17.1, OpenBLAS), `--check` failed and two tests failed. Exactly one value differed: the total variation between π and the Gaussian weights at E1 on M121/L7, which is 9.878 × 10⁻¹³ on the drafting stack and 9.997 × 10⁻¹³ on `sid-f`. That is a 1.2 % relative and 1.2 × 10⁻¹⁴ absolute difference in eigenvector roundoff. The builder had recorded noise as if it were a reproducible value. It now records bounds: total variation below 10⁻⁶ (true everywhere, observed 2.1–4.7 × 10⁻⁷ on the L = 5 grids) and below 10⁻¹⁰ (true on both L = 7 grids, observed 0.99–2.05 × 10⁻¹²). Series-convergence changes, at most 9.9 × 10⁻¹⁴, are also recorded as a flag within 10⁻⁶. A new guard test rejects any nonzero design-evidence float below 10⁻⁹; it would have caught the defect. Every protocol rule, point, comparator value and constant is unchanged. |
+| Freeze tooling | `--freeze` accepts only a draft that matches its builder. It sets `status` and `frozen`, and computes the digest with the convention of `tools/freeze_ladder_selections.py`. Tests on temporary copies cover the frozen result verifying its digest, a tampered copy failing, a second freeze and any later draft write being refused, and a modified draft being refused. |
+| Your bookkeeping correction | Revision 3 counted 41 protocol tests and 7 lock tests, not the 43 and 5 its §12 stated. Revision 4 has 49 protocol tests (§12). |
+| My own fixture error | The first freeze-tooling test used `benchmark_ladder_C.json` as its digest fixture, and it failed: that file's stored digest does not recompute under this convention. The test now uses three artifacts that do. See §12 for what this shows about three roadmap-C artifacts. |
 
-### Revision 2 (`4f0b390`)
+### Earlier revisions
 
-- **NC6:** now compares W- and 2W-history filter passes on the same final 50 000 observations, and
-  the extra pass is costed.
-- **Stopping:** every run stops at start + min(1.25 × prediction, 7200 s, remaining aggregate), and
-  Gate 3 has an enforced 1800 s deadline.
-- **Builder:** refuses to overwrite a frozen or unreadable protocol, and verification is read-only.
-- **Stack definition:** one F-specific conda definition and channel policy serves both solve and
-  installation, with OpenBLAS pinned and pip locked separately. Installation must reproduce the
-  reviewed solve exactly.
-- **Wording:** separate caveats by outcome, superseded in revision 3.
+- **r3 (`a327ab5`):**
+  - Python pinned to 3.12.14, with the pinned dry-run solve recorded.
+  - Separate caveat parts for scope, status and tuples. Revision 4 narrows the scope part.
+- **r2 (`4f0b390`):**
+  - NC6 compares filters on the same final observations.
+  - Every run stops at the earliest of its caps, and Gate 3 has a deadline.
+  - The builder refuses to overwrite a frozen protocol.
+  - One definition and channel policy for solve and installation, with OpenBLAS and a pip lock.
 
 ## 1. How note 27's findings are resolved
 
@@ -100,9 +103,10 @@ observation 1, and R_seed is the mean of ℓ_n over n = W+1 … W+n.
 estimator. Separately, started from `make_hmm`'s Gaussian weights with W = 0, it must reproduce
 `sid_lib.hmm_rate` to relative 10⁻¹².
 
-**How much initialisation matters on these grids.** The total variation between π and the
-Gaussian weights is 2–4 × 10⁻⁷ at M = 121, L = 5, and at most 2 × 10⁻¹² on the evaluation grid.
-The innovation standard deviation spans at least 2.84 grid spacings, and at least 4.06 on the
+**How much initialisation matters, recorded as bounds since revision 4.** At every point the
+total variation between π and the Gaussian weights is below 10⁻⁶ on all four grids, and below
+10⁻¹⁰ on both L = 7 grids. On those L = 7 grids it is roundoff, as revision 4 found. The
+innovation standard deviation spans at least 2.84 grid spacings, and at least 4.06 on the
 evaluation grid.
 
 ## 4. Simulator and points
@@ -219,50 +223,53 @@ No simultaneous coverage is claimed.
   remains OPEN.
 - **Licensed statements:** K1 and K2 statements are licensed only at their own validated tuples.
 - **C08's boundary:** reported separately. A statement there needs E1 and E2 both evaluated, with
-  the comparator VALIDATED at both, whatever F's closure.
+  the comparator VALIDATED at both, whatever F's closure. Boundary verdicts never enter the status.
 
-**Wording, revised in revision 3.** The campaign's status never decides what validation is claimed.
+**Wording, revised in revision 4.**
 
 *Before evaluation*, note 27's caveat is used verbatim. It ends "Binary-likelihood validation
 remains confined to C04's tested point-sampled exact-r_k comparator; F remains open."
 
-*After evaluation*, the caveat is built from four parts, in order:
+*After evaluation*, the caveat is built from five parts, in order:
 
-1. Note 27's statement that C08's archived implementation divides the first-lag correlation by F(u),
-   and that the archived rate map is not the finite-window comparator.
-2. A scope sentence chosen by whether K1 is VALIDATED at *any* mandatory point:
-   - with at least one: "The exact-r_k comparator (K1) is validated against the exact finite-window
-     ARMA(1,1) binary likelihood within ±5 % (pointwise 95 % intervals) at {validated tuples}. At
-     every other input its binary-likelihood validation remains confined to C04's tested
-     point-sampled cases."
-   - with none: "Binary-likelihood validation of the exact-r_k comparator remains confined to C04's
-     tested point-sampled cases."
-3. The status sentence: "Roadmap F remains OPEN.", "Roadmap F closed VALIDATED." or "Roadmap F closed
+1. Note 27's statement that C08's archived implementation divides the first-lag correlation by
+   F(u), and that the archived rate map is not the finite-window comparator.
+2. A scope sentence about the mandatory points only:
+   - with at least one mandatory validation: "At the mandatory points E3–E5, the exact-r_k
+     comparator (K1) is validated against the exact finite-window ARMA(1,1) binary likelihood within
+     ±5 % (pointwise 95 % intervals) at {validated tuples}."
+   - with none: "No mandatory point E3–E5 validated K1 against the finite-window binary likelihood."
+3. "C04 supplies the earlier point-sampled validation; results at the conditional boundary points
+   E1/E2 are reported separately."
+4. The status sentence: "Roadmap F remains OPEN.", "Roadmap F closed VALIDATED." or "Roadmap F closed
    FAILED."
-4. The tuple report: "K1 at the mandatory points: VALIDATED at …; FAILED at …; UNRESOLVED or without a
-   verdict at …."
+5. The tuple report for E3–E5: "K1 at the mandatory points: VALIDATED at …; FAILED at …; UNRESOLVED
+   or without a verdict at …."
 
-The reference implementation is `closure_wording` in the builder, and the protocol records every
-part. Generated text for your two examples, omitting the C08 opening:
+The campaign status never decides the scope sentence, and E1/E2 verdicts never enter this caveat.
+Generated text, omitting the C08 opening:
 
-- **E3 VALIDATED, E4 FAILED, E5 VALIDATED:** "The exact-r_k comparator (K1) is validated against the
-  exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % intervals) at E3
-  (C, s, u, c/tau_c) = (0.40, 0.50, 0.10, 0.15) and E5 (C, s, u, c/tau_c) = (0.40, 1.00, 1.00, 1.05).
-  At every other input its binary-likelihood validation remains confined to C04's tested
-  point-sampled cases. Roadmap F closed FAILED. K1 at the mandatory points: VALIDATED at E3
-  (…) and E5 (…); FAILED at E4 (C, s, u, c/tau_c) = (0.40, 0.50, 0.30, 0.35); UNRESOLVED or without a
-  verdict at none."
-- **E3 VALIDATED, E4 UNRESOLVED, E5 VALIDATED:** the same scope sentence, then "Roadmap F remains
-  OPEN.", then "VALIDATED at E3 (…) and E5 (…); FAILED at none; UNRESOLVED or without a verdict at E4
-  (C, s, u, c/tau_c) = (0.40, 0.50, 0.30, 0.35)."
+- **E1/E2 VALIDATED, E3–E5 FAILED (your fixture):** "No mandatory point E3–E5 validated K1 against
+  the finite-window binary likelihood. C04 supplies the earlier point-sampled validation; results at
+  the conditional boundary points E1/E2 are reported separately. Roadmap F closed FAILED. K1 at the
+  mandatory points: VALIDATED at none; FAILED at E3 (C, s, u, c/tau_c) = (0.40, 0.50, 0.10, 0.15),
+  E4 (C, s, u, c/tau_c) = (0.40, 0.50, 0.30, 0.35) and E5 (C, s, u, c/tau_c) = (0.40, 1.00, 1.00,
+  1.05); UNRESOLVED or without a verdict at none."
+- **E3 VALIDATED, E4 FAILED, E5 VALIDATED:** "At the mandatory points E3–E5, the exact-r_k comparator
+  (K1) is validated against the exact finite-window ARMA(1,1) binary likelihood within +/- 5 %
+  (pointwise 95 % intervals) at E3 (C, s, u, c/tau_c) = (0.40, 0.50, 0.10, 0.15) and E5 (C, s, u,
+  c/tau_c) = (0.40, 1.00, 1.00, 1.05). C04 supplies the earlier point-sampled validation; results at
+  the conditional boundary points E1/E2 are reported separately. Roadmap F closed FAILED. …"
 
 **Tests for the wording.**
 - The pre-evaluation text must match note 27 verbatim.
-- In both mixed examples, the E3 and E5 validations are kept and C04 is not claimed as the only
-  validation.
-- Without any validated tuple, the scope sentence stays with C04.
-- A fully validated outcome lists all three tuples.
-- The status function refuses missing or unknown verdicts.
+- No post-evaluation text confines validation to C04, for any mandatory outcome with or without
+  boundary verdicts.
+- Your fixture names neither boundary point.
+- Both mixed examples keep their mandatory validations.
+- A fully validated outcome lists all three mandatory tuples.
+- The status function ignores boundary verdicts, and refuses unknown points, unknown verdicts or a
+  missing mandatory verdict.
 
 Any analysis the protocol does not specify is post-unblinding and cannot change a verdict.
 
@@ -281,98 +288,49 @@ Any analysis the protocol does not specify is post-unblinding and cannot change 
 - **Stop rule:** every evaluation run stops at **start + min(1.25 × prediction, 7200 s, remaining
   aggregate seconds)**. A 7200 s prediction stops at 7200 s, and a stopped run is INCOMPLETE with no
   verdict.
-- **Shot counts:**
-  - **Pilot:** 16(W + 125 000) evaluation-grid steps per point.
-  - **NC5/NC6, per check seed:** (2W + 50 000) + (W + 50 000) steps on M241/L7, and W + 50 000 on
-    each check grid.
 
-## 10. Execution stack: definition, reviewed solves and locking plan
+## 10. Execution stack: installed and locked
 
-**Machine.** Apple M1 Pro, arm64. The available conda is 22.9.0 as an **osx-64** build, whose
-configured channel is `defaults`.
-
-**One definition for both steps.**
+**Definition.**
 - **conda part:** [analysis/stack_F/conda-osx-arm64.txt](../analysis/stack_F/conda-osx-arm64.txt)
   contains `python=3.12.14`, `numpy=2.4.4`, `scipy=1.17.1`, `matplotlib=3.10.8`, `pytest=9.0.3`,
   `pyyaml=6.0.3`, `pip` and `libblas=*=*openblas`.
 - **pip part:** [analysis/stack_F/pip-requirements.txt](../analysis/stack_F/pip-requirements.txt)
   contains `cffconvert==2.0.0`.
 
-Solve and installation run the same command. The installation replaces `--dry-run --json`
-with `-y`:
+Solve and installation run the same command, differing only in `--dry-run --json` versus `-y`.
+The reviewed solve is
+[conda-dry-run-osx-arm64-python3.12.14.json](../analysis/stack_F/conda-dry-run-osx-arm64-python3.12.14.json):
+77 packages, all from conda-forge.
 
-```sh
-CONDA_SUBDIR=osx-arm64 conda create --dry-run --json -n sid-f \
-    --override-channels -c conda-forge --no-default-packages --file analysis/stack_F/conda-osx-arm64.txt
-```
+**Installation, approved after revision 3.** Every stop condition passed (commit `009deb5`):
 
-**The reviewed solve, with Python pinned,** run 2026-09-15T16:40:36Z in 149 s with exit 0:
-[conda-dry-run-osx-arm64-python3.12.14.json](../analysis/stack_F/conda-dry-run-osx-arm64-python3.12.14.json)
-and its [metadata](../analysis/stack_F/conda-dry-run-osx-arm64-python3.12.14.meta.txt).
-- **Scope:** 77 packages, all from conda-forge; 57 osx-arm64 and 20 noarch.
-- **Stop conditions:** none triggered.
+| Step | Result |
+|---|---|
+| 1. `conda create -y` with the reviewed command | exit 0 in 225 s ([metadata](../analysis/stack_F/install-osx-arm64.meta.txt)) |
+| 2. Installed set against the reviewed solve | identical, 77 of 77 by name, version and build; all conda-forge; 57 osx-arm64 and 20 noarch; Python 3.12.14, NumPy 2.4.4, SciPy 1.17.1, `libblas` 11_h51639a9_openblas, `libopenblas` 0.3.34 (OpenMP build) ([conda-list.json](../analysis/stack_F/conda-list.json)) |
+| 3. Architecture | `python3.12` is a native arm64 Mach-O executable |
+| 4. pip resolution report | 13 distributions ([pip-report.json](../analysis/stack_F/pip-report.json)); `python-dateutil` was already satisfied by conda |
+| 5. Hash-pinned lock | written by `tools/lock_stack_F.py`; no entry is conda-provided, and every entry has a sha256 ([pip-lock.txt](../analysis/stack_F/pip-lock.txt)) |
+| 6. pip install | `--no-deps --require-hashes` installed exactly the locked set; `pip check` reports no broken requirements |
+| 7. Locks and record | [conda-osx-arm64.lock](../analysis/stack_F/conda-osx-arm64.lock) (77 URLs with md5); [pip-installed.json](../analysis/stack_F/pip-installed.json) (13 pip, 24 conda, 3 without an installer field); [stack-record.json](../analysis/stack_F/stack-record.json), written with all five thread variables at 1, records Python 3.12.14, arm64 and OpenBLAS |
 
-| Package | Version | Build |
-|---|---|---|
-| python | **3.12.14** | hd05a0c4_3_cpython |
-| libpython | 3.12.14 | h4e5ec87_3_cpython |
-| numpy | 2.4.4 | py312ha003a3f_0 |
-| scipy | 1.17.1 | py312h4519d97_1 |
-| matplotlib | 3.10.8 | py312h1f38498_0 |
-| pytest | 9.0.3 | pyhc364b38_1 |
-| pyyaml | 6.0.3 | py312h04c11ed_1 |
-| pip | 26.2.1 | pyh8b19718_0 |
-| libblas / libcblas / liblapack | 3.11.0 | 11_…_openblas |
-| libopenblas | 0.3.34 | openmp_h5e6e99c_1 |
-| llvm-openmp | 23.1.1 | hdb3d66b_0 |
+**Disclosure.** `docopt 0.6.2` is the only source distribution. pip built it locally with build
+isolation and fetched `setuptools 84.0.0` without a hash pin. The built wheel's hash is
+recorded in [pip-docopt-build.txt](../analysis/stack_F/pip-docopt-build.txt). This affects only
+the pip tooling for `cffconvert`, not the numerical stack.
 
-**Against the first solve** (2026-09-15T14:41:15Z, unpinned
-[conda-dry-run-osx-arm64.json](../analysis/stack_F/conda-dry-run-osx-arm64.json), now superseded):
-- **NumPy, SciPy and OpenBLAS:** identical builds.
-- **Added:** `libpython`.
-- **Removed:** `xz`, `xz-tools`, `xz-gpl-tools` and `liblzma-devel`. The newer Python depends on
-  `liblzma` instead.
-- **Changed:** Python, 3.12.0 → 3.12.14. Separately, `libgcc`, `libgfortran` and `libgfortran5` kept
-  version 16.2.0 but moved from build 4 to build 5.
-
-Two things remain unexplained. The build-number change came between two solves about two
-hours apart, and whether it follows from new uploads or from the changed Python is not
-established. Either way it is the drift the installed-set comparison exists to catch. Why
-`python=3.12` alone resolved to 3.12.0 is also still not established; the explicit pin makes that
-question moot for this stack.
-
-**OpenBLAS is the OpenMP build,** so `OMP_NUM_THREADS` and `OPENBLAS_NUM_THREADS` must both be 1,
-as the protocol already requires for all five thread variables.
-
-**Locking plan, after installation is approved.** Each step stops on its stop condition.
-1. **Install** with the command above, using `-y` in place of `--dry-run --json`.
-2. **Compare** `conda list -n sid-f --json`, saved as `conda-list.json`, with the reviewed pinned
-   solve by name, version and build. Stop on any difference.
-3. **Verify the architecture:** `file $ENV/bin/python3.12` must report arm64.
-4. **pip resolution without installing:**
-   `pip install --dry-run --no-cache-dir --report analysis/stack_F/pip-report.json -r analysis/stack_F/pip-requirements.txt`.
-5. **pip lock:** `tools/lock_stack_F.py pip-lock` writes the hash-pinned `pip-lock.txt`. It refuses
-   if pip would replace a conda distribution, or if any entry lacks a sha256.
-6. **pip install:** `pip install --no-deps --require-hashes --no-cache-dir -r analysis/stack_F/pip-lock.txt`.
-7. **Record and lock:** `conda list --explicit --md5 > conda-osx-arm64.lock`;
-   `pip list --format=json --verbose > pip-installed.json`; and `tools/lock_stack_F.py record` with
-   the five thread variables set, writing `stack-record.json`. All are committed before Gate 3.
-
-**Installation stop conditions, from the protocol.**
-- The installed set differs from the reviewed solve.
-- Any channel other than conda-forge.
-- A subdir other than osx-arm64 or noarch.
-- A `libblas` build without `openblas`.
-- **A Python other than 3.12.14**, or NumPy/SciPy other than the pins.
-- A Python binary that is not arm64.
-- pip replacing a conda distribution, or an entry without a sha256.
+**Execution-stack check.** Once installation finished, the builder and the protocol and lock tests
+were run on `sid-f` itself. That run exposed the roundoff defect recorded in §0. With the
+revision-4 bounds, `--check` matches and all 56 protocol and lock tests pass on `sid-f`.
 
 ## 11. Review decisions
 
 | Choice | Decision |
 |---|---|
 | BLAS | OpenBLAS pinned explicitly (`libblas=*=*openblas`) |
-| Python | **3.12.14 pinned** (option b); the second dry-run solve is recorded and passes every stop condition |
+| Python | 3.12.14 pinned (option b), with the pinned solve recorded |
+| Installation | approved under §10's locking plan; completed with every stop condition passing |
 | Burn-in W | max(1000, ⌈100·τ_c/c⌉), subject to the corrected NC6 |
 | Pilot length and stability | 125 000 shots and factor 4, as planning choices; the variance bound is approximate |
 | Check sizes and threshold | eight 50 000-observation windows; simulator check at 5 standard errors |
@@ -380,20 +338,30 @@ as the protocol already requires for all five thread variables.
 | Primary comparator | K1 alone decides F; C08-boundary validation is reported separately |
 | Labbook | the freeze pass is sufficient |
 
-**What awaits review.** No design choice is open in this draft. Awaiting review:
-- **Freezing (Gate 1).**
-- **Installation**, under the locking plan above.
-- **Miniforge:** not needed so far, because conda 22.9.0 solved the pinned definition. It stays
-  unapproved.
+**What awaits review.**
+- **Your confirmation of the unrequested revision-4 change:** design evidence recorded as bounds.
+  After that come the Gate-1 freeze, its digest, labbook pass 27 and the local commit, which you have
+  already approved.
+- **Later gates:** Gate 2 implementation, Gate 3 numerical checks and pilots, and Gate 4 evaluation
+  keep their own approvals.
 
-## 12. Limits
+## 12. Limits and an observation outside F
 
-- **Where the design evidence comes from:** the drafting stack (Python 3.9.7, SciPy 1.10.0).
-  `--check` also matches under Python 3.13.7 / SciPy 1.17.1.
-- **Test runs:**
-  - on 3.9.7, 81 tests pass: the protocol draft (43), the stack lock helper (5), and C08 fold
-    provenance, crossover provenance, site projection and public prose (33);
-  - on 3.13.7, the 48 protocol and lock tests pass.
-- **Scope of the tests:** they check documents, rules, recorded solves and helpers on fixtures. They
-  validate no comparator and install nothing.
-- **Model assistance:** drafting and analysis used it.
+**Test runs.**
+- **Python 3.9.7:** 89 tests pass. That is the protocol draft (49), the stack lock helper (7), and
+  C08 fold provenance, crossover provenance, site projection and public prose (33).
+- **Python 3.13.7:** the 56 protocol and lock tests pass.
+- **`sid-f` (Python 3.12.14, OpenBLAS, one thread):** the same 56 tests pass.
+- **Rebuild check:** `--check` matches on all three stacks.
+- **Scope:** the tests check documents, rules, recorded solves, installation records and helpers on
+  fixtures. They validate no comparator.
+
+**Observation, outside roadmap F.** Of the eleven roadmap-C JSON artifacts that store a digest,
+eight recompute under the `freeze_ladder_selections.py` convention. `benchmark_ladder_C.json`,
+`eligibility_C.json` and `schedule_class_C.json` do not. `sid_run10.py`'s `_digest_of` returns
+each file's stored `digest` field without recomputing it, so nothing in the repository currently
+checks those three digests against their content. Whether they were computed with another payload
+or the files changed after freezing is not established here. The observation is recorded for a
+separate check, and nothing about them was changed.
+
+Drafting, analysis, installation and review responses used model assistance.

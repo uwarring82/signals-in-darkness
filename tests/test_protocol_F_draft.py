@@ -1,8 +1,10 @@
 """The draft roadmap-F protocol (note 28): reproducible, non-authorising, internally consistent.
 
-These tests check the protocol document, its builder and the recorded dry-run solve only. No
-ARMA filter exists yet, and nothing here simulates a record or evaluates a likelihood.
+These tests check the protocol document, its builder, its freeze tooling and the recorded
+dry-run solve only. No ARMA filter exists yet, and nothing here simulates a record or
+evaluates a likelihood.
 """
+import itertools
 import json
 import math
 from pathlib import Path
@@ -31,15 +33,15 @@ def test_equivalence_helper_can_fail():
 
 def test_draft_cannot_authorise_any_measurement():
     assert builder.is_draft(DRAFT)
-    assert DRAFT["draft_revision"] == 3
+    assert DRAFT["draft_revision"] == 4
     assert "refuse" in DRAFT["status"] and "DRAFT" in DRAFT["execution_stack"]["refusal"]
 
 
 # --------------------------------------------------------------------------- write path
-def _frozen(doc, **changes):
-    frozen = json.loads(json.dumps(doc))
-    frozen.update(changes)
-    return frozen
+def _changed(doc, **changes):
+    out = json.loads(json.dumps(doc))
+    out.update(changes)
+    return out
 
 
 @pytest.mark.parametrize("changes", [
@@ -49,7 +51,7 @@ def _frozen(doc, **changes):
 ])
 def test_builder_refuses_to_overwrite_a_frozen_protocol(tmp_path, changes):
     target = tmp_path / "protocol_F.json"
-    target.write_text(json.dumps(_frozen(DRAFT, **changes), indent=2) + "\n")
+    target.write_text(json.dumps(_changed(DRAFT, **changes), indent=2) + "\n")
     before = target.read_bytes()
     with pytest.raises(builder.ProtocolFrozenError):
         builder.write_draft(DRAFT, target)
@@ -69,11 +71,50 @@ def test_builder_writes_new_drafts_and_replaces_only_drafts(tmp_path):
     fresh.parent.mkdir()
     builder.write_draft(DRAFT, fresh)
     assert json.loads(fresh.read_text()) == DRAFT
-    fresh.write_text(json.dumps(_frozen(DRAFT, draft_revision=1)))
+    fresh.write_text(json.dumps(_changed(DRAFT, draft_revision=1)))
     builder.write_draft(DRAFT, fresh)
     assert json.loads(fresh.read_text())["draft_revision"] == DRAFT["draft_revision"]
     with pytest.raises(builder.ProtocolFrozenError):
-        builder.write_draft(_frozen(DRAFT, digest="0123456789abcdef"), tmp_path / "other.json")
+        builder.write_draft(_changed(DRAFT, digest="0123456789abcdef"), tmp_path / "other.json")
+
+
+# --------------------------------------------------------------------------- freeze tooling (temporary copies only)
+def test_freezing_a_copy_of_the_reviewed_draft_yields_a_verifiable_protocol(tmp_path):
+    target = tmp_path / "protocol_F.json"
+    target.write_text(json.dumps(DRAFT, indent=2) + "\n")
+    digest = builder.freeze_protocol(target)
+    frozen = json.loads(target.read_text())
+    assert builder.is_verified_frozen(frozen) and frozen["digest"] == digest == builder.digest_of(frozen)
+    assert frozen["status"] == builder.FREEZE_STATUS and "BEFORE any ARMA likelihood" in frozen["frozen"]
+    assert builder.unfrozen_view(frozen) == builder.unfrozen_view(DRAFT)
+    assert builder.matches_builder(frozen)
+    tampered = _changed(frozen, version=2)
+    assert not builder.is_verified_frozen(tampered) and not builder.matches_builder(tampered)
+    before = target.read_bytes()
+    with pytest.raises(builder.ProtocolFrozenError):
+        builder.freeze_protocol(target)                  # no second freeze
+    with pytest.raises(builder.ProtocolFrozenError):
+        builder.write_draft(DRAFT, target)               # and no draft over it
+    assert target.read_bytes() == before
+
+
+def test_freezing_refuses_a_draft_that_differs_from_its_builder(tmp_path):
+    target = tmp_path / "protocol_F.json"
+    edited = json.loads(json.dumps(DRAFT))
+    edited["verdicts"]["delta"] = 0.10
+    target.write_text(json.dumps(edited, indent=2) + "\n")
+    before = target.read_bytes()
+    with pytest.raises(builder.ProtocolFrozenError):
+        builder.freeze_protocol(target)
+    assert target.read_bytes() == before
+
+
+@pytest.mark.parametrize("name", ["selections_ladder_C.json", "sensitivity_protocol_C.json", "acceptance_C.json"])
+def test_digest_follows_the_freeze_ladder_selections_convention(name):
+    # Verified against artifacts frozen with tools/freeze_ladder_selections.py's convention.
+    # benchmark_ladder_C, eligibility_C and schedule_class_C do not recompute under it (note 28 r4).
+    artifact = json.loads((ROOT / "analysis" / name).read_text())
+    assert builder.digest_of(artifact) == artifact["digest"]
 
 
 # --------------------------------------------------------------------------- numerical checks
@@ -133,8 +174,7 @@ def test_solve_and_installation_share_one_definition_and_channel_policy():
         assert args[i + 1:i + 3] == ["-c", "conda-forge"]
         assert args[args.index("--file") + 1] == builder.STACK_SPEC
     assert cmds["environment"] == {"CONDA_SUBDIR": "osx-arm64"}
-    specs = _specs(builder.STACK_SPEC)
-    assert "libblas=*=*openblas" in specs
+    assert "libblas=*=*openblas" in _specs(builder.STACK_SPEC)
     assert _specs(builder.PIP_SPEC) == ["cffconvert==2.0.0"]
     assert "--require-hashes" in cmds["pip_install"] and "--no-deps" in cmds["pip_install"]
 
@@ -232,10 +272,29 @@ def test_sizing_constants_match_their_definitions():
 
 def test_deterministic_numerical_design_checks_pass_at_every_point():
     for name, e in EVIDENCE.items():
-        assert abs(e["series_convergence_rel"]["K1"]) <= 1e-6, name
-        assert abs(e["series_convergence_rel"]["K4"]) <= 1e-6, name
+        assert e["series_convergence_within_1e-6"] == {"K1": True, "K4": True}, name
         for grid, d in e["grids"].items():
             assert d["stationary_residual_within_1e-12"] and d["stationary_min_at_least_-1e-15"], (name, grid)
+            assert d["tv_stationary_vs_gaussian_weights_below_1e-6"], (name, grid)
+
+
+def _floats(obj):
+    if isinstance(obj, dict):
+        for v in obj.values():
+            yield from _floats(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _floats(v)
+    elif isinstance(obj, float):
+        yield obj
+
+
+def test_design_evidence_records_no_roundoff_level_values():
+    # Revision 4 found a total variation of 9.878e-13 on the drafting stack and 9.997e-13 on the
+    # execution stack. Quantities at that level are floating-point noise; they are recorded as
+    # bounds, never as values that a rebuild must reproduce.
+    small = [x for x in _floats(DRAFT["design_evidence"]) if x != 0.0 and abs(x) < 1e-9]
+    assert not small, small
 
 
 # --------------------------------------------------------------------------- closure
@@ -260,13 +319,19 @@ def test_mandatory_conditional_and_closure_rules_are_explicit():
 ])
 def test_roadmap_F_status_follows_the_closure_rule(verdicts, status):
     assert builder.roadmap_F_status(dict(zip(builder.MANDATORY, verdicts))) == status
+    boundary = {"E1": "VALIDATED", "E2": "FAILED"}           # boundary verdicts never change the status
+    assert builder.roadmap_F_status({**dict(zip(builder.MANDATORY, verdicts)), **boundary}) == status
 
 
-def test_status_requires_every_mandatory_verdict():
+def test_status_requires_every_mandatory_verdict_and_known_inputs():
     with pytest.raises(ValueError):
         builder.roadmap_F_status({"E3": "VALIDATED", "E5": "VALIDATED"})
     with pytest.raises(ValueError):
         builder.roadmap_F_status({"E3": "VALIDATED", "E4": "PASSED", "E5": "VALIDATED"})
+    with pytest.raises(ValueError):
+        builder.roadmap_F_status({"E3": "VALIDATED", "E4": "VALIDATED", "E5": "VALIDATED", "E6": "VALIDATED"})
+    with pytest.raises(ValueError):
+        builder.roadmap_F_status({"E1": "MAYBE", "E3": "VALIDATED", "E4": "VALIDATED", "E5": "VALIDATED"})
 
 
 def test_before_evaluation_the_wording_is_note_27_verbatim():
@@ -275,49 +340,67 @@ def test_before_evaluation_the_wording_is_note_27_verbatim():
     assert " ".join(builder.closure_wording().split()) in note27
 
 
-BLANKET_C04 = "remains confined to C04's tested point-sampled exact-r_k comparator"
+GLOBAL_C04 = "remains confined to C04"
+MANDATORY_SCOPE = "At the mandatory points E3–E5, the exact-r_k comparator (K1) is validated"
 
 
-def _wording(*verdicts):
-    return builder.closure_wording(dict(zip(builder.MANDATORY, verdicts)), DRAFT["points"])
+def _wording(*verdicts, boundary=None):
+    return builder.closure_wording({**dict(zip(builder.MANDATORY, verdicts)), **(boundary or {})}, DRAFT["points"])
 
 
-def test_mixed_failed_closure_keeps_its_finite_window_validations():
+def test_after_evaluation_no_outcome_confines_all_validation_to_c04():
+    for boundary in (None, {"E1": "VALIDATED", "E2": "VALIDATED"}, {"E1": "FAILED", "E2": "UNRESOLVED"}):
+        for verdicts in itertools.product(builder.VERDICTS, repeat=3):
+            text = _wording(*verdicts, boundary=boundary)
+            assert GLOBAL_C04 not in text, (verdicts, boundary)
+            assert builder.C04_AND_BOUNDARY in text
+
+
+def test_boundary_passes_with_mandatory_failures_keep_the_boundary_out_of_the_mandatory_scope():
+    text = _wording("FAILED", "FAILED", "FAILED", boundary={"E1": "VALIDATED", "E2": "VALIDATED"})
+    assert builder.SCOPE_WITHOUT_MANDATORY_VALIDATION in text and MANDATORY_SCOPE not in text
+    assert "C04 supplies the earlier point-sampled validation; results at the conditional boundary points " \
+           "E1/E2 are reported separately." in text
+    assert "Roadmap F closed FAILED." in text and "VALIDATED at none" in text
+    for boundary_point in ("E1", "E2"):
+        assert builder.tuple_label(DRAFT["points"][boundary_point]) not in text
+
+
+def test_mixed_failed_closure_keeps_its_mandatory_validations():
     text = _wording("VALIDATED", "FAILED", "VALIDATED")
     e3, e4, e5 = (builder.tuple_label(DRAFT["points"][p]) for p in ("E3", "E4", "E5"))
-    assert "Roadmap F closed FAILED." in text
-    assert BLANKET_C04 not in text and "At every other input" in text
-    scope = text.split("Roadmap F closed FAILED.")[0]
+    assert "Roadmap F closed FAILED." in text and MANDATORY_SCOPE in text
+    scope = text.split(builder.C04_AND_BOUNDARY)[0]
     assert f"at E3 {e3} and E5 {e5}." in scope and e4 not in scope
     assert f"FAILED at E4 {e4}" in text
 
 
-def test_mixed_open_campaign_keeps_its_finite_window_validations():
+def test_mixed_open_campaign_keeps_its_mandatory_validations():
     text = _wording("VALIDATED", "UNRESOLVED", "VALIDATED")
     e4 = builder.tuple_label(DRAFT["points"]["E4"])
-    assert "Roadmap F remains OPEN." in text and "closed" not in text
-    assert BLANKET_C04 not in text and "At every other input" in text
+    assert "Roadmap F remains OPEN." in text and "closed" not in text and MANDATORY_SCOPE in text
     assert f"UNRESOLVED or without a verdict at E4 {e4}" in text and "FAILED at none" in text
 
 
-def test_without_any_finite_window_validation_the_scope_stays_with_c04():
+def test_without_any_mandatory_validation_the_scope_sentence_says_so():
     for verdicts, status in ((("FAILED", "FAILED", "FAILED"), "closed FAILED"),
                              (("NO_VERDICT", "UNRESOLVED", "FAILED"), "remains OPEN")):
         text = _wording(*verdicts)
-        assert builder.SCOPE_WITHOUT_FINITE_WINDOW in text and "validated against" not in text
+        assert builder.SCOPE_WITHOUT_MANDATORY_VALIDATION in text and MANDATORY_SCOPE not in text
         assert f"Roadmap F {status}." in text and "VALIDATED at none" in text
 
 
-def test_validated_closure_reports_every_tuple_and_no_blanket_c04_limit():
+def test_validated_closure_reports_every_mandatory_tuple():
     text = _wording("VALIDATED", "VALIDATED", "VALIDATED")
-    assert "Roadmap F closed VALIDATED." in text and BLANKET_C04 not in text
+    assert "Roadmap F closed VALIDATED." in text and MANDATORY_SCOPE in text
     for p in builder.MANDATORY:
         assert builder.tuple_label(DRAFT["points"][p]) in text
 
 
 def test_protocol_records_the_wording_parts_the_builder_uses():
     w = DRAFT["closure"]["wording"]
-    assert w["scope_with_finite_window_validation"] == builder.SCOPE_WITH_FINITE_WINDOW
-    assert w["scope_without_finite_window_validation"] == builder.SCOPE_WITHOUT_FINITE_WINDOW
+    assert w["scope_with_mandatory_validation"] == builder.SCOPE_WITH_MANDATORY_VALIDATION
+    assert w["scope_without_mandatory_validation"] == builder.SCOPE_WITHOUT_MANDATORY_VALIDATION
+    assert w["c04_and_boundary"] == builder.C04_AND_BOUNDARY
     assert w["status"] == builder.STATUS_SENTENCE and w["tuple_report"] == builder.TUPLE_REPORT
-    assert "never determines the scope sentence" in w["assembly"]
+    assert "E1/E2 verdicts never enter this caveat" in w["assembly"]

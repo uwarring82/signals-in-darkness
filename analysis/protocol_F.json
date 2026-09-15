@@ -1,8 +1,8 @@
 {
   "record": "roadmap F: validation of mid-fringe comparators against an exact ARMA(1,1) latent binary likelihood",
-  "status": "DRAFT FOR REVIEW (note 28, revision 3) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
+  "status": "DRAFT FOR REVIEW (note 28, revision 4) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
   "version": 1,
-  "draft_revision": 3,
+  "draft_revision": 4,
   "revision_log": [
     {
       "revision": 1,
@@ -22,9 +22,19 @@
     },
     {
       "revision": 3,
+      "commit": "a327ab5",
       "changes": [
         "python pinned to 3.12.14 (review decision on r2 \u00a711, option b); second dry-run solve recorded; stack checks, refusals and tests use the exact patch",
         "closure wording no longer confines validation to C04 once any finite-window validation exists: before evaluation note 27's sentence; afterwards scope, campaign status and the validated, failed and unresolved tuples are reported separately"
+      ]
+    },
+    {
+      "revision": 4,
+      "changes": [
+        "the post-evaluation scope sentence speaks only about the mandatory points E3-E5; the global C04 restriction is replaced by 'C04 supplies the earlier point-sampled validation; results at the conditional boundary points E1/E2 are reported separately'",
+        "fixture: E1/E2 VALIDATED with E3-E5 FAILED; every mandatory verdict combination is checked for a global C04 restriction",
+        "design evidence records roundoff-level diagnostics as bounds: on the installed execution stack the E1 M121_L7 total variation was 9.997e-13 against 9.878e-13 on the drafting stack, which failed the rebuild check; series-convergence changes (at most 9.9e-14) are recorded as bounds as well",
+        "freeze tooling: a draft that matches its builder becomes FROZEN with the digest convention of tools/freeze_ladder_selections.py"
       ]
     }
   ],
@@ -328,15 +338,16 @@
     "wording": {
       "before_evaluation": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Binary-likelihood validation remains confined to C04's tested point-sampled exact-r_k comparator; F remains open.",
       "c08_fact": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator.",
-      "scope_without_finite_window_validation": "Binary-likelihood validation of the exact-r_k comparator remains confined to C04's tested point-sampled cases.",
-      "scope_with_finite_window_validation": "The exact-r_k comparator (K1) is validated against the exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % intervals) at {validated_tuples}. At every other input its binary-likelihood validation remains confined to C04's tested point-sampled cases.",
+      "scope_with_mandatory_validation": "At the mandatory points E3\u2013E5, the exact-r_k comparator (K1) is validated against the exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % intervals) at {validated_tuples}.",
+      "scope_without_mandatory_validation": "No mandatory point E3\u2013E5 validated K1 against the finite-window binary likelihood.",
+      "c04_and_boundary": "C04 supplies the earlier point-sampled validation; results at the conditional boundary points E1/E2 are reported separately.",
       "status": {
         "OPEN": "Roadmap F remains OPEN.",
         "VALIDATED": "Roadmap F closed VALIDATED.",
         "FAILED": "Roadmap F closed FAILED."
       },
       "tuple_report": "K1 at the mandatory points: VALIDATED at {validated}; FAILED at {failed}; UNRESOLVED or without a verdict at {other}.",
-      "assembly": "before evaluation: before_evaluation, verbatim. After evaluation: c08_fact; then scope_with_finite_window_validation if K1 is VALIDATED at any mandatory point, otherwise scope_without_finite_window_validation; then the status sentence for roadmap_F; then tuple_report. Tuples are written (C, s, u, c/tau_c) = (...). The campaign status never determines the scope sentence.",
+      "assembly": "before evaluation: before_evaluation, verbatim. After evaluation: c08_fact; then scope_with_mandatory_validation if K1 is VALIDATED at any of E3-E5, otherwise scope_without_mandatory_validation; then c04_and_boundary; then the status sentence for roadmap_F; then tuple_report. The scope sentences speak only about E3-E5; E1/E2 verdicts never enter this caveat and are reported under C08_boundary. The campaign status never determines the scope sentence.",
       "reference_implementation": "tools/build_protocol_F.py closure_wording and roadmap_F_status"
     },
     "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"
@@ -794,7 +805,7 @@
     "band_upper": 1.105263157894737
   },
   "design_evidence": {
-    "record": "deterministic quantities computed by the builder on the drafting stack; the execution stack must reproduce them",
+    "record": "deterministic quantities computed by the builder on the drafting stack; the execution stack must reproduce them. Roundoff-level quantities are recorded as bounds, not values",
     "points": {
       "E1": {
         "F": 1.0081279143665292,
@@ -823,34 +834,38 @@
           "K4/K2": false,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": -5.750955267558311e-14,
-          "K4": -5.795364188543317e-14
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 2.844281322209589,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.1346310394991316e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 2.0316295158640028,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 9.877756423374366e-13
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 5.688562644419249,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.40074892798214e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 4.0632590317280055,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.257520762117335e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       },
@@ -881,34 +896,38 @@
           "K4/K2": false,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": -5.784261958297066e-14,
-          "K4": -5.828670879282072e-14
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 3.4728024798093013,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.551897855901175e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 2.4805731998637777,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.1569241885590766e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 6.945604959618603,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.8633402439870146e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 4.961146399727555,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.4623488779055839e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       },
@@ -939,34 +958,38 @@
           "K4/K2": false,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": -3.3306690738754696e-16,
-          "K4": -3.3306690738754696e-16
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 6.109187852884568,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 3.8559583892946895e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 4.3637056092032624,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.5557048540733268e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 12.218375705769283,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 4.3167803524868493e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 8.727411218406601,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.9590947312777917e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       },
@@ -997,34 +1020,38 @@
           "K4/K2": true,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": 2.220446049250313e-16,
-          "K4": 2.220446049250313e-16
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 8.514206730755154,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 4.2302040631570266e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 6.081576236253703,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.6252243483773985e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 17.028413461510517,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 4.73390338291642e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 12.163152472507512,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.047181013019804e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       },
@@ -1055,34 +1082,38 @@
           "K4/K2": true,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": 9.85878045867139e-14,
-          "K4": 8.881784197001252e-16
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 11.241275476189093,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.384918495572348e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 8.02948248299225,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.19271178225575e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 22.48255095237845,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.659852916441315e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 16.0589649659845,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.4968435364108264e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       },
@@ -1113,34 +1144,38 @@
           "K4/K2": false,
           "K4/K3": false
         },
-        "series_convergence_rel": {
-          "K1": 1.7763568394002505e-14,
-          "K4": 1.7763568394002505e-14
+        "series_convergence_within_1e-6": {
+          "K1": true,
+          "K4": true
         },
         "grids": {
           "M121_L5": {
             "innovation_sd_over_spacing": 3.701811962110165,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 2.69497454487461e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M121_L7": {
             "innovation_sd_over_spacing": 2.6441514015072607,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.2115583983871097e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           },
           "M241_L5": {
             "innovation_sd_over_spacing": 7.403623924220251,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 3.02226434215905e-07
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": false
           },
           "M241_L7": {
             "innovation_sd_over_spacing": 5.288302803014481,
             "stationary_residual_within_1e-12": true,
             "stationary_min_at_least_-1e-15": true,
-            "tv_stationary_vs_gaussian_weights": 1.5295346367985249e-12
+            "tv_stationary_vs_gaussian_weights_below_1e-6": true,
+            "tv_stationary_vs_gaussian_weights_below_1e-10": true
           }
         }
       }

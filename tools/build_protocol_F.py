@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
-"""Build the DRAFT roadmap-F protocol described in note 28.
+"""Build, check and freeze the roadmap-F protocol described in note 28.
 
 Deterministic. It evaluates committed comparator formulas and archived grids only; it
 simulates no latent trajectory, evaluates no ARMA likelihood and produces no F result.
 
     python tools/build_protocol_F.py                 # write analysis/protocol_F.json, if it is still a draft
     python tools/build_protocol_F.py --out PATH      # write a new draft elsewhere
-    python tools/build_protocol_F.py --check         # read-only: exit 1 if the committed file differs
+    python tools/build_protocol_F.py --check         # read-only: the file matches its builder (and digest, if frozen)
     python tools/build_protocol_F.py --markdown      # read-only: print the tables quoted in note 28
+    python tools/build_protocol_F.py --freeze        # approved Gate-1 step only: draft -> FROZEN with digest
 
 Writing refuses to replace a protocol that is frozen (status not starting with DRAFT, or a
-non-null digest). The draft carries status DRAFT and digest null, and sid_run13.py must
-refuse every phase while that is so. Freezing is a separate, approved step: it changes the
-status, computes the digest (sha256 of the sorted JSON without the digest field, first 16
-hex digits, as in the roadmap-C protocols) and commits both together.
+non-null digest). Freezing accepts only a draft that matches its builder, sets the status and
+`frozen` fields, and computes the digest with the convention of tools/freeze_ladder_selections.py:
+sha256 of the sorted JSON without the digest field, first 16 hex digits. Eight roadmap-C
+artifacts recompute under it; benchmark_ladder_C, eligibility_C and schedule_class_C do not.
+
+Design evidence records roundoff-level quantities as bounds, never as values: a total variation
+of about 1e-12 came out 9.878e-13 on the drafting stack and 9.997e-13 on the execution stack.
 """
 import argparse
 import ast
+import hashlib
 import json
 import math
 import sys
@@ -31,7 +36,7 @@ from review_F_plan import comparators, exact_boundary_points, filter_factor, run
 
 OUT = ROOT / "analysis" / "protocol_F.json"
 NOTE = "notes/2026-09-15-note-28-F-protocol-draft.md"
-DRAFT_REVISION = 3
+DRAFT_REVISION = 4
 DELTA, KAPPA, R = 0.05, 0.25, 16
 EVAL_GRID = (241, 7)
 CHECK_GRIDS = ((121, 5), (121, 7), (241, 5))
@@ -63,6 +68,13 @@ INSTALL_ARGS = ["conda", "create", "-y"] + CONDA_COMMON
 SOLVE_ONLY_FLAGS = ("--dry-run", "--json")
 INSTALL_ONLY_FLAGS = ("-y",)
 
+FREEZE_STATUS = ("FROZEN at Gate 1 (2026-09-15): note 28 revision 4 accepted. Any change requires a superseding "
+                 "protocol version that records supersedes_digest. sid_run13.py must verify this digest before "
+                 "every phase.")
+FROZEN_WHEN = ("2026-09-15, Gate 1, BEFORE any ARMA likelihood evaluation, execution-stack numerical check, "
+               "pilot or evaluation")
+FREEZE_KEYS = ("status", "frozen", "digest")
+
 # ------------------------------------------------------------------------------------------- wording
 _C08_FACT = (
     "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by "
@@ -71,12 +83,12 @@ _C08_FACT = (
 CAVEAT_BEFORE_EVALUATION = (_C08_FACT + " Binary-likelihood validation remains confined to C04's tested "
                             "point-sampled exact-r_k comparator; F remains open.")      # note 27, verbatim
 CORRECTED_C08_CAVEAT = CAVEAT_BEFORE_EVALUATION
-SCOPE_WITHOUT_FINITE_WINDOW = ("Binary-likelihood validation of the exact-r_k comparator remains confined to "
-                               "C04's tested point-sampled cases.")
-SCOPE_WITH_FINITE_WINDOW = ("The exact-r_k comparator (K1) is validated against the exact finite-window ARMA(1,1) "
-                            "binary likelihood within +/- 5 % (pointwise 95 % intervals) at {validated_tuples}. "
-                            "At every other input its binary-likelihood validation remains confined to C04's "
-                            "tested point-sampled cases.")
+SCOPE_WITH_MANDATORY_VALIDATION = ("At the mandatory points E3–E5, the exact-r_k comparator (K1) is validated "
+                                   "against the exact finite-window ARMA(1,1) binary likelihood within +/- 5 % "
+                                   "(pointwise 95 % intervals) at {validated_tuples}.")
+SCOPE_WITHOUT_MANDATORY_VALIDATION = "No mandatory point E3–E5 validated K1 against the finite-window binary likelihood."
+C04_AND_BOUNDARY = ("C04 supplies the earlier point-sampled validation; results at the conditional boundary points "
+                    "E1/E2 are reported separately.")
 STATUS_SENTENCE = {"OPEN": "Roadmap F remains OPEN.",
                    "VALIDATED": "Roadmap F closed VALIDATED.",
                    "FAILED": "Roadmap F closed FAILED."}
@@ -85,14 +97,21 @@ TUPLE_REPORT = ("K1 at the mandatory points: VALIDATED at {validated}; FAILED at
 VERDICTS = ("VALIDATED", "FAILED", "UNRESOLVED", "NO_VERDICT")
 
 
-def roadmap_F_status(k1_verdicts):
-    """The numerical closure rule: K1 alone, at E3, E4 and E5."""
+def _check_verdicts(k1_verdicts):
+    unknown_points = sorted(set(k1_verdicts) - set(POINT_ORDER))
+    if unknown_points:
+        raise ValueError(f"verdicts supplied for unknown points {unknown_points}")
     missing = [p for p in MANDATORY if p not in k1_verdicts]
     if missing:
         raise ValueError(f"no K1 verdict supplied for mandatory points {missing}")
-    unknown = sorted({k1_verdicts[p] for p in MANDATORY} - set(VERDICTS))
+    unknown = sorted(set(k1_verdicts.values()) - set(VERDICTS))
     if unknown:
         raise ValueError(f"unknown verdicts {unknown}")
+
+
+def roadmap_F_status(k1_verdicts):
+    """The numerical closure rule: K1 alone, at E3, E4 and E5. Boundary verdicts never enter it."""
+    _check_verdicts(k1_verdicts)
     v = [k1_verdicts[p] for p in MANDATORY]
     if all(x == "VALIDATED" for x in v):
         return "VALIDATED"
@@ -114,8 +133,9 @@ def _join(items):
 
 
 def closure_wording(k1_verdicts=None, points=None):
-    """Caveat for the manuscript: note 27's sentence before evaluation; afterwards, scope,
-    campaign status and the verdict tuples reported separately."""
+    """Caveat for the manuscript. Before evaluation: note 27's sentence. Afterwards: the scope at the
+    mandatory points E3-E5 only, C04 and the separately reported boundary, the campaign status and
+    the verdict tuples. E1/E2 verdicts may be supplied but never enter this text."""
     if k1_verdicts is None:
         return CAVEAT_BEFORE_EVALUATION
     status = roadmap_F_status(k1_verdicts)
@@ -123,20 +143,37 @@ def closure_wording(k1_verdicts=None, points=None):
     validated = [p for p in MANDATORY if k1_verdicts[p] == "VALIDATED"]
     failed = [p for p in MANDATORY if k1_verdicts[p] == "FAILED"]
     other = [p for p in MANDATORY if k1_verdicts[p] not in ("VALIDATED", "FAILED")]
-    scope = (SCOPE_WITH_FINITE_WINDOW.format(validated_tuples=fmt(validated)) if validated
-             else SCOPE_WITHOUT_FINITE_WINDOW)
-    return " ".join([_C08_FACT, scope, STATUS_SENTENCE[status],
+    scope = (SCOPE_WITH_MANDATORY_VALIDATION.format(validated_tuples=fmt(validated)) if validated
+             else SCOPE_WITHOUT_MANDATORY_VALIDATION)
+    return " ".join([_C08_FACT, scope, C04_AND_BOUNDARY, STATUS_SENTENCE[status],
                      TUPLE_REPORT.format(validated=fmt(validated), failed=fmt(failed), other=fmt(other))])
 
 
-# ------------------------------------------------------------------------------------------- write path
+# ------------------------------------------------------------------------------------------- write, check, freeze
 class ProtocolFrozenError(RuntimeError):
-    """Raised instead of overwriting a protocol that is no longer a draft."""
+    """Raised instead of overwriting or re-freezing a protocol that is no longer a draft."""
 
 
 def is_draft(doc):
     return isinstance(doc, dict) and isinstance(doc.get("status"), str) \
         and doc["status"].startswith("DRAFT") and doc.get("digest") is None
+
+
+def digest_of(obj):
+    """The convention of tools/freeze_ladder_selections.py."""
+    return hashlib.sha256(json.dumps({k: v for k, v in obj.items() if k != "digest"},
+                                     sort_keys=True).encode()).hexdigest()[:16]
+
+
+def is_verified_frozen(doc):
+    return isinstance(doc, dict) and isinstance(doc.get("status"), str) and doc["status"].startswith("FROZEN") \
+        and isinstance(doc.get("frozen"), str) and isinstance(doc.get("digest"), str) \
+        and doc["digest"] == digest_of(doc)
+
+
+def unfrozen_view(doc):
+    """The protocol content without the fields a freeze sets."""
+    return {k: v for k, v in doc.items() if k not in FREEZE_KEYS}
 
 
 def write_draft(doc, path):
@@ -153,6 +190,22 @@ def write_draft(doc, path):
             raise ProtocolFrozenError(f"refusing to overwrite frozen protocol {path}; "
                                       "write a new draft elsewhere with --out")
     path.write_text(json.dumps(doc, indent=2, allow_nan=False) + "\n")
+
+
+def freeze_protocol(path, status=FREEZE_STATUS, frozen=FROZEN_WHEN):
+    """Turn the reviewed draft on disk into a frozen protocol. Refuses anything else."""
+    path = Path(path)
+    current = json.loads(path.read_text())
+    if not is_draft(current):
+        raise ProtocolFrozenError(f"{path} is not an unfrozen draft")
+    if not equivalent(current, build()):
+        raise ProtocolFrozenError(f"{path} differs from its builder; rebuild and review before freezing")
+    frozen_doc = {k: v for k, v in current.items() if k != "digest"}     # the reviewed values, as stored
+    frozen_doc["status"] = status
+    frozen_doc["frozen"] = frozen
+    frozen_doc["digest"] = digest_of(frozen_doc)
+    path.write_text(json.dumps(frozen_doc, indent=2, allow_nan=False) + "\n")
+    return frozen_doc["digest"]
 
 
 def stop_seconds(predicted_seconds, remaining_aggregate_seconds):
@@ -187,7 +240,11 @@ def series_convergence(C, s, A, phi):
 
 
 def grid_diagnostics(phi, vx, q, M, L):
-    """Deterministic properties of the discretised latent chain the filter will use."""
+    """Deterministic properties of the discretised latent chain the filter will use.
+
+    The total variation between the stationary distribution and the Gaussian weights is recorded
+    as bounds: about 2-5e-7 on L = 5 grids (a truncation effect) and about 1e-12 on L = 7 grids
+    (roundoff, which differed by 1.2 % between the drafting and execution stacks)."""
     g = np.linspace(-L * math.sqrt(vx), L * math.sqrt(vx), M)
     T = np.exp(-(g[None, :] - phi * g[:, None]) ** 2 / (2 * q))
     T /= T.sum(1, keepdims=True)
@@ -196,10 +253,12 @@ def grid_diagnostics(phi, vx, q, M, L):
     pi = pi / pi.sum()
     gauss = np.exp(-g ** 2 / (2 * vx))
     gauss /= gauss.sum()
+    tv = float(0.5 * abs(pi - gauss).sum())
     return {"innovation_sd_over_spacing": float(math.sqrt(q) / (g[1] - g[0])),
             "stationary_residual_within_1e-12": bool(abs(pi @ T - pi).sum() <= 1e-12),
             "stationary_min_at_least_-1e-15": bool(pi.min() >= -1e-15),
-            "tv_stationary_vs_gaussian_weights": float(0.5 * abs(pi - gauss).sum())}
+            "tv_stationary_vs_gaussian_weights_below_1e-6": bool(tv < 1e-6),
+            "tv_stationary_vs_gaussian_weights_below_1e-10": bool(tv < 1e-10)}
 
 
 def run3_taus(T2):
@@ -250,8 +309,8 @@ def design(C, s, u, c_over_tc):
         "ratios": {"K2/K1": K["K2"] / K["K1"], "K3/K1": K["K3"] / K["K1"],
                    "K4/K1": K["K4"] / K["K1"], "K3/K4": K["K3"] / K["K4"]},
         "forced_incompatible_pairs": pairs,
-        "series_convergence_rel": {"K1": series_convergence(C, s, F, phi),
-                                   "K4": series_convergence(C, s, 1.0, phi)},
+        "series_convergence_within_1e-6": {"K1": bool(abs(series_convergence(C, s, F, phi)) <= 1e-6),
+                                           "K4": bool(abs(series_convergence(C, s, 1.0, phi)) <= 1e-6)},
         "grids": {f"M{M}_L{L}": grid_diagnostics(phi, vx, q, M, L)
                   for M, L in CHECK_GRIDS + (EVAL_GRID,)},
     }
@@ -322,12 +381,23 @@ def build():
                 "pip packages locked separately",
                 "separate caveats for open, failed and validated closure",
                 "review decisions on note 28 §11 recorded"]},
-            {"revision": 3, "changes": [
+            {"revision": 3, "commit": "a327ab5", "changes": [
                 f"python pinned to {PYTHON_PIN} (review decision on r2 §11, option b); second dry-run solve recorded; "
                 "stack checks, refusals and tests use the exact patch",
                 "closure wording no longer confines validation to C04 once any finite-window validation exists: "
                 "before evaluation note 27's sentence; afterwards scope, campaign status and the validated, failed "
-                "and unresolved tuples are reported separately"]}],
+                "and unresolved tuples are reported separately"]},
+            {"revision": 4, "changes": [
+                "the post-evaluation scope sentence speaks only about the mandatory points E3-E5; the global C04 "
+                "restriction is replaced by 'C04 supplies the earlier point-sampled validation; results at the "
+                "conditional boundary points E1/E2 are reported separately'",
+                "fixture: E1/E2 VALIDATED with E3-E5 FAILED; every mandatory verdict combination is checked for "
+                "a global C04 restriction",
+                "design evidence records roundoff-level diagnostics as bounds: on the installed execution stack the "
+                "E1 M121_L7 total variation was 9.997e-13 against 9.878e-13 on the drafting stack, which failed the "
+                "rebuild check; series-convergence changes (at most 9.9e-14) are recorded as bounds as well",
+                "freeze tooling: a draft that matches its builder becomes FROZEN with the digest convention of "
+                "tools/freeze_ladder_selections.py"]}],
         "note": NOTE,
         "replaces_plan": "notes/2026-09-15-note-26-F-plan-draft.md (not accepted; reviewed in note 27)",
         "builder": "tools/build_protocol_F.py",
@@ -494,15 +564,17 @@ def build():
             "wording": {
                 "before_evaluation": CAVEAT_BEFORE_EVALUATION,
                 "c08_fact": _C08_FACT,
-                "scope_without_finite_window_validation": SCOPE_WITHOUT_FINITE_WINDOW,
-                "scope_with_finite_window_validation": SCOPE_WITH_FINITE_WINDOW,
+                "scope_with_mandatory_validation": SCOPE_WITH_MANDATORY_VALIDATION,
+                "scope_without_mandatory_validation": SCOPE_WITHOUT_MANDATORY_VALIDATION,
+                "c04_and_boundary": C04_AND_BOUNDARY,
                 "status": STATUS_SENTENCE,
                 "tuple_report": TUPLE_REPORT,
                 "assembly": "before evaluation: before_evaluation, verbatim. After evaluation: c08_fact; then "
-                            "scope_with_finite_window_validation if K1 is VALIDATED at any mandatory point, "
-                            "otherwise scope_without_finite_window_validation; then the status sentence for "
-                            "roadmap_F; then tuple_report. Tuples are written (C, s, u, c/tau_c) = (...). The "
-                            "campaign status never determines the scope sentence.",
+                            "scope_with_mandatory_validation if K1 is VALIDATED at any of E3-E5, otherwise "
+                            "scope_without_mandatory_validation; then c04_and_boundary; then the status sentence "
+                            "for roadmap_F; then tuple_report. The scope sentences speak only about E3-E5; E1/E2 "
+                            "verdicts never enter this caveat and are reported under C08_boundary. The campaign "
+                            "status never determines the scope sentence.",
                 "reference_implementation": "tools/build_protocol_F.py closure_wording and roadmap_F_status"},
             "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"},
         "budget": {
@@ -584,7 +656,8 @@ def build():
                     "evaluation": "analysis/reproduction/res13_F_evaluation.json"},
         "constants": constants,
         "design_evidence": {"record": "deterministic quantities computed by the builder on the drafting stack; "
-                                      "the execution stack must reproduce them",
+                                      "the execution stack must reproduce them. Roundoff-level quantities are "
+                                      "recorded as bounds, not values",
                             "points": evidence},
         "digest": None,
     }
@@ -604,6 +677,15 @@ def equivalent(a, b, rel=1e-9, abs_tol=1e-14):
     return a == b
 
 
+def matches_builder(doc, rebuilt=None):
+    """A draft must equal its rebuild; a frozen protocol must verify its digest and equal the rebuild
+    apart from the fields the freeze set."""
+    rebuilt = build() if rebuilt is None else rebuilt
+    if is_draft(doc):
+        return equivalent(doc, rebuilt)
+    return is_verified_frozen(doc) and equivalent(unfrozen_view(doc), unfrozen_view(rebuilt))
+
+
 def markdown(doc):
     pts, ev = doc["points"], doc["design_evidence"]["points"]
     names = ["E1", "E2", "E3", "E4", "E5", "N0"]
@@ -621,14 +703,15 @@ def markdown(doc):
         r, f = ev[n]["ratios"], ev[n]["forced_incompatible_pairs"]
         bad = ", ".join(k for k, v in f.items() if v) or "none"
         lines.append(f"| {n} | {r['K2/K1']:.6f} | {r['K3/K1']:.6f} | {r['K4/K1']:.6f} | {r['K3/K4']:.6f} | {bad} |")
-    lines += ["", "| Point | Innovation SD / spacing, M121 L5 | same, M241 L7 | TV(π, Gaussian weights), M121 L5 | "
-                  "same, M241 L7 | Series change K1 | Series change K4 |",
-              "|---|---:|---:|---:|---:|---:|---:|"]
+    lines += ["", "| Point | Innovation SD / spacing, M121 L5 | same, M241 L7 | TV(π, Gaussian) < 1e-6, all grids | "
+                  "TV < 1e-10, grids | Series within 1e-6 (K1, K4) |",
+              "|---|---:|---:|---|---|---|"]
     for n in names:
-        g, c = ev[n]["grids"], ev[n]["series_convergence_rel"]
+        g, c = ev[n]["grids"], ev[n]["series_convergence_within_1e-6"]
+        below6 = all(d["tv_stationary_vs_gaussian_weights_below_1e-6"] for d in g.values())
+        below10 = ", ".join(k for k, d in g.items() if d["tv_stationary_vs_gaussian_weights_below_1e-10"]) or "none"
         lines.append(f"| {n} | {g['M121_L5']['innovation_sd_over_spacing']:.2f} | {g['M241_L7']['innovation_sd_over_spacing']:.2f} | "
-                     f"{g['M121_L5']['tv_stationary_vs_gaussian_weights']:.2e} | {g['M241_L7']['tv_stationary_vs_gaussian_weights']:.2e} | "
-                     f"{c['K1']:+.1e} | {c['K4']:+.1e} |")
+                     f"{below6} | {below10} | {c['K1']}, {c['K4']} |")
     lines += ["", "E1/E2 archive indices: " + "; ".join(
         f"{n}: C0 column {pts[n]['archive_indices']['C0_column']}, tau_c row {pts[n]['archive_indices']['tau_c_row']}, "
         f"tau index {pts[n]['archive_indices']['tau_index']}" for n in ("E1", "E2"))]
@@ -645,14 +728,23 @@ def main():
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="read-only comparison with the committed protocol")
     mode.add_argument("--markdown", action="store_true", help="read-only table output")
+    mode.add_argument("--freeze", action="store_true", help="approved Gate-1 step: freeze the reviewed draft")
     ap.add_argument("--out", type=Path, default=OUT, help="destination for a new draft")
     args = ap.parse_args()
+    if args.freeze:
+        try:
+            digest = freeze_protocol(OUT)
+        except ProtocolFrozenError as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            return 2
+        print(f"froze {OUT.relative_to(ROOT)} with digest {digest}")
+        return 0
     doc = build()
     if args.markdown:
-        print(markdown(doc))
+        print(markdown(json.loads(OUT.read_text()) if OUT.exists() else doc))
         return 0
     if args.check:
-        ok = OUT.exists() and equivalent(json.loads(OUT.read_text()), doc)
+        ok = OUT.exists() and matches_builder(json.loads(OUT.read_text()), doc)
         print("protocol_F.json matches its builder" if ok else "protocol_F.json differs from its builder")
         return 0 if ok else 1
     try:
