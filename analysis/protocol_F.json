@@ -1,6 +1,6 @@
 {
   "record": "roadmap F: validation of mid-fringe comparators against an exact ARMA(1,1) latent binary likelihood",
-  "status": "DRAFT FOR REVIEW (note 28, revision 4) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
+  "status": "FROZEN at Gate 1 (2026-09-15): note 28 revision 4 accepted. Any change requires a superseding protocol version that records supersedes_digest. sid_run13.py must verify this digest before every phase.",
   "version": 1,
   "draft_revision": 4,
   "revision_log": [
@@ -1181,5 +1181,6 @@
       }
     }
   },
-  "digest": null
+  "frozen": "2026-09-15, Gate 1, BEFORE any ARMA likelihood evaluation, execution-stack numerical check, pilot or evaluation",
+  "digest": "b7c09ce90f33c37b"
 }

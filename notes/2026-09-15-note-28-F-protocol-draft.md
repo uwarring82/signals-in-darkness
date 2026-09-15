@@ -1,43 +1,47 @@
-# Signals in Darkness — note 28 (15 Sept 2026, DRAFT r4): roadmap F protocol for review
+# Signals in Darkness — note 28 (15 Sept 2026, FROZEN r4): roadmap F protocol
 
-**Status:** DRAFT FOR REVIEW, revision 4. The revisions so far are `0a3584b`, `4f0b390` and
-`a327ab5`. The package is:
-- this note;
-- [analysis/protocol_F.json](../analysis/protocol_F.json), with `status` DRAFT, `draft_revision` 4 and
-  `digest` null;
-- [tools/build_protocol_F.py](../tools/build_protocol_F.py), which builds the protocol, checks it and,
-  once approved, freezes it;
-- [tests/test_protocol_F_draft.py](../tests/test_protocol_F_draft.py);
-- the execution stack in [analysis/stack_F/](../analysis/stack_F/conda-osx-arm64.txt), now installed and
-  locked (commit `009deb5`);
-- [tools/lock_stack_F.py](../tools/lock_stack_F.py) and [tests/test_lock_stack_F.py](../tests/test_lock_stack_F.py).
+**Status:** FROZEN at Gate 1, revision 4.
+[analysis/protocol_F.json](../analysis/protocol_F.json) carries status FROZEN and digest
+**`b7c09ce90f33c37b`**. The digest is the sha256 of the sorted JSON without its digest field, first
+16 hex digits, the convention of `tools/freeze_ladder_selections.py`.
 
-**The freeze is not yet done.** You approved the Gate-1 freeze once the bounded wording
-correction passed its checks. That correction does pass. But checking revision 4 on the newly
-installed execution stack exposed a separate defect in the design evidence, and fixing it
-changed protocol content you had not reviewed (§0). The freeze tooling is ready and tested on
-temporary copies, and the freeze waits for your confirmation.
+The draft revisions were `0a3584b`, `4f0b390`, `a327ab5` and `99cb09a`. This file keeps its "draft"
+name so that earlier links still resolve; it is the accepted description of the protocol. Labbook:
+[pass 27](../labbook/2026-09-15-pass-27-F-protocol-frozen.md).
+
+The package:
+- the frozen [analysis/protocol_F.json](../analysis/protocol_F.json);
+- [tools/build_protocol_F.py](../tools/build_protocol_F.py), which builds the protocol, checks it,
+  and refuses to overwrite or re-freeze it;
+- [tests/test_protocol_F.py](../tests/test_protocol_F.py), which verifies the committed artifact
+  against its builder and digest, and tests draft and refusal behaviour on a separate fixture;
+- the installed and locked execution stack in [analysis/stack_F/](../analysis/stack_F/conda-osx-arm64.txt)
+  (commit `009deb5`), with [tools/lock_stack_F.py](../tools/lock_stack_F.py) and
+  [tests/test_lock_stack_F.py](../tests/test_lock_stack_F.py).
 
 **What has and has not happened:**
-- **Ran:** two approved dry-run solves, and the approved installation with its locking.
-- **Not run:** no ARMA likelihood evaluation, no latent-record simulation, no numerical check
-  from Gate 3, no pilot and no evaluation.
+- **Ran:** two approved dry-run solves, the approved installation with its locking, and the
+  approved freeze.
+- **Not run:** no ARMA likelihood evaluation, no latent-record simulation, no numerical check from
+  Gate 3, no pilot and no evaluation.
+- **State:** roadmap F remains OPEN. Gates 2–4 keep their own approvals.
 
-**Evidence snapshot:** `009deb5`. `python tools/build_protocol_F.py --check` and `--markdown` are
+**Evidence snapshot:** the reviewed draft `99cb09a`, frozen in the commit that adds this status.
+`python tools/build_protocol_F.py --check` verifies the digest and the match with the builder,
 read-only.
 
 ## 0. Review history
 
-### Revision 4
+### Revision 4 (reviewed draft `99cb09a`, then frozen)
 
 | Item | Change |
 |---|---|
-| Scope correction (your request) | After evaluation, the scope sentence speaks only about the mandatory points. If K1 validated at any of them: "At the mandatory points E3–E5, the exact-r_k comparator (K1) is validated … at {validated tuples}." Otherwise: "No mandatory point E3–E5 validated K1 against the finite-window binary likelihood." Next comes "C04 supplies the earlier point-sampled validation; results at the conditional boundary points E1/E2 are reported separately." The pre-evaluation caveat and the numerical closure rule are unchanged (§8). |
-| Your fixture | E1/E2 VALIDATED with E3–E5 FAILED closes FAILED. The caveat then says no mandatory point validated and names neither boundary point. A further test runs all 64 combinations of mandatory verdicts, with and without boundary verdicts, and requires that no text confines validation to C04. |
-| **Unrequested: design evidence recorded as bounds** | On the installed execution stack (`sid-f`: Python 3.12.14, NumPy 2.4.4, SciPy 1.17.1, OpenBLAS), `--check` failed and two tests failed. Exactly one value differed: the total variation between π and the Gaussian weights at E1 on M121/L7, which is 9.878 × 10⁻¹³ on the drafting stack and 9.997 × 10⁻¹³ on `sid-f`. That is a 1.2 % relative and 1.2 × 10⁻¹⁴ absolute difference in eigenvector roundoff. The builder had recorded noise as if it were a reproducible value. It now records bounds: total variation below 10⁻⁶ (true everywhere, observed 2.1–4.7 × 10⁻⁷ on the L = 5 grids) and below 10⁻¹⁰ (true on both L = 7 grids, observed 0.99–2.05 × 10⁻¹²). Series-convergence changes, at most 9.9 × 10⁻¹⁴, are also recorded as a flag within 10⁻⁶. A new guard test rejects any nonzero design-evidence float below 10⁻⁹; it would have caught the defect. Every protocol rule, point, comparator value and constant is unchanged. |
-| Freeze tooling | `--freeze` accepts only a draft that matches its builder. It sets `status` and `frozen`, and computes the digest with the convention of `tools/freeze_ladder_selections.py`. Tests on temporary copies cover the frozen result verifying its digest, a tampered copy failing, a second freeze and any later draft write being refused, and a modified draft being refused. |
-| Your bookkeeping correction | Revision 3 counted 41 protocol tests and 7 lock tests, not the 43 and 5 its §12 stated. Revision 4 has 49 protocol tests (§12). |
-| My own fixture error | The first freeze-tooling test used `benchmark_ladder_C.json` as its digest fixture, and it failed: that file's stored digest does not recompute under this convention. The test now uses three artifacts that do. See §12 for what this shows about three roadmap-C artifacts. |
+| Scope correction (requested in review) | After evaluation, the scope sentence speaks only about the mandatory points. If K1 validated at any of them: "At the mandatory points E3–E5, the exact-r_k comparator (K1) is validated … at {validated tuples}." Otherwise: "No mandatory point E3–E5 validated K1 against the finite-window binary likelihood." Next comes "C04 supplies the earlier point-sampled validation; results at the conditional boundary points E1/E2 are reported separately." The pre-evaluation caveat and the numerical closure rule are unchanged (§8). |
+| Boundary fixture (requested in review) | E1/E2 VALIDATED with E3–E5 FAILED closes FAILED. The caveat then says no mandatory point validated and names neither boundary point. A further test runs all 64 combinations of mandatory verdicts, with and without boundary verdicts, and requires that no text confines validation to C04. |
+| Design evidence as bounds (found on the installed stack, then approved) | On `sid-f` (Python 3.12.14, NumPy 2.4.4, SciPy 1.17.1, OpenBLAS), the rebuild check and two tests failed. Exactly one value differed: the total variation between π and the Gaussian weights at E1 on M121/L7, which is 9.878 × 10⁻¹³ on the drafting stack and 9.997 × 10⁻¹³ on `sid-f`, a difference of eigenvector roundoff. It is now recorded as bounds: below 10⁻⁶ everywhere (observed 2.1–4.7 × 10⁻⁷ on the L = 5 grids) and below 10⁻¹⁰ on both L = 7 grids (observed 0.99–2.05 × 10⁻¹²). Series-convergence changes, at most 9.9 × 10⁻¹⁴, are also recorded as a flag within 10⁻⁶. A guard test rejects any nonzero design-evidence float below 10⁻⁹. Rules, points, comparator values, constants and seeds are unchanged. |
+| Freeze tooling | `--freeze` accepts only a draft that matches its builder. It sets `status` and `frozen`, and computes the digest. Tests show that re-freezing the committed content reproduces the committed protocol and digest exactly; that a tampered copy fails even with a recomputed digest; and that the committed file refuses both a draft write and a second freeze. |
+| Test bookkeeping | Revision 3 had 41 protocol tests and 7 lock tests, not the 43 and 5 its §12 stated. The frozen-protocol module has 51 tests (§12). |
+| A fixture error | The first digest-convention test used `benchmark_ladder_C.json`, which does not recompute under the convention. The test now uses three artifacts that do. See §12. |
 
 ### Earlier revisions
 
@@ -49,6 +53,7 @@ read-only.
   - Every run stops at the earliest of its caps, and Gate 3 has a deadline.
   - The builder refuses to overwrite a frozen protocol.
   - One definition and channel policy for solve and installation, with OpenBLAS and a pip lock.
+- **r1 (`0a3584b`):** the first executable draft, after note 26 was rejected in note 27.
 
 ## 1. How note 27's findings are resolved
 
@@ -103,11 +108,10 @@ observation 1, and R_seed is the mean of ℓ_n over n = W+1 … W+n.
 estimator. Separately, started from `make_hmm`'s Gaussian weights with W = 0, it must reproduce
 `sid_lib.hmm_rate` to relative 10⁻¹².
 
-**How much initialisation matters, recorded as bounds since revision 4.** At every point the
-total variation between π and the Gaussian weights is below 10⁻⁶ on all four grids, and below
-10⁻¹⁰ on both L = 7 grids. On those L = 7 grids it is roundoff, as revision 4 found. The
-innovation standard deviation spans at least 2.84 grid spacings, and at least 4.06 on the
-evaluation grid.
+**How much initialisation matters, recorded as bounds.** At every point the total variation
+between π and the Gaussian weights is below 10⁻⁶ on all four grids, and below 10⁻¹⁰ on both
+L = 7 grids, where it is roundoff. The innovation standard deviation spans at least 2.84 grid
+spacings, and at least 4.06 on the evaluation grid.
 
 ## 4. Simulator and points
 
@@ -217,7 +221,7 @@ No simultaneous coverage is claimed.
 
 ## 8. Closure and wording
 
-**Closure rule, unchanged.**
+**Closure rule.**
 - **Roadmap F:** decided by K1 alone. It closes VALIDATED iff K1 is VALIDATED at E3, E4 and E5. It
   closes FAILED iff all three receive VALIDATED or FAILED and at least one is FAILED. Otherwise F
   remains OPEN.
@@ -225,7 +229,7 @@ No simultaneous coverage is claimed.
 - **C08's boundary:** reported separately. A statement there needs E1 and E2 both evaluated, with
   the comparator VALIDATED at both, whatever F's closure. Boundary verdicts never enter the status.
 
-**Wording, revised in revision 4.**
+**Wording.**
 
 *Before evaluation*, note 27's caveat is used verbatim. It ends "Binary-likelihood validation
 remains confined to C04's tested point-sampled exact-r_k comparator; F remains open."
@@ -249,12 +253,12 @@ remains confined to C04's tested point-sampled exact-r_k comparator; F remains o
 The campaign status never decides the scope sentence, and E1/E2 verdicts never enter this caveat.
 Generated text, omitting the C08 opening:
 
-- **E1/E2 VALIDATED, E3–E5 FAILED (your fixture):** "No mandatory point E3–E5 validated K1 against
-  the finite-window binary likelihood. C04 supplies the earlier point-sampled validation; results at
-  the conditional boundary points E1/E2 are reported separately. Roadmap F closed FAILED. K1 at the
-  mandatory points: VALIDATED at none; FAILED at E3 (C, s, u, c/tau_c) = (0.40, 0.50, 0.10, 0.15),
-  E4 (C, s, u, c/tau_c) = (0.40, 0.50, 0.30, 0.35) and E5 (C, s, u, c/tau_c) = (0.40, 1.00, 1.00,
-  1.05); UNRESOLVED or without a verdict at none."
+- **E1/E2 VALIDATED, E3–E5 FAILED (the review's fixture):** "No mandatory point E3–E5 validated K1
+  against the finite-window binary likelihood. C04 supplies the earlier point-sampled validation;
+  results at the conditional boundary points E1/E2 are reported separately. Roadmap F closed FAILED.
+  K1 at the mandatory points: VALIDATED at none; FAILED at E3 (C, s, u, c/tau_c) = (0.40, 0.50, 0.10,
+  0.15), E4 (C, s, u, c/tau_c) = (0.40, 0.50, 0.30, 0.35) and E5 (C, s, u, c/tau_c) = (0.40, 1.00,
+  1.00, 1.05); UNRESOLVED or without a verdict at none."
 - **E3 VALIDATED, E4 FAILED, E5 VALIDATED:** "At the mandatory points E3–E5, the exact-r_k comparator
   (K1) is validated against the exact finite-window ARMA(1,1) binary likelihood within +/- 5 %
   (pointwise 95 % intervals) at E3 (C, s, u, c/tau_c) = (0.40, 0.50, 0.10, 0.15) and E5 (C, s, u,
@@ -265,7 +269,7 @@ Generated text, omitting the C08 opening:
 - The pre-evaluation text must match note 27 verbatim.
 - No post-evaluation text confines validation to C04, for any mandatory outcome with or without
   boundary verdicts.
-- Your fixture names neither boundary point.
+- The boundary fixture names neither boundary point.
 - Both mixed examples keep their mandatory validations.
 - A fully validated outcome lists all three mandatory tuples.
 - The status function ignores boundary verdicts, and refuses unknown points, unknown verdicts or a
@@ -321,8 +325,9 @@ recorded in [pip-docopt-build.txt](../analysis/stack_F/pip-docopt-build.txt). Th
 the pip tooling for `cffconvert`, not the numerical stack.
 
 **Execution-stack check.** Once installation finished, the builder and the protocol and lock tests
-were run on `sid-f` itself. That run exposed the roundoff defect recorded in §0. With the
-revision-4 bounds, `--check` matches and all 56 protocol and lock tests pass on `sid-f`.
+were run on `sid-f`. That run exposed the roundoff defect recorded in §0. After the bounds were
+approved and the protocol frozen, `--check` matches and all 58 protocol and lock tests pass on
+`sid-f`.
 
 ## 11. Review decisions
 
@@ -331,28 +336,33 @@ revision-4 bounds, `--check` matches and all 56 protocol and lock tests pass on 
 | BLAS | OpenBLAS pinned explicitly (`libblas=*=*openblas`) |
 | Python | 3.12.14 pinned (option b), with the pinned solve recorded |
 | Installation | approved under §10's locking plan; completed with every stop condition passing |
+| Design evidence | roundoff-level diagnostics recorded as bounds (approved after revision 4) |
+| Freeze | approved at Gate 1; frozen with digest `b7c09ce90f33c37b` |
 | Burn-in W | max(1000, ⌈100·τ_c/c⌉), subject to the corrected NC6 |
 | Pilot length and stability | 125 000 shots and factor 4, as planning choices; the variance bound is approximate |
 | Check sizes and threshold | eight 50 000-observation windows; simulator check at 5 standard errors |
 | Prediction and stopping margins | 1.10 and 1.25, subordinate to the enforced hard caps |
 | Primary comparator | K1 alone decides F; C08-boundary validation is reported separately |
-| Labbook | the freeze pass is sufficient |
+| Labbook | the freeze pass is sufficient ([pass 27](../labbook/2026-09-15-pass-27-F-protocol-frozen.md)) |
 
-**What awaits review.**
-- **Your confirmation of the unrequested revision-4 change:** design evidence recorded as bounds.
-  After that come the Gate-1 freeze, its digest, labbook pass 27 and the local commit, which you have
-  already approved.
-- **Later gates:** Gate 2 implementation, Gate 3 numerical checks and pilots, and Gate 4 evaluation
-  keep their own approvals.
+**Next gates, each needing its own approval.**
+- **Gate 2:** implement `sid_arma.py` and `sid_run13.py` against these contracts.
+- **Gate 3:** numerical checks and pilots.
+- **Gate 4:** evaluation.
+- **Separate workstream:** the corrected C08 map, after Gate 2. Any change to the protocol requires a
+  superseding version that records `supersedes_digest`.
 
 ## 12. Limits and an observation outside F
 
-**Test runs.**
-- **Python 3.9.7:** 89 tests pass. That is the protocol draft (49), the stack lock helper (7), and
-  C08 fold provenance, crossover provenance, site projection and public prose (33).
-- **Python 3.13.7:** the 56 protocol and lock tests pass.
-- **`sid-f` (Python 3.12.14, OpenBLAS, one thread):** the same 56 tests pass.
-- **Rebuild check:** `--check` matches on all three stacks.
+**Test runs after the freeze.**
+- **Python 3.9.7:** 91 tests pass. That is the frozen-protocol tests (51), the stack lock helper (7),
+  and C08 fold provenance, crossover provenance, site projection and public prose (33).
+- **Python 3.13.7:** the 58 protocol and lock tests pass.
+- **`sid-f` (Python 3.12.14, OpenBLAS, one thread):** the same 58 tests pass.
+- **Rebuild check:** `--check` verifies the digest and matches the builder on all three stacks.
+- **Refusals:** the committed file refuses both a draft write and a second freeze, with its bytes
+  unchanged.
+- **Not done:** the full suite was not rerun.
 - **Scope:** the tests check documents, rules, recorded solves, installation records and helpers on
   fixtures. They validate no comparator.
 
