@@ -1,0 +1,119 @@
+{
+  "python": "3.12.14",
+  "implementation": "CPython",
+  "machine": "arm64",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "numpy_config": {
+    "Compilers": {
+      "c": {
+        "name": "clang",
+        "linker": "ld64",
+        "version": "19.1.7",
+        "commands": "arm64-apple-darwin20.0.0-clang",
+        "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+        "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+      },
+      "cython": {
+        "name": "cython",
+        "linker": "cython",
+        "version": "3.2.4",
+        "commands": "cython"
+      },
+      "c++": {
+        "name": "clang",
+        "linker": "ld64",
+        "version": "19.1.7",
+        "commands": "arm64-apple-darwin20.0.0-clang++",
+        "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+        "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+      }
+    },
+    "Machine Information": {
+      "host": {
+        "cpu": "aarch64",
+        "family": "aarch64",
+        "endian": "little",
+        "system": "darwin"
+      },
+      "build": {
+        "cpu": "aarch64",
+        "family": "aarch64",
+        "endian": "little",
+        "system": "darwin"
+      }
+    },
+    "Build Dependencies": {
+      "blas": {
+        "name": "blas",
+        "found": true,
+        "version": "3.9.0",
+        "detection method": "pkgconfig",
+        "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+        "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+        "openblas configuration": "unknown",
+        "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+      },
+      "lapack": {
+        "name": "lapack",
+        "found": true,
+        "version": "3.9.0",
+        "detection method": "pkgconfig",
+        "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+        "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+        "openblas configuration": "unknown",
+        "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+      }
+    },
+    "Python Information": {
+      "path": "/Users/uwarring/opt/anaconda3/envs/sid-f/bin/python",
+      "version": "3.12"
+    },
+    "SIMD Extensions": {
+      "baseline": [
+        "NEON",
+        "NEON_FP16",
+        "NEON_VFPV4",
+        "ASIMD"
+      ],
+      "found": [
+        "ASIMDHP",
+        "ASIMDDP"
+      ],
+      "not found": [
+        "ASIMDFHM"
+      ]
+    }
+  },
+  "blas_packages": {
+    "libblas": {
+      "version": "3.11.0",
+      "build": "11_h51639a9_openblas",
+      "channel": "conda-forge"
+    },
+    "libcblas": {
+      "version": "3.11.0",
+      "build": "11_hb0561ab_openblas",
+      "channel": "conda-forge"
+    },
+    "liblapack": {
+      "version": "3.11.0",
+      "build": "11_hd9741b5_openblas",
+      "channel": "conda-forge"
+    },
+    "libopenblas": {
+      "version": "0.3.34",
+      "build": "openmp_h5e6e99c_1",
+      "channel": "conda-forge"
+    }
+  },
+  "openblas_pinned": true,
+  "threads": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1"
+  }
+}

@@ -1,0 +1,12 @@
+# docopt 0.6.2 is the only source distribution in the pip lock; pip built it locally with build isolation.
+# Lines below are from 'pip install --no-deps --require-hashes --no-cache-dir -v -r analysis/stack_F/pip-lock.txt', in log order.
+Installing build dependencies: started
+Running command installing build dependencies for docopt
+Collecting setuptools>=40.8.0
+Successfully installed setuptools-84.0.0
+Installing build dependencies: finished with status 'done'
+Building wheel for docopt (pyproject.toml): started
+Running command Building wheel for docopt (pyproject.toml)
+Building wheel for docopt (pyproject.toml): finished with status 'done'
+Created wheel for docopt: filename=docopt-0.6.2-py2.py3-none-any.whl size=13783 sha256=28988de4f74abb0627cb77ee6593e6598102d1c95c0a5597d7d6a29a9a14ea14
+Successfully installed attrs-26.1.0 certifi-2026.7.22 cffconvert-2.0.0 charset-normalizer-3.5.1 click-8.5.0 docopt-0.6.2 idna-3.19 jsonschema-3.2.0 pykwalify-1.8.0 pyrsistent-0.20.0 requests-2.34.2 ruamel.yaml-0.19.1 urllib3-2.8.0

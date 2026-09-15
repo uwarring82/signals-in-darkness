@@ -1,0 +1,4 @@
+2026-09-15T21:15:26Z
+conda 22.9.0
+CONDA_SUBDIR=osx-arm64 conda create -y -n sid-f --override-channels -c conda-forge --no-default-packages --file analysis/stack_F/conda-osx-arm64.txt
+exit 0 seconds 225
