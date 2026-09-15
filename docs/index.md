@@ -23,6 +23,12 @@ sets the manuscript scope: the crossover and detection–identification boundary
 principal contributions; servo and policy comparisons remain appendices. The next research
 step is the finite-window likelihood check F, which gates stronger manuscript wording.
 
+**Map correction:** the archived C08 map drops a finite-window correlation factor.
+Its four quoted coarse-grid thresholds survive correction, but its rate map and the
+card's description of that calculation are affected. The
+[note 27 erratum](https://github.com/uwarring82/signals-in-darkness/blob/main/notes/2026-09-15-note-27-C08-fold-erratum-and-F-review.md)
+records the defect and limits; F remains open.
+
 <div class="status-grid" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="result">22</strong><span>supported results</span>

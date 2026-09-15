@@ -61,6 +61,7 @@
   seed_ref: none (deterministic)
   output: analysis/outputs/res3_comparator.json (tau_optimised_threshold); figure figures/sid_regime_map_tau_optimised_exact.png
   reproduced: 2026-09-04, pinned environment. The per-contrast thresholds at which mid-fringe wins after tau optimisation are stored, with the C0 and tau_c/t_dead grids and the win fraction. Scientific status unchanged.
+  errata: notes/2026-09-15-note-27-C08-fold-erratum-and-F-review.md — run3's map first binary lag is r1/F(u), not r1; note 02 checked run4's different fit. C08 is retained only for its four quoted coarse-grid thresholds, which survive a lag-1-fit correction on that grid. The archived rate contours and optimal-time panels are not a correct finite-window map. No corrected map claim is promoted; F remains open. This supersedes the finite-window provenance wording in note 12, the seed, card v2.0, note 25, passes 6/24/25 and the original card-v2.0 milestone summary.
 - id: C09
   statement: Delay crossover at matched measured E0[T]~3e4 lies between tau_c/c=5 and 20. Established 8 Sept 2026 on the RECALIBRATED pilot chain, where all seven policies sit inside the +-30 % envelope (worst -18.1 %): mid-fringe wins at tau_c/c=20 (oracle-mid 1315.6 vs extremum 2146.9) and loses at 5 (2523.9 vs 2163.2) and 1 (10586.4 vs 2260.8). Consistent with the comparator crossover 7.2. Zero capped delay runs. The earlier chains could not support this: the archived one divided by a withdrawn C18 benchmark, and the 7 Sept fresh one had oracle-mid(tc=20) at +49 % outside the envelope.
   status: result

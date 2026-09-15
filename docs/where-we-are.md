@@ -14,6 +14,12 @@ and status labels; the surrounding interpretation still requires editorial revie
 is computed here. For the technical record see the [status table](status.md), the
 [roadmap](roadmap.md), and the notes and labbook in the repository.*
 
+**15 September correction:** C08's archived map omits a factor accounting for the finite
+measurement window. Its four quoted coarse-grid thresholds survive correction, but its
+rate map cannot be used as the correct finite-window calculation. The
+[note 27 erratum](https://github.com/uwarring82/signals-in-darkness/blob/main/notes/2026-09-15-note-27-C08-fold-erratum-and-F-review.md)
+corrects the frozen card and earlier descriptions. F remains open.
+
 <div class="status-grid compact" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="result">22</strong><span>supported results</span>
@@ -172,9 +178,9 @@ contribution to what it does with it.
 between interrogations — into the four-outcome likelihood the servo actually sees, rather than the
 two-outcome idealisation used so far. **F** checks the comparator against an exact treatment of a
 subtlety in the noise model: the phase accumulated over a finite measurement window is not quite
-the simple process the simulator assumes. F is not expected to move any published number, but it
-has not been run, so that expectation is not a guarantee; what it certainly gates is how strongly
-the manuscript may word one claim. **G** (provenance), **B** (the second operating point) and **C**
+the simple process the simulator assumes. Planning F exposed the separate C08 implementation
+defect recorded above. The likelihood comparison has not been run; its outcome controls stronger
+manuscript wording at the points actually tested. **G** (provenance), **B** (the second operating point) and **C**
 (posterior-driven action selection) are complete. G was **provenance-critical** rather than
 housekeeping: while the operating point lived in a mutable global variable, a stored result did
 not carry the parameters it was computed at, and a checkpoint could not refuse to be reused

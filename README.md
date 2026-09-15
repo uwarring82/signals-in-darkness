@@ -8,6 +8,11 @@ and eight withdrawn claims. Posterior sampling responds to the data but does not
 consistent detection-delay advantage (C30–C32). See [`ledgers/status.yaml`](ledgers/status.yaml)
 and [`ledgers/roadmap.yaml`](ledgers/roadmap.yaml) for scope and qualifications.
 
+**C08 correction (15 Sept):** the archived map drops the finite-window factor from its
+first binary lag. Its four quoted coarse-grid thresholds survive correction, but its
+rate map and the card's covariance description need the
+[note 27 erratum](notes/2026-09-15-note-27-C08-fold-erratum-and-F-review.md).
+
 Release [`repo-v0.1.0`](https://github.com/uwarring82/signals-in-darkness/releases/tag/repo-v0.1.0)
 was certified at commit `d845a80` by a clean-checkout run of the whole analysis path in the pinned
 environment; C19 and C20 closed on that evidence
@@ -19,7 +24,7 @@ their information-rate advantage as noise memory changes. Identifying the physic
 additionally depends on the admissible baseline and interrogation-time scan.
 
 ## Current results
-1. Operating-point crossover — *result* at C̄ = 0.4 under the stated comparator (C05), with the τ-optimised physical map (C08) and a separate validity check for the leading-order boundary (C23).
+1. Operating-point crossover — *result* at C̄ = 0.4 under the stated comparator (C05), with C08's four coarse physical-map thresholds retained under the note 27 erratum and a separate validity check for the leading-order boundary (C23).
 2. Detection-versus-identification boundary — *result* (C26), distinguishing a pointwise uncertainty band from a shape-constrained baseline; ΔΓ_φ > 2η₀Γ̂ is necessary but not sufficient for class-A separation on the finite scan.
 3. Extension to the independently randomised servo model via C_eff(κ) — *pilot* (C14, supported, not proved).
 4. Finite-delay comparisons at two parameter sets — *results* for the specified precommitted schedules (C11, C27–C28) and posterior-driven policies (C30–C32); no global optimality or oracle result is claimed.
