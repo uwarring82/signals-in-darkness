@@ -31,11 +31,12 @@ from review_F_plan import comparators, exact_boundary_points, filter_factor, run
 
 OUT = ROOT / "analysis" / "protocol_F.json"
 NOTE = "notes/2026-09-15-note-28-F-protocol-draft.md"
-DRAFT_REVISION = 2
+DRAFT_REVISION = 3
 DELTA, KAPPA, R = 0.05, 0.25, 16
 EVAL_GRID = (241, 7)
 CHECK_GRIDS = ((121, 5), (121, 7), (241, 5))
 POINT_ORDER = ("E1", "E2", "E3", "E4", "E5")          # p = 0..4 in the seed formulas
+MANDATORY = ("E3", "E4", "E5")
 STRESS = {"E3": (0.4, 0.5, 0.10, 0.15), "E4": (0.4, 0.5, 0.30, 0.35), "E5": (0.4, 1.0, 1.00, 1.05)}
 N0 = (0.4, 0.5, 0.0, 0.05)
 N_PILOT = 125_000
@@ -49,8 +50,12 @@ POINT_CAP_SECONDS = 7200
 AGGREGATE_CAP_SECONDS = 8 * 3600
 GATE3_DEADLINE_SECONDS = 1800
 
+PYTHON_PIN = "3.12.14"
+NUMPY_PIN, SCIPY_PIN = "2.4.4", "1.17.1"
 STACK_SPEC = "analysis/stack_F/conda-osx-arm64.txt"
 PIP_SPEC = "analysis/stack_F/pip-requirements.txt"
+REVIEWED_SOLVE = "analysis/stack_F/conda-dry-run-osx-arm64-python3.12.14.json"
+SUPERSEDED_SOLVE = "analysis/stack_F/conda-dry-run-osx-arm64.json"
 CONDA_COMMON = ["-n", "sid-f", "--override-channels", "-c", "conda-forge", "--no-default-packages",
                 "--file", STACK_SPEC]
 SOLVE_ARGS = ["conda", "create", "--dry-run", "--json"] + CONDA_COMMON
@@ -58,22 +63,73 @@ INSTALL_ARGS = ["conda", "create", "-y"] + CONDA_COMMON
 SOLVE_ONLY_FLAGS = ("--dry-run", "--json")
 INSTALL_ONLY_FLAGS = ("-y",)
 
+# ------------------------------------------------------------------------------------------- wording
 _C08_FACT = (
     "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by "
     "F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but "
     "the archived rate map is not the finite-window comparator.")
-CAVEAT_OPEN = (_C08_FACT + " Binary-likelihood validation remains confined to C04's tested point-sampled "
-               "exact-r_k comparator; F remains open.")
-CAVEAT_FAILED = (_C08_FACT + " Roadmap F closed FAILED: the exact-r_k comparator (K1) was not validated "
-                 "against the exact finite-window ARMA(1,1) binary likelihood at {failed_tuples}. "
-                 "Binary-likelihood validation of the comparator remains confined to C04's tested "
-                 "point-sampled cases.")
-CAVEAT_VALIDATED = (_C08_FACT + " Roadmap F closed VALIDATED: the exact-r_k comparator (K1) agrees with the "
-                    "exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % "
-                    "intervals) at {validated_tuples}, and only at those inputs.")
-CORRECTED_C08_CAVEAT = CAVEAT_OPEN      # the wording while F is open (note 27)
+CAVEAT_BEFORE_EVALUATION = (_C08_FACT + " Binary-likelihood validation remains confined to C04's tested "
+                            "point-sampled exact-r_k comparator; F remains open.")      # note 27, verbatim
+CORRECTED_C08_CAVEAT = CAVEAT_BEFORE_EVALUATION
+SCOPE_WITHOUT_FINITE_WINDOW = ("Binary-likelihood validation of the exact-r_k comparator remains confined to "
+                               "C04's tested point-sampled cases.")
+SCOPE_WITH_FINITE_WINDOW = ("The exact-r_k comparator (K1) is validated against the exact finite-window ARMA(1,1) "
+                            "binary likelihood within +/- 5 % (pointwise 95 % intervals) at {validated_tuples}. "
+                            "At every other input its binary-likelihood validation remains confined to C04's "
+                            "tested point-sampled cases.")
+STATUS_SENTENCE = {"OPEN": "Roadmap F remains OPEN.",
+                   "VALIDATED": "Roadmap F closed VALIDATED.",
+                   "FAILED": "Roadmap F closed FAILED."}
+TUPLE_REPORT = ("K1 at the mandatory points: VALIDATED at {validated}; FAILED at {failed}; "
+                "UNRESOLVED or without a verdict at {other}.")
+VERDICTS = ("VALIDATED", "FAILED", "UNRESOLVED", "NO_VERDICT")
 
 
+def roadmap_F_status(k1_verdicts):
+    """The numerical closure rule: K1 alone, at E3, E4 and E5."""
+    missing = [p for p in MANDATORY if p not in k1_verdicts]
+    if missing:
+        raise ValueError(f"no K1 verdict supplied for mandatory points {missing}")
+    unknown = sorted({k1_verdicts[p] for p in MANDATORY} - set(VERDICTS))
+    if unknown:
+        raise ValueError(f"unknown verdicts {unknown}")
+    v = [k1_verdicts[p] for p in MANDATORY]
+    if all(x == "VALIDATED" for x in v):
+        return "VALIDATED"
+    if all(x in ("VALIDATED", "FAILED") for x in v) and "FAILED" in v:
+        return "FAILED"
+    return "OPEN"
+
+
+def tuple_label(point):
+    return (f"(C, s, u, c/tau_c) = ({point['C']:.2f}, {point['s']:.2f}, {point['u']:.2f}, "
+            f"{point['c_over_tau_c']:.2f})")
+
+
+def _join(items):
+    """'none', 'a', 'a and b', or 'a, b and c'."""
+    if not items:
+        return "none"
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def closure_wording(k1_verdicts=None, points=None):
+    """Caveat for the manuscript: note 27's sentence before evaluation; afterwards, scope,
+    campaign status and the verdict tuples reported separately."""
+    if k1_verdicts is None:
+        return CAVEAT_BEFORE_EVALUATION
+    status = roadmap_F_status(k1_verdicts)
+    fmt = lambda names: _join([f"{n} {tuple_label(points[n])}" for n in names])  # noqa: E731
+    validated = [p for p in MANDATORY if k1_verdicts[p] == "VALIDATED"]
+    failed = [p for p in MANDATORY if k1_verdicts[p] == "FAILED"]
+    other = [p for p in MANDATORY if k1_verdicts[p] not in ("VALIDATED", "FAILED")]
+    scope = (SCOPE_WITH_FINITE_WINDOW.format(validated_tuples=fmt(validated)) if validated
+             else SCOPE_WITHOUT_FINITE_WINDOW)
+    return " ".join([_C08_FACT, scope, STATUS_SENTENCE[status],
+                     TUPLE_REPORT.format(validated=fmt(validated), failed=fmt(failed), other=fmt(other))])
+
+
+# ------------------------------------------------------------------------------------------- write path
 class ProtocolFrozenError(RuntimeError):
     """Raised instead of overwriting a protocol that is no longer a draft."""
 
@@ -104,6 +160,7 @@ def stop_seconds(predicted_seconds, remaining_aggregate_seconds):
     return min(STOP_MARGIN * predicted_seconds, POINT_CAP_SECONDS, remaining_aggregate_seconds)
 
 
+# ------------------------------------------------------------------------------------------- design
 def ma_root(F, phi):
     """MA coefficient b, |b| < 1, of eps_n = x_n + b x_{n-1} with rho_1 = F phi (note 28 §3)."""
     A = phi * (1 - F)
@@ -235,7 +292,7 @@ def build():
                     "C": N0[0], "s": N0[1], "u": N0[2], "c_over_tau_c": N0[3]}
     evidence = {name: design(p["C"], p["s"], p["u"], p["c_over_tau_c"])
                 for name, p in points.items()}
-    points["mandatory"] = ["E3", "E4", "E5"]
+    points["mandatory"] = list(MANDATORY)
     points["conditional_pair"] = ["E1", "E2"]
     points["deferred"] = {"E6": "(C, s, u, c/tau_c) = (0.4, 1.0, 0.30, 0.35): K1 and K2 differ by 5.6 %, "
                                 "inside the band, so it supplies no forced-incompatibility control (note 27)"}
@@ -256,7 +313,7 @@ def build():
         "draft_revision": DRAFT_REVISION,
         "revision_log": [
             {"revision": 1, "commit": "0a3584b"},
-            {"revision": 2, "changes": [
+            {"revision": 2, "commit": "4f0b390", "changes": [
                 "NC6 compares W- and 2W-history filters on the same final observations; the extra pass is costed",
                 "every run stops at the earliest of 1.25 x prediction, the 7200 s point cap and the remaining "
                 "aggregate budget; Gate 3 has an enforced 1800 s deadline including its first measurement",
@@ -264,13 +321,20 @@ def build():
                 "one F-specific conda definition and channel policy for solve and installation; OpenBLAS pinned; "
                 "pip packages locked separately",
                 "separate caveats for open, failed and validated closure",
-                "review decisions on note 28 §11 recorded"]}],
+                "review decisions on note 28 §11 recorded"]},
+            {"revision": 3, "changes": [
+                f"python pinned to {PYTHON_PIN} (review decision on r2 §11, option b); second dry-run solve recorded; "
+                "stack checks, refusals and tests use the exact patch",
+                "closure wording no longer confines validation to C04 once any finite-window validation exists: "
+                "before evaluation note 27's sentence; afterwards scope, campaign status and the validated, failed "
+                "and unresolved tuples are reported separately"]}],
         "note": NOTE,
         "replaces_plan": "notes/2026-09-15-note-26-F-plan-draft.md (not accepted; reviewed in note 27)",
         "builder": "tools/build_protocol_F.py",
         "frozen_before": "any ARMA likelihood evaluation, execution-stack numerical check, pilot or evaluation",
         "adopted_choices": {
             "blas": "OpenBLAS pinned (libblas=*=*openblas)",
+            "python": f"{PYTHON_PIN} pinned (option b of note 28 r2 §11)",
             "burn_in": "W = max(1000, ceil(100 tau_c/c)), subject to the corrected NC6",
             "pilot": "n_p = 125000 and stability factor 4, as planning choices; the variance bound is approximate",
             "checks": "eight 50000-observation windows; simulator threshold 5 standard errors",
@@ -427,9 +491,19 @@ def build():
             "diagnostics": "K3 FAILED is a rate comparison consistent with note 27; the covariance defect is "
                            "established algebraically and does not depend on it. K4 verdicts are not "
                            "finite-window truth statements.",
-            "wording_while_open": CAVEAT_OPEN,
-            "wording_if_failed": CAVEAT_FAILED,
-            "wording_if_validated": CAVEAT_VALIDATED,
+            "wording": {
+                "before_evaluation": CAVEAT_BEFORE_EVALUATION,
+                "c08_fact": _C08_FACT,
+                "scope_without_finite_window_validation": SCOPE_WITHOUT_FINITE_WINDOW,
+                "scope_with_finite_window_validation": SCOPE_WITH_FINITE_WINDOW,
+                "status": STATUS_SENTENCE,
+                "tuple_report": TUPLE_REPORT,
+                "assembly": "before evaluation: before_evaluation, verbatim. After evaluation: c08_fact; then "
+                            "scope_with_finite_window_validation if K1 is VALIDATED at any mandatory point, "
+                            "otherwise scope_without_finite_window_validation; then the status sentence for "
+                            "roadmap_F; then tuple_report. Tuples are written (C, s, u, c/tau_c) = (...). The "
+                            "campaign status never determines the scope sentence.",
+                "reference_implementation": "tools/build_protocol_F.py closure_wording and roadmap_F_status"},
             "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"},
         "budget": {
             "numerical_threads": 1,
@@ -457,6 +531,7 @@ def build():
         "execution_stack": {
             "conda_definition": STACK_SPEC,
             "pip_definition": PIP_SPEC,
+            "pins": {"python": PYTHON_PIN, "numpy": NUMPY_PIN, "scipy": SCIPY_PIN},
             "platform": "osx-arm64, native; an osx-64 environment under Rosetta is a different stack and is not permitted",
             "channel_policy": "conda-forge only: both the solve and the installation pass --override-channels -c "
                               "conda-forge with the same spec file, so configured channels such as defaults "
@@ -478,14 +553,15 @@ def build():
                 "pip_installed": ["$ENV/bin/python", "-m", "pip", "list", "--format=json", "--verbose"],
                 "record": ["$ENV/bin/python", "tools/lock_stack_F.py", "record", "analysis/stack_F/conda-list.json",
                            "analysis/stack_F/stack-record.json"]},
-            "reviewed_solve": "analysis/stack_F/conda-dry-run-osx-arm64.json",
+            "reviewed_solve": REVIEWED_SOLVE,
+            "superseded_solve": SUPERSEDED_SOLVE + " (python=3.12 without a patch pin resolved to 3.12.0)",
             "stop_conditions": [
                 "the installed conda package set (name, version, build) differs from the reviewed dry-run solve; "
                 "channel metadata can change between the two steps",
                 "the solve or installation takes any package from a channel other than conda-forge",
                 "any conda package's subdir is neither osx-arm64 nor noarch",
                 "libblas's build string does not contain openblas",
-                "python is not 3.12.x, or numpy is not 2.4.4, or scipy is not 1.17.1",
+                f"python is not {PYTHON_PIN}, or numpy is not {NUMPY_PIN}, or scipy is not {SCIPY_PIN}",
                 "the installed python binary is not arm64",
                 "pip would install, upgrade or remove a distribution already provided by conda, or a pip report "
                 "entry lacks a sha256"],
@@ -499,9 +575,9 @@ def build():
                        "NUMEXPR_NUM_THREADS all equal 1, set before numpy is imported",
             "recorded": "python patch version, platform.machine(), numpy build configuration, libblas and "
                         "libopenblas build strings, thread variables, git revision, protocol digest",
-            "refusal": "sid_run13.py refuses a dirty tree, a python other than 3.12.x, numpy or scipy other than the "
-                       "pins, a machine other than arm64, a libblas build without openblas, any thread variable "
-                       "other than 1, a DRAFT status or a digest mismatch",
+            "refusal": f"sid_run13.py refuses a dirty tree, a python other than {PYTHON_PIN}, numpy or scipy other "
+                       "than the pins, a machine other than arm64, a libblas build without openblas, any thread "
+                       "variable other than 1, a DRAFT status or a digest mismatch",
             "timing": "all locks are committed before Gate 3"},
         "outputs": {"numerical_checks": "analysis/reproduction/res13_F_numerical_checks.json",
                     "pilot": "analysis/reproduction/res13_F_pilot.json",

@@ -3,7 +3,9 @@
 #   CONDA_SUBDIR=osx-arm64 conda create [--dry-run] -n sid-f --override-channels -c conda-forge --file <this file>
 # so no configured channel (such as defaults) can enter either step. Pins follow environment.yml;
 # the BLAS implementation is pinned to OpenBLAS (conda-forge's libblas switching mechanism).
-python=3.12
+# python is pinned to 3.12.14 (review decision on note 28 r2 §11, option b): python=3.12 alone
+# resolved to 3.12.0 in the first dry-run solve.
+python=3.12.14
 numpy=2.4.4
 scipy=1.17.1
 matplotlib=3.10.8

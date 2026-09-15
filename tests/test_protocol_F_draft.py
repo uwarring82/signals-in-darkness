@@ -1,7 +1,7 @@
 """The draft roadmap-F protocol (note 28): reproducible, non-authorising, internally consistent.
 
-These tests check the protocol document and its builder only. No ARMA filter exists yet, and
-nothing here simulates a record or evaluates a likelihood.
+These tests check the protocol document, its builder and the recorded dry-run solve only. No
+ARMA filter exists yet, and nothing here simulates a record or evaluates a likelihood.
 """
 import json
 import math
@@ -31,7 +31,7 @@ def test_equivalence_helper_can_fail():
 
 def test_draft_cannot_authorise_any_measurement():
     assert builder.is_draft(DRAFT)
-    assert DRAFT["draft_revision"] == 2
+    assert DRAFT["draft_revision"] == 3
     assert "refuse" in DRAFT["status"] and "DRAFT" in DRAFT["execution_stack"]["refusal"]
 
 
@@ -69,10 +69,9 @@ def test_builder_writes_new_drafts_and_replaces_only_drafts(tmp_path):
     fresh.parent.mkdir()
     builder.write_draft(DRAFT, fresh)
     assert json.loads(fresh.read_text()) == DRAFT
-    older = _frozen(DRAFT, draft_revision=1)
-    fresh.write_text(json.dumps(older))
+    fresh.write_text(json.dumps(_frozen(DRAFT, draft_revision=1)))
     builder.write_draft(DRAFT, fresh)
-    assert json.loads(fresh.read_text())["draft_revision"] == 2
+    assert json.loads(fresh.read_text())["draft_revision"] == DRAFT["draft_revision"]
     with pytest.raises(builder.ProtocolFrozenError):
         builder.write_draft(_frozen(DRAFT, digest="0123456789abcdef"), tmp_path / "other.json")
 
@@ -121,21 +120,49 @@ def test_budget_caps_and_gate3_deadline_are_explicit():
 
 
 # --------------------------------------------------------------------------- stack
+def _specs(path):
+    return [l.strip() for l in (ROOT / path).read_text().splitlines() if l.strip() and not l.startswith("#")]
+
+
 def test_solve_and_installation_share_one_definition_and_channel_policy():
     cmds = DRAFT["execution_stack"]["commands"]
     strip = lambda args, extra: [a for a in args if a not in extra]  # noqa: E731
     assert strip(cmds["solve"], builder.SOLVE_ONLY_FLAGS) == strip(cmds["install"], builder.INSTALL_ONLY_FLAGS)
     for args in (cmds["solve"], cmds["install"]):
-        assert args[args.index("--override-channels") + 1:args.index("--override-channels") + 3] == ["-c", "conda-forge"]
+        i = args.index("--override-channels")
+        assert args[i + 1:i + 3] == ["-c", "conda-forge"]
         assert args[args.index("--file") + 1] == builder.STACK_SPEC
     assert cmds["environment"] == {"CONDA_SUBDIR": "osx-arm64"}
-    specs = [l.strip() for l in (ROOT / builder.STACK_SPEC).read_text().splitlines()
-             if l.strip() and not l.startswith("#")]
+    specs = _specs(builder.STACK_SPEC)
     assert "libblas=*=*openblas" in specs
-    assert {"python=3.12", "numpy=2.4.4", "scipy=1.17.1"} <= set(specs)
-    pip = [l.strip() for l in (ROOT / builder.PIP_SPEC).read_text().splitlines() if l.strip() and not l.startswith("#")]
-    assert pip == ["cffconvert==2.0.0"]
+    assert _specs(builder.PIP_SPEC) == ["cffconvert==2.0.0"]
     assert "--require-hashes" in cmds["pip_install"] and "--no-deps" in cmds["pip_install"]
+
+
+def test_the_exact_python_patch_is_carried_through_the_stack_rules():
+    pins = DRAFT["execution_stack"]["pins"]
+    assert pins == {"python": "3.12.14", "numpy": "2.4.4", "scipy": "1.17.1"}
+    specs = _specs(builder.STACK_SPEC)
+    assert f"python={pins['python']}" in specs and "python=3.12" not in specs
+    assert {f"numpy={pins['numpy']}", f"scipy={pins['scipy']}"} <= set(specs)
+    assert any(f"python is not {pins['python']}" in s for s in DRAFT["execution_stack"]["stop_conditions"])
+    assert f"a python other than {pins['python']}" in DRAFT["execution_stack"]["refusal"]
+
+
+def test_the_reviewed_solve_is_the_recorded_pinned_solve_and_passes_the_stop_conditions():
+    solve_path = ROOT / DRAFT["execution_stack"]["reviewed_solve"]
+    solve = json.loads(solve_path.read_text())
+    meta = solve_path.with_suffix(".meta.txt").read_text().splitlines()
+    assert solve["success"] is True and solve["dry_run"] is True
+    assert meta[2] == "CONDA_SUBDIR=osx-arm64 " + " ".join(DRAFT["execution_stack"]["commands"]["solve"])
+    assert meta[3].startswith("exit 0 ")
+    link = {p["name"]: p for p in solve["actions"]["LINK"]}
+    pins = DRAFT["execution_stack"]["pins"]
+    assert {p["channel"] for p in link.values()} == {"conda-forge"}
+    assert {p["platform"] for p in link.values()} <= {"osx-arm64", "noarch"}
+    assert "openblas" in link["libblas"]["build_string"]
+    assert (link["python"]["version"], link["numpy"]["version"], link["scipy"]["version"]) == \
+        (pins["python"], pins["numpy"], pins["scipy"])
 
 
 # --------------------------------------------------------------------------- inputs and arithmetic
@@ -222,10 +249,75 @@ def test_mandatory_conditional_and_closure_rules_are_explicit():
     assert "R_lo <= 0" in " ".join(DRAFT["verdicts"]["rule"])
 
 
-def test_closure_wordings_match_their_outcomes():
-    c = DRAFT["closure"]
-    assert c["wording_while_open"].endswith("F remains open.")
-    for key in ("wording_if_failed", "wording_if_validated"):
-        assert "remains open" not in c[key].split("finite-window comparator.")[1]
-    assert "closed FAILED" in c["wording_if_failed"] and "{failed_tuples}" in c["wording_if_failed"]
-    assert "closed VALIDATED" in c["wording_if_validated"] and "{validated_tuples}" in c["wording_if_validated"]
+@pytest.mark.parametrize("verdicts,status", [
+    (("VALIDATED", "VALIDATED", "VALIDATED"), "VALIDATED"),
+    (("VALIDATED", "FAILED", "VALIDATED"), "FAILED"),
+    (("FAILED", "FAILED", "FAILED"), "FAILED"),
+    (("VALIDATED", "UNRESOLVED", "VALIDATED"), "OPEN"),
+    (("FAILED", "UNRESOLVED", "FAILED"), "OPEN"),
+    (("VALIDATED", "NO_VERDICT", "VALIDATED"), "OPEN"),
+    (("NO_VERDICT", "NO_VERDICT", "NO_VERDICT"), "OPEN"),
+])
+def test_roadmap_F_status_follows_the_closure_rule(verdicts, status):
+    assert builder.roadmap_F_status(dict(zip(builder.MANDATORY, verdicts))) == status
+
+
+def test_status_requires_every_mandatory_verdict():
+    with pytest.raises(ValueError):
+        builder.roadmap_F_status({"E3": "VALIDATED", "E5": "VALIDATED"})
+    with pytest.raises(ValueError):
+        builder.roadmap_F_status({"E3": "VALIDATED", "E4": "PASSED", "E5": "VALIDATED"})
+
+
+def test_before_evaluation_the_wording_is_note_27_verbatim():
+    note27 = " ".join((ROOT / "notes" / "2026-09-15-note-27-C08-fold-erratum-and-F-review.md").read_text().split())
+    assert builder.closure_wording() == DRAFT["closure"]["wording"]["before_evaluation"]
+    assert " ".join(builder.closure_wording().split()) in note27
+
+
+BLANKET_C04 = "remains confined to C04's tested point-sampled exact-r_k comparator"
+
+
+def _wording(*verdicts):
+    return builder.closure_wording(dict(zip(builder.MANDATORY, verdicts)), DRAFT["points"])
+
+
+def test_mixed_failed_closure_keeps_its_finite_window_validations():
+    text = _wording("VALIDATED", "FAILED", "VALIDATED")
+    e3, e4, e5 = (builder.tuple_label(DRAFT["points"][p]) for p in ("E3", "E4", "E5"))
+    assert "Roadmap F closed FAILED." in text
+    assert BLANKET_C04 not in text and "At every other input" in text
+    scope = text.split("Roadmap F closed FAILED.")[0]
+    assert f"at E3 {e3} and E5 {e5}." in scope and e4 not in scope
+    assert f"FAILED at E4 {e4}" in text
+
+
+def test_mixed_open_campaign_keeps_its_finite_window_validations():
+    text = _wording("VALIDATED", "UNRESOLVED", "VALIDATED")
+    e4 = builder.tuple_label(DRAFT["points"]["E4"])
+    assert "Roadmap F remains OPEN." in text and "closed" not in text
+    assert BLANKET_C04 not in text and "At every other input" in text
+    assert f"UNRESOLVED or without a verdict at E4 {e4}" in text and "FAILED at none" in text
+
+
+def test_without_any_finite_window_validation_the_scope_stays_with_c04():
+    for verdicts, status in ((("FAILED", "FAILED", "FAILED"), "closed FAILED"),
+                             (("NO_VERDICT", "UNRESOLVED", "FAILED"), "remains OPEN")):
+        text = _wording(*verdicts)
+        assert builder.SCOPE_WITHOUT_FINITE_WINDOW in text and "validated against" not in text
+        assert f"Roadmap F {status}." in text and "VALIDATED at none" in text
+
+
+def test_validated_closure_reports_every_tuple_and_no_blanket_c04_limit():
+    text = _wording("VALIDATED", "VALIDATED", "VALIDATED")
+    assert "Roadmap F closed VALIDATED." in text and BLANKET_C04 not in text
+    for p in builder.MANDATORY:
+        assert builder.tuple_label(DRAFT["points"][p]) in text
+
+
+def test_protocol_records_the_wording_parts_the_builder_uses():
+    w = DRAFT["closure"]["wording"]
+    assert w["scope_with_finite_window_validation"] == builder.SCOPE_WITH_FINITE_WINDOW
+    assert w["scope_without_finite_window_validation"] == builder.SCOPE_WITHOUT_FINITE_WINDOW
+    assert w["status"] == builder.STATUS_SENTENCE and w["tuple_report"] == builder.TUPLE_REPORT
+    assert "never determines the scope sentence" in w["assembly"]

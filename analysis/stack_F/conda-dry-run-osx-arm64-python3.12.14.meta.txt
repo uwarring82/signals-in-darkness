@@ -1,0 +1,4 @@
+2026-09-15T16:40:36Z
+conda 22.9.0
+CONDA_SUBDIR=osx-arm64 conda create --dry-run --json -n sid-f --override-channels -c conda-forge --no-default-packages --file analysis/stack_F/conda-osx-arm64.txt
+exit 0 seconds 149
