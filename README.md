@@ -1,7 +1,8 @@
 # Signals in Darkness — operating-point crossover in sequential quantum-clock detection
 
-**Status (14 Sept 2026):** card v1.1 frozen; card v2.0 seed open. Roadmap B (second operating
-point), C (posterior-driven action selection) and E (dimensionless identifiability) are complete.
+**Status (15 Sept 2026):** [card v2.0 is frozen](cards/v2.0-frozen.md), identified by the
+annotated `card-v2.0` Git tag. Roadmap B (second operating point), C (posterior-driven action
+selection) and E (dimensionless identifiability) are complete.
 **D and F remain open; C24 is the sole open claim.** The ledger contains 22 results, one pilot
 and eight withdrawn claims. Posterior sampling responds to the data but does not deliver a
 consistent detection-delay advantage (C30–C32). See [`ledgers/status.yaml`](ledgers/status.yaml)
@@ -12,11 +13,14 @@ was certified at commit `d845a80` by a clean-checkout run of the whole analysis 
 environment; C19 and C20 closed on that evidence
 (`notes/2026-09-05-note-10-certification-closure.md`). That certification applies to that release,
 not automatically to later work. No DOI is claimed for it.
-This README carries no thesis line until card v2.0 is frozen.
+
+In the calibrated binary-readout/OU model, contrast loss and temporal correlation exchange
+their information-rate advantage as noise memory changes. Identifying the physical cause
+additionally depends on the admissible baseline and interrogation-time scan.
 
 ## Current results
 1. Operating-point crossover — *result* at C̄ = 0.4 under the stated comparator (C05), with the τ-optimised physical map (C08) and a separate validity check for the leading-order boundary (C23).
-2. Detection-versus-identification boundary — *result* (C26), distinguishing a pointwise uncertainty band from a shape-constrained baseline; the fast-noise criterion is ΔΓ_φ > 2η₀Γ̂.
+2. Detection-versus-identification boundary — *result* (C26), distinguishing a pointwise uncertainty band from a shape-constrained baseline; ΔΓ_φ > 2η₀Γ̂ is necessary but not sufficient for class-A separation on the finite scan.
 3. Extension to the independently randomised servo model via C_eff(κ) — *pilot* (C14, supported, not proved).
 4. Finite-delay comparisons at two parameter sets — *results* for the specified precommitted schedules (C11, C27–C28) and posterior-driven policies (C30–C32); no global optimality or oracle result is claimed.
 

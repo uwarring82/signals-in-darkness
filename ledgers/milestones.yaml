@@ -7,3 +7,6 @@
 - date: 2026-09-03
   tag: note-03a
   summary: Errata to pass 2 — benchmark renamed, learner not adaptive, worst-case delay ratio wording, general identifiability criterion, servo reduction supported not proved, bonus withdrawn; paper hierarchy reweighted.
+- date: 2026-09-15
+  tag: card-v2.0
+  summary: Manuscript-scope card frozen at cards/v2.0-frozen.md — C05 crossover and C26 identification share the headline; C05/C08 geometric-fit provenance is linked through note 02 to C04's exact-correlation validation; servo and L1-L3 policies remain appendices, the quantitative compression promise is dropped, and F remains open before manuscript freeze. C's freeze-gate flag follows the seed's explicit go/no-go rule. The annotated card-v2.0 Git tag identifies the freeze commit as a new convention; this is not a repository release certification.

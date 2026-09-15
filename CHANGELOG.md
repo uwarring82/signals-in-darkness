@@ -14,6 +14,10 @@ listed under Planned and are not claimed as history.
 
 ## Tags
 
+- **`card-v2.0`** — manuscript-scope freeze after review: two principal contributions,
+  explicit geometric-fit validation provenance, servo and L1–L3 policy appendices, and no
+  unestablished quantitative compression promise. F remains open. The annotated card tag
+  identifies the freeze commit as a new convention; it does not certify a repository release.
 - **`repo-v0.2.0`** — tutorial workstream and certification closure. Opens the tutorial
   sequence under `cards/tutorial-v0.1.md` with notebook 00, whose contract is enforced in the
   certified environment; closes C19 and C20 on the `repo-v0.1.0` certification evidence, and

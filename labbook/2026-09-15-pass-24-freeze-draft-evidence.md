@@ -24,7 +24,8 @@ row inventory are checked.
 
 **Status:** [Note 25](../notes/2026-09-15-note-25-freeze-review-evidence.md) records the
 erratum and the supplement. The frozen cards, previous notes, ledgers and outputs are
-preserved. [The v2.0 card](../cards/v2.0-freeze-draft.md) remains a review draft. Its
+preserved. At this pass, the v2.0 card remained a review draft, preserved at commit
+`0f98c206a0a4c503747c6137e4d91f23bdcf8278` as `cards/v2.0-freeze-draft.md`. Its
 baseline-class chronology is now attributed to note 03's content, and its proposed
 annotated freeze tag is identified as a new convention rather than a historical precedent.
 
@@ -45,3 +46,6 @@ an additional local run. The final review also prompted an explicit link from C0
 exact-r_k validation through note 02's fit–series comparison to the archived C05/C08
 geometric-fit numbers, and an explicit statement that oscillator phases are independent
 both from shot to shot and of the signal phase.
+
+Subsequent disposition: [pass 25](2026-09-15-pass-25-card-v2-freeze.md) records acceptance
+and the rename to the [frozen v2.0 card](../cards/v2.0-frozen.md).

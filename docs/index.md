@@ -17,6 +17,12 @@ reproduced, and its provenance is irrecoverable. It is kept, marked, and depende
 
 ## Current research state
 
+**Card v2.0 is frozen (15 Sept 2026).** The
+[accepted card](https://github.com/uwarring82/signals-in-darkness/blob/main/cards/v2.0-frozen.md)
+sets the manuscript scope: the crossover and detection–identification boundary are the two
+principal contributions; servo and policy comparisons remain appendices. The next research
+step is the finite-window likelihood check F, which gates stronger manuscript wording.
+
 <div class="status-grid" aria-label="Current claim status">
   <a class="status-card status-result" href="{{ '/status.html' | relative_url }}">
     <strong data-status-count="result">22</strong><span>supported results</span>
@@ -84,7 +90,7 @@ calculation, not a claim of this project — or with a ledger claim and its stat
 | page | what it holds |
 |---|---|
 | **[Status](status.md)** | every claim, its standing, its notes and its errata pointers |
-| **[Roadmap](roadmap.md)** | planned work, and which items gate the next freeze |
+| **[Roadmap](roadmap.md)** | completed campaigns, the card's freeze gates and remaining checks |
 | **[Milestones](milestones.md)** | what has been completed and when |
 | **[Reproduce](reproduce.md)** | how to recompute the results from a clean copy |
 | **[Feedback](feedback.md)** | how to report an error |

@@ -1,4 +1,5 @@
-# v2.0 gating runs (cards/v2.0-seed.md)
+# v2.0 runs; accepted freeze rule in cards/v2.0-frozen.md (15 Sept 2026).
+# C's former gate flag is reconciled with the seed's explicit go/no-go rule at this freeze.
 - id: A1
   title: Operating-point and sequential-detection prior-art audit — C05 mechanism re-scoped; quantitative detection-theoretic boundary not found by targeted search
   state: complete
@@ -14,7 +15,7 @@
 - id: C
   title: Posterior-driven action selection against independently selected fixed-endpoint and robust-schedule benchmarks (L1-L3); L4 oracle NOT attempted - COMPLETE 14 Sept 2026. Sampling shows resolved action-level responsiveness at both operating points while greedy fails the action gate (C30); sampling is resolvedly SLOWER than the independently selected informed fixed endpoint L1 in five of six cells, and the three cells a null-ARL mismatch could have manufactured survive ARL matching (C31); against L2 the evidence is mixed and the selected L3 procedure finds no robust-schedule advantage, which does NOT establish a class-wide optimum (C32). The earlier title said 'vs true oracle'; no oracle comparison was made or licensed, because L4 was never attempted. Responsiveness did not produce a consistent delay advantage.
   state: complete
-  gates_freeze: true
+  gates_freeze: false
 - id: D
   title: Correlated oscillator residual (AR(1) phase) in the four-outcome likelihood — size effect on C_eff
   state: open
