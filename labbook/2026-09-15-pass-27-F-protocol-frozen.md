@@ -57,13 +57,17 @@ The failures along the way stay in the record:
   - a 1.25× stop could exceed the 2 h cap;
   - the builder replaced a frozen protocol on a temporary fixture;
   - the dry run excluded `defaults`, while installing from `environment.yml` would append it.
-- **Revision 2 (`4f0b390`):** `python=3.12` resolved to 3.12.0 although 3.12.14 builds existed. A
-  missing `__osx` virtual package was ruled out, and the cause was not established. The
-  second solve pinned 3.12.14.
-- **Revision 3 (`a327ab5`):** the FAILED and OPEN caveats confined validation to C04 despite
-  permitted mixed outcomes, and its test count was misstated (43 and 5 for 41 and 7).
-- **Revision 4 (`99cb09a`):**
-  - The scope sentence still spoke about every input while inspecting only E3–E5.
+- **Revision 2 (`4f0b390`):**
+  - `python=3.12` resolved to 3.12.0 although 3.12.14 builds existed. A missing `__osx` virtual
+    package was ruled out, and the cause was not established. The second solve pinned 3.12.14.
+  - The OPEN and FAILED caveats confined validation to C04 despite permitted mixed outcomes.
+    Revision 3 corrected this.
+- **Revision 3 (`a327ab5`):**
+  - The post-evaluation scope sentence spoke about every other input ("At every other input its
+    binary-likelihood validation remains confined to C04's tested point-sampled cases") while the
+    wording helper inspected only E3–E5. Revision 4 corrected this.
+  - Its test count was misstated (43 and 5 for 41 and 7).
+- **Revision 4 (`99cb09a`),** failures met while preparing it:
   - On the installed stack, a total variation of about 10⁻¹² came out 9.997 × 10⁻¹³ against
     9.878 × 10⁻¹³ and failed the rebuild check, so design evidence now records bounds.
   - The first digest fixture, `benchmark_ladder_C.json`, did not recompute under the convention.
@@ -81,5 +85,15 @@ The failures along the way stay in the record:
 - **Refusals:** the committed file refuses both a draft write and a second freeze, and its bytes
   stay unchanged.
 - **Not done:** the full suite was not rerun.
+
+**Correction (2026-09-16).** As first written, this list filed two wording defects under the
+revision that corrected them, not the revision that contained them:
+- The every-input scope sentence was listed under revision 4. It was in revision 3 (`a327ab5`), and
+  revision 4 replaced it. The Gate-1 review identified this misattribution.
+- The C04-confined OPEN and FAILED caveats were listed under revision 3. They were in revision 2
+  (`4f0b390`: `CAVEAT_OPEN` and `CAVEAT_FAILED`), and revision 3 removed them. This was found while
+  checking the first misattribution against the commits.
+
+The protocol's own revision log records changes, not defects, and is unaffected.
 
 Review, drafting, implementation and installation used model assistance.
