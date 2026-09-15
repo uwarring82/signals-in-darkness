@@ -74,6 +74,32 @@ def test_fast_noise_ratio_is_necessary_but_not_sufficient_for_scan_separation():
     assert unseparated_scan, "ratio > 1 can even fail to separate anywhere on this finite scan"
 
 
+def test_class_a_zero_inventory_includes_the_longer_correlation_counterexample():
+    """Note 25: C26's partial list must not hide three zero rows at tau_c/T2=1."""
+    expected = {
+        (contrast, eta, v)
+        for contrast in (0.4, 0.5, 0.9)
+        for eta in (0.02, 0.05, 0.10)
+        for v in (0.05, 0.2, 1.0, 5.0)
+        if v == 0.05 or (v == 0.2 and eta >= 0.05) or (v == 1.0 and eta == 0.10)
+    }
+    zero_rows = set()
+    for row in IDENT:
+        v, eta = row["tau_c_over_T2"], row["eta_0"]
+        exact = np.array([s2_of(u, v)/2 for u in TAU_OVER_T2])
+        separated = exact > 2*eta*TAU_OVER_T2
+        assert (row["I_A"] == 0) == (not separated.any())
+        if row["I_A"] == 0:
+            zero_rows.add((row["C_0"], eta, v))
+        if v == 1.0 and eta == 0.10:
+            assert row["DeltaGamma_over_2eta0_Gamma_hat"] == 1.25
+            assert row["class_A_points_passing"] == 0
+            assert 0.087 < row["I_B"] / row["I_unc"] < 0.104
+    assert len(IDENT) == 36
+    assert len(zero_rows) == 18
+    assert zero_rows == expected
+
+
 # --------------------------------------------------------------------------- errata reachability
 def test_errata_target_still_matches_the_live_frozen_digest():
     """If the ladder were ever re-frozen, the erratum would silently detach from it."""
