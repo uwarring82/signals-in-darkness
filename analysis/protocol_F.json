@@ -1,11 +1,38 @@
 {
   "record": "roadmap F: validation of mid-fringe comparators against an exact ARMA(1,1) latent binary likelihood",
-  "status": "DRAFT FOR REVIEW (note 28) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
+  "status": "DRAFT FOR REVIEW (note 28, revision 2) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
   "version": 1,
+  "draft_revision": 2,
+  "revision_log": [
+    {
+      "revision": 1,
+      "commit": "0a3584b"
+    },
+    {
+      "revision": 2,
+      "changes": [
+        "NC6 compares W- and 2W-history filters on the same final observations; the extra pass is costed",
+        "every run stops at the earliest of 1.25 x prediction, the 7200 s point cap and the remaining aggregate budget; Gate 3 has an enforced 1800 s deadline including its first measurement",
+        "the builder refuses to overwrite a frozen protocol; verification stays read-only",
+        "one F-specific conda definition and channel policy for solve and installation; OpenBLAS pinned; pip packages locked separately",
+        "separate caveats for open, failed and validated closure",
+        "review decisions on note 28 \u00a711 recorded"
+      ]
+    }
+  ],
   "note": "notes/2026-09-15-note-28-F-protocol-draft.md",
   "replaces_plan": "notes/2026-09-15-note-26-F-plan-draft.md (not accepted; reviewed in note 27)",
   "builder": "tools/build_protocol_F.py",
   "frozen_before": "any ARMA likelihood evaluation, execution-stack numerical check, pilot or evaluation",
+  "adopted_choices": {
+    "blas": "OpenBLAS pinned (libblas=*=*openblas)",
+    "burn_in": "W = max(1000, ceil(100 tau_c/c)), subject to the corrected NC6",
+    "pilot": "n_p = 125000 and stability factor 4, as planning choices; the variance bound is approximate",
+    "checks": "eight 50000-observation windows; simulator threshold 5 standard errors",
+    "margins": "prediction 1.10 and stop 1.25, subordinate to the enforced hard caps",
+    "closure": "K1 alone decides roadmap F; C08-boundary validation is reported separately",
+    "labbook": "the freeze pass is sufficient"
+  },
   "estimand": {
     "quantity": "per-shot relative-entropy rate R of the theta = pi/2 binary record against the i.i.d. null p0 = 1/2; latent phase = finite-window integrated stationary OU phase",
     "units": "nats per shot",
@@ -41,11 +68,11 @@
     "transition": "T[i, i'] proportional to exp(-(g_i' - phi g_i)^2/(2 q)); every row normalised to 1",
     "emission": "E_y[i', i] = (1 + (2y - 1) C cos(theta + g_i' + b g_i))/2",
     "stationary_initialisation": "pi = left eigenvector of T for the eigenvalue nearest 1 (numpy.linalg.eig of T transpose, real part, normalised to sum 1); require sum|pi T - pi| <= 1e-12 and min(pi) >= -1e-15; entries in [-1e-15, 0) are set to 0 and pi is renormalised",
-    "first_step": "alpha~_1(i, j) = pi(j) T[j, i] E_{y1}(i, j)",
+    "first_step": "at a pass's first observation m: alpha~_m(i, j) = pi(j) T[j, i] E_{y_m}(i, j)",
     "recursion": "beta(i) = sum_j alpha_{n-1}(i, j); alpha~_n(i', i) = T[i, i'] beta(i) E_{yn}(i', i); Z_n = sum alpha~_n; alpha_n = alpha~_n / Z_n",
     "log_increment": "l_n = log Z_n - log(1/2)",
-    "burn_in": "W = max(1000, ceil(100 tau_c/c)) shots; the filter runs through them and every estimator excludes them",
-    "per_seed_estimator": "R_seed = mean of l_n over n = W+1 .. W+n",
+    "burn_in": "W = max(1000, ceil(100 tau_c/c)) observations; the filter runs through them and every estimator excludes them",
+    "per_seed_estimator": "pilot and evaluation passes start at observation 1; R_seed = mean of l_n over n = W+1 .. W+n",
     "evaluation_grid": {
       "M": 241,
       "L": 7
@@ -166,21 +193,76 @@
     "NC4_stationary": {
       "pass": "stationary_initialisation requirements on every grid used"
     },
-    "NC5_grid": {
+    "records_for_NC5_NC6": {
       "seeds": "numerical_checks r = 0..7",
-      "records": "length 2W + 50000; estimator window n = W+1 .. W+50000",
-      "grids": [
-        "M121_L5",
-        "M121_L7",
-        "M241_L5"
-      ],
-      "against": "M241_L7",
-      "pass": "for each grid, |mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"
+      "length": {
+        "W_multiple": 2,
+        "plus": 50000
+      },
+      "estimation_window": {
+        "first": {
+          "W_multiple": 2,
+          "plus": 1
+        },
+        "last": {
+          "W_multiple": 2,
+          "plus": 50000
+        }
+      },
+      "passes": {
+        "M241_L7_2W_history": {
+          "grid": "M241_L7",
+          "first_observation": {
+            "W_multiple": 0,
+            "plus": 1
+          }
+        },
+        "M241_L7_W_history": {
+          "grid": "M241_L7",
+          "first_observation": {
+            "W_multiple": 1,
+            "plus": 1
+          }
+        },
+        "M121_L5_W_history": {
+          "grid": "M121_L5",
+          "first_observation": {
+            "W_multiple": 1,
+            "plus": 1
+          }
+        },
+        "M121_L7_W_history": {
+          "grid": "M121_L7",
+          "first_observation": {
+            "W_multiple": 1,
+            "plus": 1
+          }
+        },
+        "M241_L5_W_history": {
+          "grid": "M241_L5",
+          "first_observation": {
+            "W_multiple": 1,
+            "plus": 1
+          }
+        }
+      },
+      "initialisation": "each pass starts from the stationary distribution at its first observation, runs through the observations before the estimation window as burn-in and is estimated over the same final observations",
+      "cost_per_seed": "simulation 2W + 50000; M241_L7: (2W + 50000) + (W + 50000) filter steps; M241_L5, M121_L7 and M121_L5: W + 50000 each"
+    },
+    "NC5_grid": {
+      "compare": {
+        "M121_L5_W_history": "M241_L7_W_history",
+        "M121_L7_W_history": "M241_L7_W_history",
+        "M241_L5_W_history": "M241_L7_W_history"
+      },
+      "pass": "for each pair, |mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"
     },
     "NC6_finite_history": {
-      "records": "the NC5 records on M241_L7",
-      "difference": "R over n = W+1 .. W+50000 minus R over n = 2W+1 .. 2W+50000",
-      "pass": "|mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"
+      "compare": {
+        "M241_L7_W_history": "M241_L7_2W_history"
+      },
+      "pass": "|mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1",
+      "meaning": "the same final observations, filtered after W versus 2W preceding observations; only the history length differs"
     },
     "failure": "a failed check marks the point NUMERICAL_CHECK_FAILED: no pilot, no evaluation, no verdict. NC1 failure blocks every point. Grid, burn-in, record length and seeds change only through a superseding protocol version."
   },
@@ -189,7 +271,7 @@
     "per_seed": "W burn-in + n_p = 125000 post-burn-in shots on the evaluation grid",
     "recorded": "per-seed wall time and shots; across-seed sample variance S^2 of per-seed means; pooled batch-means variance for B = 10 and B = 20 equal batches; t_step = total filter-plus-simulation seconds / total shots including burn-in",
     "not_recorded": "per-seed means, their average, any comparator ratio",
-    "variance_bound": "U = max(U_seed, U_bm10, U_bm20); U_seed = 15 S^2 / chi2_{0.05,15}; U_bmB = vbar_B df_B / chi2_{0.05,df_B}, vbar_B = mean over seeds of var(batch means, ddof=1)/B, df_B = 16 (B - 1)",
+    "variance_bound": "approximate conservative planning bound, not an exact confidence limit: U = max(U_seed, U_bm10, U_bm20); U_seed = 15 S^2 / chi2_{0.05,15}; U_bmB = vbar_B df_B / chi2_{0.05,df_B}, vbar_B = mean over seeds of var(batch means, ddof=1)/B, df_B = 16 (B - 1). The chi-square factors treat per-seed and batch means as approximately normal and batches as approximately independent",
     "stability": "if the largest of (S^2, vbar_10, vbar_20) exceeds 4 times the smallest, the point is PILOT_UNSTABLE and is not evaluated"
   },
   "shot_rule": {
@@ -211,7 +293,7 @@
       "E1+E2"
     ],
     "admission": "a mandatory point is evaluated only if predicted_seconds <= 7200 and <= the remaining aggregate budget; E1 and E2 only together, if both passed their checks and pilots, each predicted <= 7200 s and their sum <= the remaining budget",
-    "hard_stop": "a run exceeding 1.25 x its predicted seconds is stopped and recorded INCOMPLETE; partial samples receive no verdict"
+    "hard_stop": "budget.stop_rule"
   },
   "verdicts": {
     "delta": 0.05,
@@ -232,16 +314,19 @@
     "roadmap_F": "Primary comparator K1. F closes VALIDATED iff K1 is VALIDATED at E3, E4 and E5. F closes FAILED iff E3, E4 and E5 all receive VALIDATED or FAILED for K1 and at least one is FAILED. Otherwise F remains OPEN.",
     "licensed_K1": "only at the validated tuples (C, s, u, c/tau_c), within +/- delta, pointwise",
     "licensed_K2": "a statement about the lag-1-matched fit only at the tuples where K2 is VALIDATED",
-    "C08_boundary": "a finite-window binary-likelihood statement at C08's boundary requires E1 and E2 both evaluated and the comparator VALIDATED at both; otherwise that validation remains open",
+    "C08_boundary": "reported separately: a finite-window binary-likelihood statement at C08's boundary requires E1 and E2 both evaluated and the comparator VALIDATED at both; otherwise that validation remains open, whatever F's closure",
     "diagnostics": "K3 FAILED is a rate comparison consistent with note 27; the covariance defect is established algebraically and does not depend on it. K4 verdicts are not finite-window truth statements.",
-    "wording_while_open_or_failed": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Binary-likelihood validation remains confined to C04's tested point-sampled exact-r_k comparator; F remains open.",
+    "wording_while_open": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Binary-likelihood validation remains confined to C04's tested point-sampled exact-r_k comparator; F remains open.",
+    "wording_if_failed": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Roadmap F closed FAILED: the exact-r_k comparator (K1) was not validated against the exact finite-window ARMA(1,1) binary likelihood at {failed_tuples}. Binary-likelihood validation of the comparator remains confined to C04's tested point-sampled cases.",
+    "wording_if_validated": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Roadmap F closed VALIDATED: the exact-r_k comparator (K1) agrees with the exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % intervals) at {validated_tuples}, and only at those inputs.",
     "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"
   },
   "budget": {
     "numerical_threads": 1,
-    "aggregate_hours": 8,
-    "gate3_minutes": 30,
-    "evaluation_hours_per_point": 2,
+    "aggregate_cap_seconds": 28800,
+    "aggregate_clock": "the sum of wall-clock seconds recorded by every sid_run13 phase (numerical checks, pilots and evaluations) in its res13 artifact; each run reads the remaining budget from those records before it starts",
+    "gate3_deadline_seconds": 1800,
+    "gate3_deadline": "enforced from the start of the Gate-3 run for every step, including NC1, NC3 and the first point's measurement, and never later than the remaining aggregate budget; a step reaching it is stopped and recorded INCOMPLETE, and an incomplete NC1 blocks every point",
     "gate3_order": [
       "NC1 and NC3",
       "E3",
@@ -250,7 +335,11 @@
       "E1",
       "E2"
     ],
-    "gate3_admission": "before each point's NC2, NC4-NC6 and pilot, predict their cost from the measured t_step (the first point is run to measure it) and mark the point NOT_ATTEMPTED if the prediction exceeds the remaining Gate-3 budget; E1 and E2 are admitted together"
+    "gate3_admission": "before each point's NC2, NC4-NC6 and pilot, predict their cost from the measured t_step (the first point is run to measure it, within the deadline) and mark the point NOT_ATTEMPTED if the prediction exceeds the time left before the deadline; E1 and E2 are admitted together",
+    "point_cap_seconds": 7200,
+    "prediction_margin": 1.1,
+    "stop_margin": 1.25,
+    "stop_rule": "every evaluation run stops at start + min(stop_margin x predicted_seconds, point_cap_seconds, remaining aggregate seconds at its start); a stopped run is INCOMPLETE and receives no verdict"
   },
   "seeds": {
     "pilot": {
@@ -539,13 +628,129 @@
     "rng": "numpy.random.default_rng(seed) (PCG64); one generator per (phase, point, replicate)"
   },
   "execution_stack": {
-    "definition": "environment.yml: conda-forge; python=3.12, numpy=2.4.4, scipy=1.17.1, matplotlib=3.10.8, pytest=9.0.3, pyyaml=6.0.3, pip cffconvert==2.0.0",
+    "conda_definition": "analysis/stack_F/conda-osx-arm64.txt",
+    "pip_definition": "analysis/stack_F/pip-requirements.txt",
     "platform": "osx-arm64, native; an osx-64 environment under Rosetta is a different stack and is not permitted",
-    "lock": "conda list --explicit --md5, committed before Gate 3",
+    "channel_policy": "conda-forge only: both the solve and the installation pass --override-channels -c conda-forge with the same spec file, so configured channels such as defaults cannot enter either step",
+    "blas": "OpenBLAS, pinned in the spec as libblas=*=*openblas",
+    "commands": {
+      "environment": {
+        "CONDA_SUBDIR": "osx-arm64"
+      },
+      "solve": [
+        "conda",
+        "create",
+        "--dry-run",
+        "--json",
+        "-n",
+        "sid-f",
+        "--override-channels",
+        "-c",
+        "conda-forge",
+        "--no-default-packages",
+        "--file",
+        "analysis/stack_F/conda-osx-arm64.txt"
+      ],
+      "install": [
+        "conda",
+        "create",
+        "-y",
+        "-n",
+        "sid-f",
+        "--override-channels",
+        "-c",
+        "conda-forge",
+        "--no-default-packages",
+        "--file",
+        "analysis/stack_F/conda-osx-arm64.txt"
+      ],
+      "verify_architecture": [
+        "file",
+        "$ENV/bin/python3.12"
+      ],
+      "conda_list_json": [
+        "conda",
+        "list",
+        "-n",
+        "sid-f",
+        "--json"
+      ],
+      "pip_report": [
+        "$ENV/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--dry-run",
+        "--no-cache-dir",
+        "--report",
+        "analysis/stack_F/pip-report.json",
+        "-r",
+        "analysis/stack_F/pip-requirements.txt"
+      ],
+      "pip_lock": [
+        "$ENV/bin/python",
+        "tools/lock_stack_F.py",
+        "pip-lock",
+        "analysis/stack_F/pip-report.json",
+        "analysis/stack_F/conda-list.json",
+        "analysis/stack_F/pip-lock.txt"
+      ],
+      "pip_install": [
+        "$ENV/bin/python",
+        "-m",
+        "pip",
+        "install",
+        "--no-deps",
+        "--require-hashes",
+        "--no-cache-dir",
+        "-r",
+        "analysis/stack_F/pip-lock.txt"
+      ],
+      "conda_lock": [
+        "conda",
+        "list",
+        "-n",
+        "sid-f",
+        "--explicit",
+        "--md5"
+      ],
+      "pip_installed": [
+        "$ENV/bin/python",
+        "-m",
+        "pip",
+        "list",
+        "--format=json",
+        "--verbose"
+      ],
+      "record": [
+        "$ENV/bin/python",
+        "tools/lock_stack_F.py",
+        "record",
+        "analysis/stack_F/conda-list.json",
+        "analysis/stack_F/stack-record.json"
+      ]
+    },
+    "reviewed_solve": "analysis/stack_F/conda-dry-run-osx-arm64.json",
+    "stop_conditions": [
+      "the installed conda package set (name, version, build) differs from the reviewed dry-run solve; channel metadata can change between the two steps",
+      "the solve or installation takes any package from a channel other than conda-forge",
+      "any conda package's subdir is neither osx-arm64 nor noarch",
+      "libblas's build string does not contain openblas",
+      "python is not 3.12.x, or numpy is not 2.4.4, or scipy is not 1.17.1",
+      "the installed python binary is not arm64",
+      "pip would install, upgrade or remove a distribution already provided by conda, or a pip report entry lacks a sha256"
+    ],
+    "locks": {
+      "conda": "analysis/stack_F/conda-osx-arm64.lock (conda list --explicit --md5)",
+      "conda_json": "analysis/stack_F/conda-list.json",
+      "pip": "analysis/stack_F/pip-lock.txt (name==version --hash=sha256:...) and analysis/stack_F/pip-report.json",
+      "pip_installed": "analysis/stack_F/pip-installed.json (installer recorded per distribution)",
+      "record": "analysis/stack_F/stack-record.json"
+    },
     "threads": "OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, MKL_NUM_THREADS, VECLIB_MAXIMUM_THREADS and NUMEXPR_NUM_THREADS all equal 1, set before numpy is imported",
-    "recorded": "python patch version, platform.machine(), numpy build BLAS (show_config), runtime BLAS package build string from the lock, thread variables, git revision, protocol digest",
-    "refusal": "sid_run13.py refuses a dirty tree, a python other than 3.12.x, numpy or scipy other than the pins, a machine other than arm64, any thread variable other than 1, a DRAFT status or a digest mismatch",
-    "blas_variant": "open choice in note 28: conda-forge's default libblas, or libblas pinned to openblas"
+    "recorded": "python patch version, platform.machine(), numpy build configuration, libblas and libopenblas build strings, thread variables, git revision, protocol digest",
+    "refusal": "sid_run13.py refuses a dirty tree, a python other than 3.12.x, numpy or scipy other than the pins, a machine other than arm64, a libblas build without openblas, any thread variable other than 1, a DRAFT status or a digest mismatch",
+    "timing": "all locks are committed before Gate 3"
   },
   "outputs": {
     "numerical_checks": "analysis/reproduction/res13_F_numerical_checks.json",

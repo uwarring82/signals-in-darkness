@@ -1,0 +1,13 @@
+# Roadmap F execution stack, conda part (note 28 §10). One definition for the dry-run solve and
+# the installation: both use
+#   CONDA_SUBDIR=osx-arm64 conda create [--dry-run] -n sid-f --override-channels -c conda-forge --file <this file>
+# so no configured channel (such as defaults) can enter either step. Pins follow environment.yml;
+# the BLAS implementation is pinned to OpenBLAS (conda-forge's libblas switching mechanism).
+python=3.12
+numpy=2.4.4
+scipy=1.17.1
+matplotlib=3.10.8
+pytest=9.0.3
+pyyaml=6.0.3
+pip
+libblas=*=*openblas

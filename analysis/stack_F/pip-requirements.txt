@@ -1,0 +1,3 @@
+# Roadmap F execution stack, pip part (note 28 §10). Installed only after the conda part, from a
+# hash-pinned lock generated from pip's own --dry-run --report, and locked separately from conda.
+cffconvert==2.0.0

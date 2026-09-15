@@ -4,14 +4,16 @@
 Deterministic. It evaluates committed comparator formulas and archived grids only; it
 simulates no latent trajectory, evaluates no ARMA likelihood and produces no F result.
 
-    python tools/build_protocol_F.py             # (re)write analysis/protocol_F.json
-    python tools/build_protocol_F.py --check     # exit 1 if the committed draft differs
-    python tools/build_protocol_F.py --markdown  # print the tables quoted in note 28
+    python tools/build_protocol_F.py                 # write analysis/protocol_F.json, if it is still a draft
+    python tools/build_protocol_F.py --out PATH      # write a new draft elsewhere
+    python tools/build_protocol_F.py --check         # read-only: exit 1 if the committed file differs
+    python tools/build_protocol_F.py --markdown      # read-only: print the tables quoted in note 28
 
-The draft carries status DRAFT and digest null, and sid_run13.py must refuse every phase
-while that is so. Freezing is a separate, approved step: it changes the status, computes
-the digest (sha256 of the sorted JSON without the digest field, first 16 hex digits, as in
-the roadmap-C protocols) and commits both together.
+Writing refuses to replace a protocol that is frozen (status not starting with DRAFT, or a
+non-null digest). The draft carries status DRAFT and digest null, and sid_run13.py must
+refuse every phase while that is so. Freezing is a separate, approved step: it changes the
+status, computes the digest (sha256 of the sorted JSON without the digest field, first 16
+hex digits, as in the roadmap-C protocols) and commits both together.
 """
 import argparse
 import ast
@@ -29,6 +31,7 @@ from review_F_plan import comparators, exact_boundary_points, filter_factor, run
 
 OUT = ROOT / "analysis" / "protocol_F.json"
 NOTE = "notes/2026-09-15-note-28-F-protocol-draft.md"
+DRAFT_REVISION = 2
 DELTA, KAPPA, R = 0.05, 0.25, 16
 EVAL_GRID = (241, 7)
 CHECK_GRIDS = ((121, 5), (121, 7), (241, 5))
@@ -40,11 +43,65 @@ N_CHECK = 50_000
 N_SIM = 250_000
 N_NEST = 200_000
 
-CORRECTED_C08_CAVEAT = (
+PREDICTION_MARGIN = 1.10
+STOP_MARGIN = 1.25
+POINT_CAP_SECONDS = 7200
+AGGREGATE_CAP_SECONDS = 8 * 3600
+GATE3_DEADLINE_SECONDS = 1800
+
+STACK_SPEC = "analysis/stack_F/conda-osx-arm64.txt"
+PIP_SPEC = "analysis/stack_F/pip-requirements.txt"
+CONDA_COMMON = ["-n", "sid-f", "--override-channels", "-c", "conda-forge", "--no-default-packages",
+                "--file", STACK_SPEC]
+SOLVE_ARGS = ["conda", "create", "--dry-run", "--json"] + CONDA_COMMON
+INSTALL_ARGS = ["conda", "create", "-y"] + CONDA_COMMON
+SOLVE_ONLY_FLAGS = ("--dry-run", "--json")
+INSTALL_ONLY_FLAGS = ("-y",)
+
+_C08_FACT = (
     "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by "
     "F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but "
-    "the archived rate map is not the finite-window comparator. Binary-likelihood validation remains "
-    "confined to C04's tested point-sampled exact-r_k comparator; F remains open.")
+    "the archived rate map is not the finite-window comparator.")
+CAVEAT_OPEN = (_C08_FACT + " Binary-likelihood validation remains confined to C04's tested point-sampled "
+               "exact-r_k comparator; F remains open.")
+CAVEAT_FAILED = (_C08_FACT + " Roadmap F closed FAILED: the exact-r_k comparator (K1) was not validated "
+                 "against the exact finite-window ARMA(1,1) binary likelihood at {failed_tuples}. "
+                 "Binary-likelihood validation of the comparator remains confined to C04's tested "
+                 "point-sampled cases.")
+CAVEAT_VALIDATED = (_C08_FACT + " Roadmap F closed VALIDATED: the exact-r_k comparator (K1) agrees with the "
+                    "exact finite-window ARMA(1,1) binary likelihood within +/- 5 % (pointwise 95 % "
+                    "intervals) at {validated_tuples}, and only at those inputs.")
+CORRECTED_C08_CAVEAT = CAVEAT_OPEN      # the wording while F is open (note 27)
+
+
+class ProtocolFrozenError(RuntimeError):
+    """Raised instead of overwriting a protocol that is no longer a draft."""
+
+
+def is_draft(doc):
+    return isinstance(doc, dict) and isinstance(doc.get("status"), str) \
+        and doc["status"].startswith("DRAFT") and doc.get("digest") is None
+
+
+def write_draft(doc, path):
+    """Write a draft, refusing to replace anything that is not itself an unfrozen draft."""
+    path = Path(path)
+    if not is_draft(doc):
+        raise ProtocolFrozenError("the builder writes drafts only")
+    if path.exists():
+        try:
+            existing = json.loads(path.read_text())
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise ProtocolFrozenError(f"refusing to overwrite unreadable {path}") from exc
+        if not is_draft(existing):
+            raise ProtocolFrozenError(f"refusing to overwrite frozen protocol {path}; "
+                                      "write a new draft elsewhere with --out")
+    path.write_text(json.dumps(doc, indent=2, allow_nan=False) + "\n")
+
+
+def stop_seconds(predicted_seconds, remaining_aggregate_seconds):
+    """Latest permitted run time: the earliest of the margin, the point cap and the aggregate budget."""
+    return min(STOP_MARGIN * predicted_seconds, POINT_CAP_SECONDS, remaining_aggregate_seconds)
 
 
 def ma_root(F, phi):
@@ -126,9 +183,7 @@ def design(C, s, u, c_over_tc):
     pairs = {}
     for i in ("K1", "K2", "K3", "K4"):
         for j in ("K1", "K2", "K3", "K4"):
-            if i < j:
-                continue
-            if i != j:
+            if i > j:
                 r = K[i] / K[j]
                 pairs[f"{i}/{j}"] = bool(r < lo or r > hi)
     return {
@@ -157,6 +212,20 @@ def seeds():
     return out
 
 
+def offset(w_multiple, plus):
+    """An observation index written as w_multiple * W + plus (1-based)."""
+    return {"W_multiple": w_multiple, "plus": plus}
+
+
+def check_passes():
+    """Filter passes shared by NC5 and NC6. Every pass is estimated on the same final observations."""
+    passes = {"M241_L7_2W_history": {"grid": "M241_L7", "first_observation": offset(0, 1)},
+              "M241_L7_W_history": {"grid": "M241_L7", "first_observation": offset(1, 1)}}
+    for M, L in CHECK_GRIDS:
+        passes[f"M{M}_L{L}_W_history"] = {"grid": f"M{M}_L{L}", "first_observation": offset(1, 1)}
+    return passes
+
+
 def build():
     points = boundary_points()
     for name, (C, s, u, v) in STRESS.items():
@@ -181,13 +250,33 @@ def build():
 
     return {
         "record": "roadmap F: validation of mid-fringe comparators against an exact ARMA(1,1) latent binary likelihood",
-        "status": "DRAFT FOR REVIEW (note 28) -- not frozen. No digest is binding. sid_run13.py must refuse "
-                  "every phase while status starts with DRAFT.",
+        "status": f"DRAFT FOR REVIEW (note 28, revision {DRAFT_REVISION}) -- not frozen. No digest is binding. "
+                  "sid_run13.py must refuse every phase while status starts with DRAFT.",
         "version": 1,
+        "draft_revision": DRAFT_REVISION,
+        "revision_log": [
+            {"revision": 1, "commit": "0a3584b"},
+            {"revision": 2, "changes": [
+                "NC6 compares W- and 2W-history filters on the same final observations; the extra pass is costed",
+                "every run stops at the earliest of 1.25 x prediction, the 7200 s point cap and the remaining "
+                "aggregate budget; Gate 3 has an enforced 1800 s deadline including its first measurement",
+                "the builder refuses to overwrite a frozen protocol; verification stays read-only",
+                "one F-specific conda definition and channel policy for solve and installation; OpenBLAS pinned; "
+                "pip packages locked separately",
+                "separate caveats for open, failed and validated closure",
+                "review decisions on note 28 §11 recorded"]}],
         "note": NOTE,
         "replaces_plan": "notes/2026-09-15-note-26-F-plan-draft.md (not accepted; reviewed in note 27)",
         "builder": "tools/build_protocol_F.py",
         "frozen_before": "any ARMA likelihood evaluation, execution-stack numerical check, pilot or evaluation",
+        "adopted_choices": {
+            "blas": "OpenBLAS pinned (libblas=*=*openblas)",
+            "burn_in": "W = max(1000, ceil(100 tau_c/c)), subject to the corrected NC6",
+            "pilot": "n_p = 125000 and stability factor 4, as planning choices; the variance bound is approximate",
+            "checks": "eight 50000-observation windows; simulator threshold 5 standard errors",
+            "margins": "prediction 1.10 and stop 1.25, subordinate to the enforced hard caps",
+            "closure": "K1 alone decides roadmap F; C08-boundary validation is reported separately",
+            "labbook": "the freeze pass is sufficient"},
         "estimand": {
             "quantity": "per-shot relative-entropy rate R of the theta = pi/2 binary record against the "
                         "i.i.d. null p0 = 1/2; latent phase = finite-window integrated stationary OU phase",
@@ -220,13 +309,14 @@ def build():
                                          "(numpy.linalg.eig of T transpose, real part, normalised to sum 1); "
                                          "require sum|pi T - pi| <= 1e-12 and min(pi) >= -1e-15; entries in "
                                          "[-1e-15, 0) are set to 0 and pi is renormalised",
-            "first_step": "alpha~_1(i, j) = pi(j) T[j, i] E_{y1}(i, j)",
+            "first_step": "at a pass's first observation m: alpha~_m(i, j) = pi(j) T[j, i] E_{y_m}(i, j)",
             "recursion": "beta(i) = sum_j alpha_{n-1}(i, j); alpha~_n(i', i) = T[i, i'] beta(i) E_{yn}(i', i); "
                          "Z_n = sum alpha~_n; alpha_n = alpha~_n / Z_n",
             "log_increment": "l_n = log Z_n - log(1/2)",
-            "burn_in": "W = max(1000, ceil(100 tau_c/c)) shots; the filter runs through them and every "
+            "burn_in": "W = max(1000, ceil(100 tau_c/c)) observations; the filter runs through them and every "
                        "estimator excludes them",
-            "per_seed_estimator": "R_seed = mean of l_n over n = W+1 .. W+n",
+            "per_seed_estimator": "pilot and evaluation passes start at observation 1; R_seed = mean of l_n over "
+                                  "n = W+1 .. W+n",
             "evaluation_grid": {"M": EVAL_GRID[0], "L": EVAL_GRID[1]},
             "ar1_nesting_reference": "same grid (with b = 0, so v_x = s^2), T, pi, emission, burn-in W and estimator: "
                                      "alpha~_1(i) = pi(i) E_{y1}(i); alpha~_n(i') = sum_i alpha_{n-1}(i) T[i, i'] E_{yn}(i')",
@@ -261,13 +351,22 @@ def build():
             "NC3_series": {"pass": "K1 and K4 change by at most 1e-6 relative from (6 terms, 1024 frequencies) "
                                    "to (12 terms, 4096 frequencies)"},
             "NC4_stationary": {"pass": "stationary_initialisation requirements on every grid used"},
-            "NC5_grid": {"seeds": "numerical_checks r = 0..7",
-                         "records": f"length 2W + {N_CHECK}; estimator window n = W+1 .. W+{N_CHECK}",
-                         "grids": [f"M{M}_L{L}" for M, L in CHECK_GRIDS], "against": "M241_L7",
-                         "pass": "for each grid, |mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"},
-            "NC6_finite_history": {"records": "the NC5 records on M241_L7",
-                                   "difference": f"R over n = W+1 .. W+{N_CHECK} minus R over n = 2W+1 .. 2W+{N_CHECK}",
-                                   "pass": "|mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"},
+            "records_for_NC5_NC6": {
+                "seeds": "numerical_checks r = 0..7",
+                "length": offset(2, N_CHECK),
+                "estimation_window": {"first": offset(2, 1), "last": offset(2, N_CHECK)},
+                "passes": check_passes(),
+                "initialisation": "each pass starts from the stationary distribution at its first observation, "
+                                  "runs through the observations before the estimation window as burn-in and is "
+                                  "estimated over the same final observations",
+                "cost_per_seed": f"simulation 2W + {N_CHECK}; M241_L7: (2W + {N_CHECK}) + (W + {N_CHECK}) filter "
+                                 f"steps; M241_L5, M121_L7 and M121_L5: W + {N_CHECK} each"},
+            "NC5_grid": {"compare": {f"M{M}_L{L}_W_history": "M241_L7_W_history" for M, L in CHECK_GRIDS},
+                         "pass": "for each pair, |mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"},
+            "NC6_finite_history": {"compare": {"M241_L7_W_history": "M241_L7_2W_history"},
+                                   "pass": "|mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1",
+                                   "meaning": "the same final observations, filtered after W versus 2W preceding "
+                                              "observations; only the history length differs"},
             "failure": "a failed check marks the point NUMERICAL_CHECK_FAILED: no pilot, no evaluation, no verdict. "
                        "NC1 failure blocks every point. Grid, burn-in, record length and seeds change only "
                        "through a superseding protocol version."},
@@ -278,9 +377,12 @@ def build():
                         "pooled batch-means variance for B = 10 and B = 20 equal batches; t_step = total "
                         "filter-plus-simulation seconds / total shots including burn-in",
             "not_recorded": "per-seed means, their average, any comparator ratio",
-            "variance_bound": "U = max(U_seed, U_bm10, U_bm20); U_seed = 15 S^2 / chi2_{0.05,15}; "
+            "variance_bound": "approximate conservative planning bound, not an exact confidence limit: "
+                              "U = max(U_seed, U_bm10, U_bm20); U_seed = 15 S^2 / chi2_{0.05,15}; "
                               "U_bmB = vbar_B df_B / chi2_{0.05,df_B}, vbar_B = mean over seeds of "
-                              "var(batch means, ddof=1)/B, df_B = 16 (B - 1)",
+                              "var(batch means, ddof=1)/B, df_B = 16 (B - 1). The chi-square factors treat "
+                              "per-seed and batch means as approximately normal and batches as approximately "
+                              "independent",
             "stability": "if the largest of (S^2, vbar_10, vbar_20) exceeds 4 times the smallest, the point is "
                          "PILOT_UNSTABLE and is not evaluated"},
         "shot_rule": {
@@ -296,13 +398,12 @@ def build():
         "evaluation": {
             "seeds": "evaluation 14000 + 20p + r, r = 0..15",
             "interval": "R_bar +/- t_{0.975,15} s_R / 4 (pointwise 95 %)",
-            "predicted_seconds": "1.10 x 16 (W + n_e) t_step",
+            "predicted_seconds": f"{PREDICTION_MARGIN:.2f} x 16 (W + n_e) t_step",
             "order": ["E3", "E4", "E5", "E1+E2"],
             "admission": "a mandatory point is evaluated only if predicted_seconds <= 7200 and <= the remaining "
                          "aggregate budget; E1 and E2 only together, if both passed their checks and pilots, "
                          "each predicted <= 7200 s and their sum <= the remaining budget",
-            "hard_stop": "a run exceeding 1.25 x its predicted seconds is stopped and recorded INCOMPLETE; "
-                         "partial samples receive no verdict"},
+            "hard_stop": "budget.stop_rule"},
         "verdicts": {
             "delta": DELTA, "kappa": KAPPA, "replicates": R,
             "rule": ["NO_VERDICT if the point failed a numerical check, was PILOT_UNSTABLE, not attempted or INCOMPLETE",
@@ -320,33 +421,88 @@ def build():
                          "one is FAILED. Otherwise F remains OPEN.",
             "licensed_K1": "only at the validated tuples (C, s, u, c/tau_c), within +/- delta, pointwise",
             "licensed_K2": "a statement about the lag-1-matched fit only at the tuples where K2 is VALIDATED",
-            "C08_boundary": "a finite-window binary-likelihood statement at C08's boundary requires E1 and E2 both "
-                            "evaluated and the comparator VALIDATED at both; otherwise that validation remains open",
+            "C08_boundary": "reported separately: a finite-window binary-likelihood statement at C08's boundary "
+                            "requires E1 and E2 both evaluated and the comparator VALIDATED at both; otherwise "
+                            "that validation remains open, whatever F's closure",
             "diagnostics": "K3 FAILED is a rate comparison consistent with note 27; the covariance defect is "
                            "established algebraically and does not depend on it. K4 verdicts are not "
                            "finite-window truth statements.",
-            "wording_while_open_or_failed": CORRECTED_C08_CAVEAT,
+            "wording_while_open": CAVEAT_OPEN,
+            "wording_if_failed": CAVEAT_FAILED,
+            "wording_if_validated": CAVEAT_VALIDATED,
             "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"},
         "budget": {
-            "numerical_threads": 1, "aggregate_hours": 8, "gate3_minutes": 30, "evaluation_hours_per_point": 2,
+            "numerical_threads": 1,
+            "aggregate_cap_seconds": AGGREGATE_CAP_SECONDS,
+            "aggregate_clock": "the sum of wall-clock seconds recorded by every sid_run13 phase (numerical checks, "
+                               "pilots and evaluations) in its res13 artifact; each run reads the remaining budget "
+                               "from those records before it starts",
+            "gate3_deadline_seconds": GATE3_DEADLINE_SECONDS,
+            "gate3_deadline": "enforced from the start of the Gate-3 run for every step, including NC1, NC3 and the "
+                              "first point's measurement, and never later than the remaining aggregate budget; a "
+                              "step reaching it is stopped and recorded INCOMPLETE, and an incomplete NC1 blocks "
+                              "every point",
             "gate3_order": ["NC1 and NC3", "E3", "E4", "E5", "E1", "E2"],
             "gate3_admission": "before each point's NC2, NC4-NC6 and pilot, predict their cost from the measured "
-                               "t_step (the first point is run to measure it) and mark the point NOT_ATTEMPTED if "
-                               "the prediction exceeds the remaining Gate-3 budget; E1 and E2 are admitted together"},
+                               "t_step (the first point is run to measure it, within the deadline) and mark the "
+                               "point NOT_ATTEMPTED if the prediction exceeds the time left before the deadline; "
+                               "E1 and E2 are admitted together",
+            "point_cap_seconds": POINT_CAP_SECONDS,
+            "prediction_margin": PREDICTION_MARGIN,
+            "stop_margin": STOP_MARGIN,
+            "stop_rule": "every evaluation run stops at start + min(stop_margin x predicted_seconds, "
+                         "point_cap_seconds, remaining aggregate seconds at its start); a stopped run is "
+                         "INCOMPLETE and receives no verdict"},
         "seeds": seeds(),
         "execution_stack": {
-            "definition": "environment.yml: conda-forge; python=3.12, numpy=2.4.4, scipy=1.17.1, matplotlib=3.10.8, "
-                          "pytest=9.0.3, pyyaml=6.0.3, pip cffconvert==2.0.0",
+            "conda_definition": STACK_SPEC,
+            "pip_definition": PIP_SPEC,
             "platform": "osx-arm64, native; an osx-64 environment under Rosetta is a different stack and is not permitted",
-            "lock": "conda list --explicit --md5, committed before Gate 3",
+            "channel_policy": "conda-forge only: both the solve and the installation pass --override-channels -c "
+                              "conda-forge with the same spec file, so configured channels such as defaults "
+                              "cannot enter either step",
+            "blas": "OpenBLAS, pinned in the spec as libblas=*=*openblas",
+            "commands": {
+                "environment": {"CONDA_SUBDIR": "osx-arm64"},
+                "solve": SOLVE_ARGS,
+                "install": INSTALL_ARGS,
+                "verify_architecture": ["file", "$ENV/bin/python3.12"],
+                "conda_list_json": ["conda", "list", "-n", "sid-f", "--json"],
+                "pip_report": ["$ENV/bin/python", "-m", "pip", "install", "--dry-run", "--no-cache-dir",
+                               "--report", "analysis/stack_F/pip-report.json", "-r", PIP_SPEC],
+                "pip_lock": ["$ENV/bin/python", "tools/lock_stack_F.py", "pip-lock", "analysis/stack_F/pip-report.json",
+                             "analysis/stack_F/conda-list.json", "analysis/stack_F/pip-lock.txt"],
+                "pip_install": ["$ENV/bin/python", "-m", "pip", "install", "--no-deps", "--require-hashes",
+                                "--no-cache-dir", "-r", "analysis/stack_F/pip-lock.txt"],
+                "conda_lock": ["conda", "list", "-n", "sid-f", "--explicit", "--md5"],
+                "pip_installed": ["$ENV/bin/python", "-m", "pip", "list", "--format=json", "--verbose"],
+                "record": ["$ENV/bin/python", "tools/lock_stack_F.py", "record", "analysis/stack_F/conda-list.json",
+                           "analysis/stack_F/stack-record.json"]},
+            "reviewed_solve": "analysis/stack_F/conda-dry-run-osx-arm64.json",
+            "stop_conditions": [
+                "the installed conda package set (name, version, build) differs from the reviewed dry-run solve; "
+                "channel metadata can change between the two steps",
+                "the solve or installation takes any package from a channel other than conda-forge",
+                "any conda package's subdir is neither osx-arm64 nor noarch",
+                "libblas's build string does not contain openblas",
+                "python is not 3.12.x, or numpy is not 2.4.4, or scipy is not 1.17.1",
+                "the installed python binary is not arm64",
+                "pip would install, upgrade or remove a distribution already provided by conda, or a pip report "
+                "entry lacks a sha256"],
+            "locks": {"conda": "analysis/stack_F/conda-osx-arm64.lock (conda list --explicit --md5)",
+                      "conda_json": "analysis/stack_F/conda-list.json",
+                      "pip": "analysis/stack_F/pip-lock.txt (name==version --hash=sha256:...) and "
+                             "analysis/stack_F/pip-report.json",
+                      "pip_installed": "analysis/stack_F/pip-installed.json (installer recorded per distribution)",
+                      "record": "analysis/stack_F/stack-record.json"},
             "threads": "OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, MKL_NUM_THREADS, VECLIB_MAXIMUM_THREADS and "
                        "NUMEXPR_NUM_THREADS all equal 1, set before numpy is imported",
-            "recorded": "python patch version, platform.machine(), numpy build BLAS (show_config), runtime BLAS "
-                        "package build string from the lock, thread variables, git revision, protocol digest",
+            "recorded": "python patch version, platform.machine(), numpy build configuration, libblas and "
+                        "libopenblas build strings, thread variables, git revision, protocol digest",
             "refusal": "sid_run13.py refuses a dirty tree, a python other than 3.12.x, numpy or scipy other than the "
-                       "pins, a machine other than arm64, any thread variable other than 1, a DRAFT status or a "
-                       "digest mismatch",
-            "blas_variant": "open choice in note 28: conda-forge's default libblas, or libblas pinned to openblas"},
+                       "pins, a machine other than arm64, a libblas build without openblas, any thread variable "
+                       "other than 1, a DRAFT status or a digest mismatch",
+            "timing": "all locks are committed before Gate 3"},
         "outputs": {"numerical_checks": "analysis/reproduction/res13_F_numerical_checks.json",
                     "pilot": "analysis/reproduction/res13_F_pilot.json",
                     "evaluation": "analysis/reproduction/res13_F_evaluation.json"},
@@ -410,8 +566,10 @@ def markdown(doc):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true")
-    ap.add_argument("--markdown", action="store_true")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true", help="read-only comparison with the committed protocol")
+    mode.add_argument("--markdown", action="store_true", help="read-only table output")
+    ap.add_argument("--out", type=Path, default=OUT, help="destination for a new draft")
     args = ap.parse_args()
     doc = build()
     if args.markdown:
@@ -421,8 +579,12 @@ def main():
         ok = OUT.exists() and equivalent(json.loads(OUT.read_text()), doc)
         print("protocol_F.json matches its builder" if ok else "protocol_F.json differs from its builder")
         return 0 if ok else 1
-    OUT.write_text(json.dumps(doc, indent=2, allow_nan=False) + "\n")
-    print(f"wrote {OUT.relative_to(ROOT)} (DRAFT, digest null)")
+    try:
+        write_draft(doc, args.out)
+    except ProtocolFrozenError as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 2
+    print(f"wrote {args.out} (DRAFT revision {DRAFT_REVISION}, digest null)")
     return 0
 
 
