@@ -1,0 +1,919 @@
+{
+  "record": "roadmap F: validation of mid-fringe comparators against an exact ARMA(1,1) latent binary likelihood",
+  "status": "DRAFT FOR REVIEW (note 28) -- not frozen. No digest is binding. sid_run13.py must refuse every phase while status starts with DRAFT.",
+  "version": 1,
+  "note": "notes/2026-09-15-note-28-F-protocol-draft.md",
+  "replaces_plan": "notes/2026-09-15-note-26-F-plan-draft.md (not accepted; reviewed in note 27)",
+  "builder": "tools/build_protocol_F.py",
+  "frozen_before": "any ARMA likelihood evaluation, execution-stack numerical check, pilot or evaluation",
+  "estimand": {
+    "quantity": "per-shot relative-entropy rate R of the theta = pi/2 binary record against the i.i.d. null p0 = 1/2; latent phase = finite-window integrated stationary OU phase",
+    "units": "nats per shot",
+    "link": "P(Y=1 | eps) = (1 + C cos(theta + eps))/2 = (1 - C sin eps)/2"
+  },
+  "comparators": {
+    "K1": {
+      "definition": "six-term sinh-series Gaussian spectral rate with exact r_k = C^2 exp(-s^2) sinh(s^2 F(u) phi^k); 1024 midpoint frequencies omega = pi (j + 1/2)/1024",
+      "source": "analysis/runs/sid_run4.py gp_rate_series, read through the AST",
+      "role": "primary: the exact-r_k comparator class"
+    },
+    "K2": {
+      "definition": "geometric closed form with rho = r1/phi, r1 = C^2 exp(-s^2) sinh(s^2 F(u) phi)",
+      "source": "analysis/runs/sid_run4.py gp_rate_geomfit",
+      "role": "secondary: lag-1-matched fit"
+    },
+    "K3": {
+      "definition": "geometric closed form with rho = r1/(F(u) phi)",
+      "source": "analysis/runs/sid_run3.py archived C08 map call, evaluated through the AST",
+      "role": "diagnostic: archived map form (note 27 erratum)"
+    },
+    "K4": {
+      "definition": "six-term sinh series with A = 1",
+      "source": "sid_run4.py gp_rate_series",
+      "role": "diagnostic control: point-sampled series, not a finite-window truth model"
+    },
+    "implementation_contract": "the Gate-2 library must reproduce design_evidence comparator values to relative 1e-12 on the execution stack"
+  },
+  "reference_filter": {
+    "latent_model": "eps_n = x_n + b x_{n-1}; x_n = phi x_{n-1} + eta_n; eta_n ~ N(0, q)",
+    "parameters": "phi = exp(-c/tau_c); F(u) = (cosh u - 1)/(u - 1 + exp(-u)); b = root with |b| < 1 of phi(1-F) b^2 + (1 + phi^2 - 2 F phi^2) b + phi(1-F) = 0; v_x = s^2/(1 + b^2 + 2 b phi); q = v_x (1 - phi^2)",
+    "grid": "g_i = -L sqrt(v_x) + i 2 L sqrt(v_x)/(M - 1), i = 0..M-1",
+    "transition": "T[i, i'] proportional to exp(-(g_i' - phi g_i)^2/(2 q)); every row normalised to 1",
+    "emission": "E_y[i', i] = (1 + (2y - 1) C cos(theta + g_i' + b g_i))/2",
+    "stationary_initialisation": "pi = left eigenvector of T for the eigenvalue nearest 1 (numpy.linalg.eig of T transpose, real part, normalised to sum 1); require sum|pi T - pi| <= 1e-12 and min(pi) >= -1e-15; entries in [-1e-15, 0) are set to 0 and pi is renormalised",
+    "first_step": "alpha~_1(i, j) = pi(j) T[j, i] E_{y1}(i, j)",
+    "recursion": "beta(i) = sum_j alpha_{n-1}(i, j); alpha~_n(i', i) = T[i, i'] beta(i) E_{yn}(i', i); Z_n = sum alpha~_n; alpha_n = alpha~_n / Z_n",
+    "log_increment": "l_n = log Z_n - log(1/2)",
+    "burn_in": "W = max(1000, ceil(100 tau_c/c)) shots; the filter runs through them and every estimator excludes them",
+    "per_seed_estimator": "R_seed = mean of l_n over n = W+1 .. W+n",
+    "evaluation_grid": {
+      "M": 241,
+      "L": 7
+    },
+    "ar1_nesting_reference": "same grid (with b = 0, so v_x = s^2), T, pi, emission, burn-in W and estimator: alpha~_1(i) = pi(i) E_{y1}(i); alpha~_n(i') = sum_i alpha_{n-1}(i) T[i, i'] E_{yn}(i')",
+    "committed_code_tie": "the AR(1) reference with sid_lib.make_hmm's Gaussian-weight prior, one propagation by T before the first emission and W = 0 must reproduce sid_lib.hmm_rate(C, s, theta, phi, N, seed, M=121) to relative 1e-12 on hmm_rate's own record"
+  },
+  "simulator": {
+    "method": "exact OU in units of tau_c: standardised frequency z with unit variance and unit correlation time",
+    "initial_state": "z_0 ~ N(0, 1)",
+    "window": "over u: z <- e^{-u} z + xi_1 and I = (1 - e^{-u}) z_start + xi_2, with Var xi_1 = 1 - e^{-2u}, Var xi_2 = 2[u - 2(1 - e^{-u}) + (1 - e^{-2u})/2], Cov(xi_1, xi_2) = (1 - e^{-u})^2, drawn as the lower Cholesky factor times two standard normals",
+    "phase": "eps_n = s I / sqrt(2 (u - 1 + e^{-u}))",
+    "dead_time": "over d = c/tau_c - u: z <- e^{-d} z + sqrt(1 - e^{-2d}) xi_3",
+    "outcome": "y_n = 1 if U_n < (1 + C cos(theta + eps_n))/2",
+    "draw_order": "z_0 = standard_normal(); then in blocks of 2^20 shots (the last block shorter): standard_normal((block, 3)) followed by random(block)",
+    "independence": "uses neither phi nor b; the filter never sees the simulator's variables",
+    "scope": "u > 0 only; the N0 nesting check uses sid_lib.simulate records"
+  },
+  "points": {
+    "E1": {
+      "role": "C08 boundary at the archived C0 column nearest 0.4; winner tau of the archived map form at the stored threshold",
+      "archive_indices": {
+        "C0_column": 33,
+        "tau_c_row": 74,
+        "tau_index": 118
+      },
+      "C0": 0.40039325842696627,
+      "tau_c_over_t_dead": 211.75939944708895,
+      "tau_over_T2": 0.5121956664854972,
+      "T2_over_t_dead": 10.0,
+      "g_sigma_x_T2": 0.5,
+      "C": 0.23990704689555395,
+      "s": 0.2550695820674307,
+      "u": 0.02418762368153941,
+      "c_over_tau_c": 0.028909964236957655
+    },
+    "E2": {
+      "role": "C08 boundary at the archived C0 column nearest 0.5; winner tau of the archived map form at the stored threshold",
+      "archive_indices": {
+        "C0_column": 42,
+        "tau_c_row": 70,
+        "tau_index": 118
+      },
+      "C0": 0.49595505617977526,
+      "tau_c_over_t_dead": 139.98045980139491,
+      "tau_over_T2": 0.5121956664854972,
+      "T2_over_t_dead": 10.0,
+      "g_sigma_x_T2": 0.5,
+      "C": 0.29716562508684585,
+      "s": 0.25454551961440675,
+      "u": 0.03659051179087448,
+      "c_over_tau_c": 0.04373436602180647
+    },
+    "E3": {
+      "role": "stress validation point (per-shot C and s set directly; dead time 0.05 tau_c)",
+      "C": 0.4,
+      "s": 0.5,
+      "u": 0.1,
+      "c_over_tau_c": 0.15
+    },
+    "E4": {
+      "role": "stress validation point (per-shot C and s set directly; dead time 0.05 tau_c)",
+      "C": 0.4,
+      "s": 0.5,
+      "u": 0.3,
+      "c_over_tau_c": 0.35
+    },
+    "E5": {
+      "role": "stress validation point (per-shot C and s set directly; dead time 0.05 tau_c)",
+      "C": 0.4,
+      "s": 1.0,
+      "u": 1.0,
+      "c_over_tau_c": 1.05
+    },
+    "N0": {
+      "role": "nesting check only (point-sampled, F = 1, b = 0)",
+      "C": 0.4,
+      "s": 0.5,
+      "u": 0.0,
+      "c_over_tau_c": 0.05
+    },
+    "mandatory": [
+      "E3",
+      "E4",
+      "E5"
+    ],
+    "conditional_pair": [
+      "E1",
+      "E2"
+    ],
+    "deferred": {
+      "E6": "(C, s, u, c/tau_c) = (0.4, 1.0, 0.30, 0.35): K1 and K2 differ by 5.6 %, inside the band, so it supplies no forced-incompatibility control (note 27)"
+    },
+    "readout_angle": "theta = pi/2"
+  },
+  "numerical_checks": {
+    "NC1_nesting": {
+      "point": "N0",
+      "seed": 15900,
+      "records": "sid_lib.simulate, N = 200000",
+      "grids": [
+        "M121_L5",
+        "M241_L7"
+      ],
+      "tolerance": "per increment |dl| <= 1e-12 + 1e-9 |l|; |sum dl| <= 1e-9 sum |l|",
+      "also": "the committed_code_tie of reference_filter",
+      "scope": "campaign-wide; failure blocks every point"
+    },
+    "NC2_simulator": {
+      "seeds": "numerical_checks r = 8..15",
+      "shots_per_seed": 250000,
+      "statistics": "sample variance of eps against s^2; lag-k autocorrelation against F(u) phi^k for k = 1..5",
+      "pass": "|mean over seeds - exact| <= 5 x across-seed standard error, for every statistic"
+    },
+    "NC3_series": {
+      "pass": "K1 and K4 change by at most 1e-6 relative from (6 terms, 1024 frequencies) to (12 terms, 4096 frequencies)"
+    },
+    "NC4_stationary": {
+      "pass": "stationary_initialisation requirements on every grid used"
+    },
+    "NC5_grid": {
+      "seeds": "numerical_checks r = 0..7",
+      "records": "length 2W + 50000; estimator window n = W+1 .. W+50000",
+      "grids": [
+        "M121_L5",
+        "M121_L7",
+        "M241_L5"
+      ],
+      "against": "M241_L7",
+      "pass": "for each grid, |mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"
+    },
+    "NC6_finite_history": {
+      "records": "the NC5 records on M241_L7",
+      "difference": "R over n = W+1 .. W+50000 minus R over n = 2W+1 .. 2W+50000",
+      "pass": "|mean paired difference| + t_{0.975,7} x its standard error <= 0.001 K1"
+    },
+    "failure": "a failed check marks the point NUMERICAL_CHECK_FAILED: no pilot, no evaluation, no verdict. NC1 failure blocks every point. Grid, burn-in, record length and seeds change only through a superseding protocol version."
+  },
+  "pilot": {
+    "seeds": "pilot 13000 + 20p + r, r = 0..15",
+    "per_seed": "W burn-in + n_p = 125000 post-burn-in shots on the evaluation grid",
+    "recorded": "per-seed wall time and shots; across-seed sample variance S^2 of per-seed means; pooled batch-means variance for B = 10 and B = 20 equal batches; t_step = total filter-plus-simulation seconds / total shots including burn-in",
+    "not_recorded": "per-seed means, their average, any comparator ratio",
+    "variance_bound": "U = max(U_seed, U_bm10, U_bm20); U_seed = 15 S^2 / chi2_{0.05,15}; U_bmB = vbar_B df_B / chi2_{0.05,df_B}, vbar_B = mean over seeds of var(batch means, ddof=1)/B, df_B = 16 (B - 1)",
+    "stability": "if the largest of (S^2, vbar_10, vbar_20) exceeds 4 times the smallest, the point is PILOT_UNSTABLE and is not evaluated"
+  },
+  "shot_rule": {
+    "per_seed_length": "n_e = max(n_p, 1000 ceil(t_{0.975,15}^2 U n_p / (16 (kappa delta K1)^2) / 1000))",
+    "total": "N = 16 n_e post-burn-in shots, plus 16 W burn-in shots",
+    "no_topups": "n_e is fixed before evaluation starts; no extension, replacement seed or early stop based on measured means",
+    "blindness": "only K1 (deterministic) and the pilot variance bound enter n_e",
+    "constants_source": "t, z and chi-square quantiles are read from this protocol's constants block and never recomputed on the execution stack; SciPy 1.10 and 1.17 already differ by 2.5e-10 relative in t(0.975, 7)",
+    "note": "planned N does not decide a verdict; the realised interval does"
+  },
+  "evaluation": {
+    "seeds": "evaluation 14000 + 20p + r, r = 0..15",
+    "interval": "R_bar +/- t_{0.975,15} s_R / 4 (pointwise 95 %)",
+    "predicted_seconds": "1.10 x 16 (W + n_e) t_step",
+    "order": [
+      "E3",
+      "E4",
+      "E5",
+      "E1+E2"
+    ],
+    "admission": "a mandatory point is evaluated only if predicted_seconds <= 7200 and <= the remaining aggregate budget; E1 and E2 only together, if both passed their checks and pilots, each predicted <= 7200 s and their sum <= the remaining budget",
+    "hard_stop": "a run exceeding 1.25 x its predicted seconds is stopped and recorded INCOMPLETE; partial samples receive no verdict"
+  },
+  "verdicts": {
+    "delta": 0.05,
+    "kappa": 0.25,
+    "replicates": 16,
+    "rule": [
+      "NO_VERDICT if the point failed a numerical check, was PILOT_UNSTABLE, not attempted or INCOMPLETE",
+      "UNRESOLVED if R_lo <= 0 (no division)",
+      "otherwise Q = [K/R_hi, K/R_lo]",
+      "VALIDATED if Q lies inside [1 - delta, 1 + delta]",
+      "FAILED if Q is disjoint from [1 - delta, 1 + delta]",
+      "UNRESOLVED otherwise, reported without a direction"
+    ],
+    "coverage": "pointwise 95 % intervals; no simultaneous coverage across the up to 20 verdicts is claimed",
+    "forced_incompatibility": "Ki and Kj cannot both validate at a point iff Ki/Kj lies outside [(1 - delta)/(1 + delta), (1 + delta)/(1 - delta)]"
+  },
+  "closure": {
+    "roadmap_F": "Primary comparator K1. F closes VALIDATED iff K1 is VALIDATED at E3, E4 and E5. F closes FAILED iff E3, E4 and E5 all receive VALIDATED or FAILED for K1 and at least one is FAILED. Otherwise F remains OPEN.",
+    "licensed_K1": "only at the validated tuples (C, s, u, c/tau_c), within +/- delta, pointwise",
+    "licensed_K2": "a statement about the lag-1-matched fit only at the tuples where K2 is VALIDATED",
+    "C08_boundary": "a finite-window binary-likelihood statement at C08's boundary requires E1 and E2 both evaluated and the comparator VALIDATED at both; otherwise that validation remains open",
+    "diagnostics": "K3 FAILED is a rate comparison consistent with note 27; the covariance defect is established algebraically and does not depend on it. K4 verdicts are not finite-window truth statements.",
+    "wording_while_open_or_failed": "C08's archived mid-fringe implementation divides the exact first-lag binary correlation by F(u). Its four quoted thresholds survive a lag-1-fit correction on the stated coarse grid, but the archived rate map is not the finite-window comparator. Binary-likelihood validation remains confined to C04's tested point-sampled exact-r_k comparator; F remains open.",
+    "post_unblinding": "any analysis not specified here is labelled post-unblinding and cannot change a verdict"
+  },
+  "budget": {
+    "numerical_threads": 1,
+    "aggregate_hours": 8,
+    "gate3_minutes": 30,
+    "evaluation_hours_per_point": 2,
+    "gate3_order": [
+      "NC1 and NC3",
+      "E3",
+      "E4",
+      "E5",
+      "E1",
+      "E2"
+    ],
+    "gate3_admission": "before each point's NC2, NC4-NC6 and pilot, predict their cost from the measured t_step (the first point is run to measure it) and mark the point NOT_ATTEMPTED if the prediction exceeds the remaining Gate-3 budget; E1 and E2 are admitted together"
+  },
+  "seeds": {
+    "pilot": {
+      "E1": [
+        13000,
+        13001,
+        13002,
+        13003,
+        13004,
+        13005,
+        13006,
+        13007,
+        13008,
+        13009,
+        13010,
+        13011,
+        13012,
+        13013,
+        13014,
+        13015
+      ],
+      "E2": [
+        13020,
+        13021,
+        13022,
+        13023,
+        13024,
+        13025,
+        13026,
+        13027,
+        13028,
+        13029,
+        13030,
+        13031,
+        13032,
+        13033,
+        13034,
+        13035
+      ],
+      "E3": [
+        13040,
+        13041,
+        13042,
+        13043,
+        13044,
+        13045,
+        13046,
+        13047,
+        13048,
+        13049,
+        13050,
+        13051,
+        13052,
+        13053,
+        13054,
+        13055
+      ],
+      "E4": [
+        13060,
+        13061,
+        13062,
+        13063,
+        13064,
+        13065,
+        13066,
+        13067,
+        13068,
+        13069,
+        13070,
+        13071,
+        13072,
+        13073,
+        13074,
+        13075
+      ],
+      "E5": [
+        13080,
+        13081,
+        13082,
+        13083,
+        13084,
+        13085,
+        13086,
+        13087,
+        13088,
+        13089,
+        13090,
+        13091,
+        13092,
+        13093,
+        13094,
+        13095
+      ]
+    },
+    "evaluation": {
+      "E1": [
+        14000,
+        14001,
+        14002,
+        14003,
+        14004,
+        14005,
+        14006,
+        14007,
+        14008,
+        14009,
+        14010,
+        14011,
+        14012,
+        14013,
+        14014,
+        14015
+      ],
+      "E2": [
+        14020,
+        14021,
+        14022,
+        14023,
+        14024,
+        14025,
+        14026,
+        14027,
+        14028,
+        14029,
+        14030,
+        14031,
+        14032,
+        14033,
+        14034,
+        14035
+      ],
+      "E3": [
+        14040,
+        14041,
+        14042,
+        14043,
+        14044,
+        14045,
+        14046,
+        14047,
+        14048,
+        14049,
+        14050,
+        14051,
+        14052,
+        14053,
+        14054,
+        14055
+      ],
+      "E4": [
+        14060,
+        14061,
+        14062,
+        14063,
+        14064,
+        14065,
+        14066,
+        14067,
+        14068,
+        14069,
+        14070,
+        14071,
+        14072,
+        14073,
+        14074,
+        14075
+      ],
+      "E5": [
+        14080,
+        14081,
+        14082,
+        14083,
+        14084,
+        14085,
+        14086,
+        14087,
+        14088,
+        14089,
+        14090,
+        14091,
+        14092,
+        14093,
+        14094,
+        14095
+      ]
+    },
+    "numerical_checks": {
+      "E1": [
+        15000,
+        15001,
+        15002,
+        15003,
+        15004,
+        15005,
+        15006,
+        15007,
+        15008,
+        15009,
+        15010,
+        15011,
+        15012,
+        15013,
+        15014,
+        15015
+      ],
+      "E2": [
+        15020,
+        15021,
+        15022,
+        15023,
+        15024,
+        15025,
+        15026,
+        15027,
+        15028,
+        15029,
+        15030,
+        15031,
+        15032,
+        15033,
+        15034,
+        15035
+      ],
+      "E3": [
+        15040,
+        15041,
+        15042,
+        15043,
+        15044,
+        15045,
+        15046,
+        15047,
+        15048,
+        15049,
+        15050,
+        15051,
+        15052,
+        15053,
+        15054,
+        15055
+      ],
+      "E4": [
+        15060,
+        15061,
+        15062,
+        15063,
+        15064,
+        15065,
+        15066,
+        15067,
+        15068,
+        15069,
+        15070,
+        15071,
+        15072,
+        15073,
+        15074,
+        15075
+      ],
+      "E5": [
+        15080,
+        15081,
+        15082,
+        15083,
+        15084,
+        15085,
+        15086,
+        15087,
+        15088,
+        15089,
+        15090,
+        15091,
+        15092,
+        15093,
+        15094,
+        15095
+      ]
+    },
+    "numerical_checks_use": {
+      "grid_and_finite_history": "r = 0..7",
+      "simulator": "r = 8..15"
+    },
+    "nesting_N0": [
+      15900
+    ],
+    "rng": "numpy.random.default_rng(seed) (PCG64); one generator per (phase, point, replicate)"
+  },
+  "execution_stack": {
+    "definition": "environment.yml: conda-forge; python=3.12, numpy=2.4.4, scipy=1.17.1, matplotlib=3.10.8, pytest=9.0.3, pyyaml=6.0.3, pip cffconvert==2.0.0",
+    "platform": "osx-arm64, native; an osx-64 environment under Rosetta is a different stack and is not permitted",
+    "lock": "conda list --explicit --md5, committed before Gate 3",
+    "threads": "OMP_NUM_THREADS, OPENBLAS_NUM_THREADS, MKL_NUM_THREADS, VECLIB_MAXIMUM_THREADS and NUMEXPR_NUM_THREADS all equal 1, set before numpy is imported",
+    "recorded": "python patch version, platform.machine(), numpy build BLAS (show_config), runtime BLAS package build string from the lock, thread variables, git revision, protocol digest",
+    "refusal": "sid_run13.py refuses a dirty tree, a python other than 3.12.x, numpy or scipy other than the pins, a machine other than arm64, any thread variable other than 1, a DRAFT status or a digest mismatch",
+    "blas_variant": "open choice in note 28: conda-forge's default libblas, or libblas pinned to openblas"
+  },
+  "outputs": {
+    "numerical_checks": "analysis/reproduction/res13_F_numerical_checks.json",
+    "pilot": "analysis/reproduction/res13_F_pilot.json",
+    "evaluation": "analysis/reproduction/res13_F_evaluation.json"
+  },
+  "constants": {
+    "t_0975_df15": 2.131449545559323,
+    "t_0975_df7": 2.3646242510102993,
+    "z_0975": 1.959963984540054,
+    "chi2_005_df15": 7.2609439276700325,
+    "chi2_005_df144": 117.26828137255845,
+    "chi2_005_df304": 264.61020405282187,
+    "band_lower": 0.9047619047619047,
+    "band_upper": 1.105263157894737
+  },
+  "design_evidence": {
+    "record": "deterministic quantities computed by the builder on the drafting stack; the execution stack must reproduce them",
+    "points": {
+      "E1": {
+        "F": 1.0081279143665292,
+        "phi": 0.9715039306266972,
+        "b": 0.20118517444958153,
+        "v_x": 0.04545298838649547,
+        "q": 0.002553554013599424,
+        "burn_in_W": 3460,
+        "comparators": {
+          "K1": 9.429134121949886e-05,
+          "K2": 9.434842737247939e-05,
+          "K3": 9.290866970631682e-05,
+          "K4": 9.285140735968423e-05
+        },
+        "ratios": {
+          "K2/K1": 1.0006054230668715,
+          "K3/K1": 0.9853361772640041,
+          "K4/K1": 0.9847288855880983,
+          "K3/K4": 1.0006167095175065
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": false,
+          "K3/K2": false,
+          "K4/K1": false,
+          "K4/K2": false,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": -5.750955267558311e-14,
+          "K4": -5.795364188543317e-14
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 2.844281322209589,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.1346310394991316e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 2.0316295158640028,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 9.877756423374366e-13
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 5.688562644419249,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.40074892798214e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 4.0632590317280055,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.257520762117335e-12
+          }
+        }
+      },
+      "E2": {
+        "F": 1.0123468791134664,
+        "phi": 0.9572081907247184,
+        "b": 0.20116870491918964,
+        "v_x": 0.04545026531948878,
+        "q": 0.003806572419417356,
+        "burn_in_W": 2287,
+        "comparators": {
+          "K1": 0.00014466719661973315,
+          "K2": 0.00014475083400608308,
+          "K3": 0.00014141474656825836,
+          "K4": 0.00014133066620958696
+        },
+        "ratios": {
+          "K2/K1": 1.000578136497452,
+          "K3/K1": 0.9775177087309982,
+          "K4/K1": 0.9769365102241079,
+          "K3/K4": 1.0005949194249655
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": false,
+          "K3/K2": false,
+          "K4/K1": false,
+          "K4/K2": false,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": -5.784261958297066e-14,
+          "K4": -5.828670879282072e-14
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 3.4728024798093013,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.551897855901175e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 2.4805731998637777,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.1569241885590766e-12
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 6.945604959618603,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.8633402439870146e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 4.961146399727555,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.4623488779055839e-12
+          }
+        }
+      },
+      "E3": {
+        "F": 1.0344708723960703,
+        "phi": 0.8607079764250578,
+        "b": 0.14558862818265392,
+        "v_x": 0.19656952591205254,
+        "q": 0.05094723948563694,
+        "burn_in_W": 1000,
+        "comparators": {
+          "K1": 0.0012770550840924431,
+          "K2": 0.001284858277604745,
+          "K3": 0.0012062913375691553,
+          "K4": 0.0011982094158500109
+        },
+        "ratios": {
+          "K2/K1": 1.0061103030006315,
+          "K3/K1": 0.9445883365527831,
+          "K4/K1": 0.9382597749896865,
+          "K3/K4": 1.0067449993400452
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": false,
+          "K3/K2": false,
+          "K4/K1": false,
+          "K4/K2": false,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": -3.3306690738754696e-16,
+          "K4": -3.3306690738754696e-16
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 6.109187852884568,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 3.8559583892946895e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 4.3637056092032624,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.5557048540733268e-12
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 12.218375705769283,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 4.3167803524868493e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 8.727411218406601,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.9590947312777917e-12
+          }
+        }
+      },
+      "E4": {
+        "F": 1.1107420502816565,
+        "phi": 0.7046880897187134,
+        "b": 0.20684129963196607,
+        "v_x": 0.18736408742240052,
+        "q": 0.09432183515014754,
+        "burn_in_W": 1000,
+        "comparators": {
+          "K1": 0.0005589439621792796,
+          "K2": 0.0005611345285253873,
+          "K3": 0.0004575361545533693,
+          "K4": 0.00045500698600036804
+        },
+        "ratios": {
+          "K2/K1": 1.0039191162161711,
+          "K3/K1": 0.8185724965513018,
+          "K4/K1": 0.8140475911508744,
+          "K3/K4": 1.0055585268596277
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": true,
+          "K3/K2": true,
+          "K4/K1": true,
+          "K4/K2": true,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": 2.220446049250313e-16,
+          "K4": 2.220446049250313e-16
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 8.514206730755154,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 4.2302040631570266e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 6.081576236253703,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.6252243483773985e-12
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 17.028413461510517,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 4.73390338291642e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 12.163152472507512,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.047181013019804e-12
+          }
+        }
+      },
+      "E5": {
+        "F": 1.4762462210062797,
+        "phi": 0.3499377491111553,
+        "b": 0.23067906539178998,
+        "v_x": 0.8232760171683543,
+        "q": 0.7224605766395771,
+        "burn_in_W": 1000,
+        "comparators": {
+          "K1": 0.0005574999070430822,
+          "K2": 0.000562165417364916,
+          "K3": 0.00025977793861538983,
+          "K4": 0.00024680379232952727
+        },
+        "ratios": {
+          "K2/K1": 1.0083686297753467,
+          "K3/K1": 0.4659694743147551,
+          "K4/K1": 0.44269745915931585,
+          "K3/K4": 1.0525686666456882
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": true,
+          "K3/K2": true,
+          "K4/K1": true,
+          "K4/K2": true,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": 9.85878045867139e-14,
+          "K4": 8.881784197001252e-16
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 11.241275476189093,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.384918495572348e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 8.02948248299225,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.19271178225575e-12
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 22.48255095237845,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.659852916441315e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 16.0589649659845,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.4968435364108264e-12
+          }
+        }
+      },
+      "N0": {
+        "F": 1.0,
+        "phi": 0.951229424500714,
+        "b": 0.0,
+        "v_x": 0.25,
+        "q": 0.023790645491010093,
+        "burn_in_W": 2000,
+        "comparators": {
+          "K1": 0.003054880203324932,
+          "K2": 0.00307501419438283,
+          "K3": 0.00307501419438283,
+          "K4": 0.003054880203324932
+        },
+        "ratios": {
+          "K2/K1": 1.0065907628835935,
+          "K3/K1": 1.0065907628835935,
+          "K4/K1": 1.0,
+          "K3/K4": 1.0065907628835935
+        },
+        "forced_incompatible_pairs": {
+          "K2/K1": false,
+          "K3/K1": false,
+          "K3/K2": false,
+          "K4/K1": false,
+          "K4/K2": false,
+          "K4/K3": false
+        },
+        "series_convergence_rel": {
+          "K1": 1.7763568394002505e-14,
+          "K4": 1.7763568394002505e-14
+        },
+        "grids": {
+          "M121_L5": {
+            "innovation_sd_over_spacing": 3.701811962110165,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 2.69497454487461e-07
+          },
+          "M121_L7": {
+            "innovation_sd_over_spacing": 2.6441514015072607,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.2115583983871097e-12
+          },
+          "M241_L5": {
+            "innovation_sd_over_spacing": 7.403623924220251,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 3.02226434215905e-07
+          },
+          "M241_L7": {
+            "innovation_sd_over_spacing": 5.288302803014481,
+            "stationary_residual_within_1e-12": true,
+            "stationary_min_at_least_-1e-15": true,
+            "tv_stationary_vs_gaussian_weights": 1.5295346367985249e-12
+          }
+        }
+      }
+    }
+  },
+  "digest": null
+}
