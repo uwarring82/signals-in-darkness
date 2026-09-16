@@ -193,8 +193,14 @@ def test_public_prose_scopes_the_symmetric_model_and_B_and_G():
     assert "symmetric, zero-mean model studied here" in body, \
         "the half-average statement must be scoped to the symmetric model"
     assert "provenance-critical" in body, "G is not housekeeping"
-    assert "not a guarantee" in body or "not expected to move" in body, \
-        "F must not be promised to disturb nothing"
+    # The page no longer hedges an expectation about F; it states that F has not been run and
+    # leaves the outcome open. The guard checks that meaning, and still fails if the page ever
+    # promises what F will find.
+    assert "The likelihood comparison has not been run" in body and "F remains open" in body, \
+        "F's outcome must be stated as open and unrun"
+    for promise in ("F is not expected to move", "will not move any published number",
+                    "F changes nothing", "F will confirm", "F disturbs nothing"):
+        assert promise not in body, f"F's outcome must not be promised: {promise!r}"
     gap = body.split("Generality across operating points.")[1].split("---")[0]
     assert "parity regime" in gap and "not a demonstration of generality" in gap, \
         "B's scope must be stated as one further point in the same regime"
