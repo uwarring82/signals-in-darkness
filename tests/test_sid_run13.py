@@ -12,6 +12,7 @@ import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -37,6 +38,20 @@ class StepClock:
     def __call__(self):
         self.t += self.dt
         return self.t
+
+
+class WriteClock:
+    """Still, except that the first artifact write takes `write` seconds after its timestamp."""
+
+    def __init__(self, write):
+        self.t, self.write, self.reads = 0.0, write, 0
+
+    def __call__(self):
+        self.reads += 1
+        now = self.t
+        if self.reads == 2:                       # the initial save reads the clock, then writes
+            self.t += self.write
+        return now
 
 
 def _cli(args, **env):
@@ -263,6 +278,7 @@ def test_tiny_gate3_run_writes_verifiable_blind_artifacts(tiny_gate3):
     on_disk = {k: json.loads(p.read_text()) for k, p in _paths(tmp).items() if k != "evaluation"}
     assert run13.gate3_input_refusals(on_disk["numerical_checks"], on_disk["pilot"]) == []
     assert checks["NC1"]["status"] == "PASSED" and checks["NC1"]["committed_code_tie"]["pass"]
+    assert checks["NC1"]["committed_code_timer_armed"] is True      # the fallback would be recorded
     for name in run13.POINTS:
         assert checks["points"][name]["status"] == "CHECKS_PASSED", checks["points"][name]
         pilot = pilots["points"][name]
@@ -424,6 +440,40 @@ def test_gate3_writes_its_artifacts_before_it_computes_anything(tmp_path):
     assert {p["status"] for p in seen["record"]["points"].values()} == {"NOT_STARTED"}
 
 
+def test_the_timer_guard_records_whether_it_could_arm():
+    _, sa, _ = run13.numerical_imports()
+    guard = run13.alarm_guard(sa.Deadline(5.0))
+    assert guard.armed is None
+    with guard() as armed:
+        assert armed is True
+    assert guard.armed is True
+    off_main = []
+
+    def worker():
+        other = run13.alarm_guard(sa.Deadline(5.0))
+        with other() as armed:
+            off_main.append((armed, other.armed))
+
+    thread = threading.Thread(target=worker)
+    thread.start()
+    thread.join()
+    assert off_main == [(False, False)], "a guard that cannot arm must say so"
+
+
+def test_gate4_charges_its_initial_write_to_the_aggregate_budget(tiny_gate3, tmp_path):
+    """Gate-2 review regression: a five-second budget and a six-second initial write leave nothing
+    to evaluate. Reconstructing the run's start dropped that write and admitted the point."""
+    plan, checks, pilots = _evaluation_inputs(tiny_gate3, t_step=1e-5)
+    cap = plan["aggregate_cap_seconds"]
+    art = run13.run_evaluation(DOC, plan, PROV, checks, pilots, tmp_path / "res13_F_evaluation.json",
+                               spent=cap - 5.0, clock=WriteClock(6.0))
+    e3 = art["points"]["E3"]
+    assert e3["admission"]["remaining_aggregate_seconds"] == pytest.approx(-1.0)
+    assert e3["admission"]["reason"] == "the prediction exceeds the remaining aggregate budget"
+    assert e3["status"] == "NOT_ATTEMPTED" and set(e3["verdicts"].values()) == {"NO_VERDICT"}
+    assert "per_seed" not in e3 and art["run"]["run_wall_seconds"] >= 6.0
+
+
 @pytest.mark.parametrize("error", [RuntimeError("synthetic failure"), KeyboardInterrupt()])
 def test_gate3_preserves_elapsed_time_and_progress_when_a_step_raises(tmp_path, error):
     paths = _paths(tmp_path)
@@ -441,7 +491,9 @@ def test_gate3_preserves_elapsed_time_and_progress_when_a_step_raises(tmp_path, 
     assert run13.spent_seconds([json.loads(paths[k].read_text()) for k in ("numerical_checks", "pilot")]) > 0
 
 
-def test_gate4_writes_its_artifact_before_computing_and_keeps_the_clock_on_failure(tiny_gate3, tmp_path, monkeypatch):
+@pytest.mark.parametrize("error", [RuntimeError("synthetic failure"), KeyboardInterrupt()])
+def test_gate4_writes_its_artifact_before_computing_and_keeps_the_clock_on_failure(tiny_gate3, tmp_path,
+                                                                                  monkeypatch, error):
     plan, checks, pilots = _evaluation_inputs(tiny_gate3, t_step=1e-3)
     path = tmp_path / "res13_F_evaluation.json"
     _, sa, _ = run13.numerical_imports()
@@ -449,13 +501,13 @@ def test_gate4_writes_its_artifact_before_computing_and_keeps_the_clock_on_failu
 
     def fail(*args, **kwargs):
         seen["written_before_computing"] = path.exists()
-        raise RuntimeError("synthetic failure")
+        raise error
 
     monkeypatch.setattr(sa, "simulate_window_record", fail)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(type(error)):
         run13.run_evaluation(DOC, plan, PROV, checks, pilots, path, spent=100.0, clock=StepClock(11.0))
     art = json.loads(path.read_text())
     assert seen["written_before_computing"] is True
     assert art["digest"] == run13.digest_of(art)
     assert art["run"]["complete"] is False and art["run"]["run_wall_seconds"] > 0
-    assert "RuntimeError" in art["run"]["interrupted"] and "closure" not in art
+    assert type(error).__name__ in art["run"]["interrupted"] and "closure" not in art

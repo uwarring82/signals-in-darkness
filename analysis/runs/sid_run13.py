@@ -351,13 +351,15 @@ def alarm_guard(deadline):
     sid_arma's own passes check the deadline between chunks, but sid_lib.hmm_rate and
     sid_lib.simulate are single uninterruptible loops. Inside this guard a timer signal raises
     DeadlineReached within them. Off the main thread, or without setitimer, the guard falls back to
-    the checks before and after, and reports that in its artifact."""
+    the checks before and after; guard.armed holds which of the two happened, and nc1_step records
+    it in the artifact."""
     _, sa, _ = numerical_imports()
 
     @contextmanager
     def guard():
         deadline.check()                           # nothing starts after the deadline
         armed = hasattr(signal, "setitimer") and threading.current_thread() is threading.main_thread()
+        guard.armed = armed
         if not armed:
             yield False
             return
@@ -372,6 +374,8 @@ def alarm_guard(deadline):
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, previous)
+
+    guard.armed = None
     return guard
 
 
@@ -393,7 +397,7 @@ def nc1_step(plan, deadline):
     deadline.check()
     ok = all(g["pass"] and g["NC4"]["pass"] for g in grids.values()) and tie["pass"]
     return {"point": "N0", "seed": seed, "N": N, "W": W, "grids": grids, "committed_code_tie": tie,
-            "NC4_on_N0_grids_enters_NC1": True, "pass": ok}
+            "committed_code_timer_armed": guard.armed, "NC4_on_N0_grids_enters_NC1": True, "pass": ok}
 
 
 def point_step(plan, name, nc3, deadline, clock):
@@ -574,17 +578,18 @@ def run_evaluation(doc, plan, prov, checks, pilots, path, spent, clock=time.mono
 
     save()                       # on the aggregate clock, and on disk, before anything is computed
     try:
-        return _evaluate_points(plan, art, save, checks, pilots, spent, clock)
+        return _evaluate_points(plan, art, save, checks, pilots, spent, clock, t0)
     except BaseException as exc:             # including KeyboardInterrupt: the clock is still spent
         run["interrupted"] = f"{type(exc).__name__}: {exc}"[:200]
         save()
         raise
 
 
-def _evaluate_points(plan, art, save, checks, pilots, spent, clock):
+def _evaluate_points(plan, art, save, checks, pilots, spent, clock, t0):
+    """t0 is the run's own start: reconstructing it here would drop the initial write's duration
+    from every admission and stop calculation (Gate-2 review)."""
     numpy, sa, bp = numerical_imports()
     cap, t15 = plan["aggregate_cap_seconds"], plan["constants"]["t_0975_df15"]
-    t0 = clock() - art["run"]["run_wall_seconds"]
     for group in GROUPS:
         recs, eligible, predicted = {}, {}, {}
         for name in group:
