@@ -22,17 +22,24 @@ Refusals (exit 2; nothing measured, nothing written) follow execution_stack.refu
 
 The outputs lie in analysis/reproduction, which git ignores, so a clean tree cannot vouch for
 them. Every res13 artifact therefore carries its own digest (the protocol's convention), and the
-evaluation artifact records the digests of the Gate-3 artifacts it read.
+evaluation artifact records the digests of the Gate-3 artifacts it read. Review decision: both
+Gate-3 artifacts are committed at these frozen output paths, added explicitly against the ignore
+rule, before Gate-4 review, together with their digests and the derived shot counts and costs.
+
+Each phase writes its artifacts before it computes anything, checkpoints after every step, and
+preserves the elapsed time if a step raises or the run is interrupted, so that an interrupted run
+still holds its provenance and its share of the aggregate clock.
 
 Blindness: the pilot artifact records per-seed wall time and shots, S^2, vbar_10, vbar_20, the
 bounds and t_step; never a per-seed mean, their average or a comparator ratio. NC5/NC6 record
 paired differences only. Nothing prints a rate estimate before evaluation.
 
-Gate-3 admission (implementation choice, for review): after the first point that runs filter
+Gate-3 admission is a planning estimate, not the limit: after the first point that runs filter
 steps, the rate is (seconds spent on points) / (filter steps run: NC5/NC6 passes and pilot
 shots). A later point's prediction is that rate times its NC2 shots, NC5/NC6 simulated shots,
 NC5/NC6 filter steps and pilot shots, each counted as a unit. Simulation-only work is thereby
-charged in the prediction but not credited in the rate, so the prediction errs long.
+charged in the prediction but not credited in the rate, so the prediction errs long. The enforced
+deadline remains the backstop: no step starts after it, and a step that reaches it is INCOMPLETE.
 """
 import argparse
 import glob
@@ -41,10 +48,13 @@ import json
 import math
 import os
 import platform
+import signal
 import subprocess
 import sys
+import threading
 import time
 import uuid
+from contextlib import contextmanager
 from importlib import metadata
 from pathlib import Path
 
@@ -335,19 +345,51 @@ def output_paths(doc):
 
 
 # ------------------------------------------------------------------------------------------- Gate 3
+def alarm_guard(deadline):
+    """A context-manager factory that interrupts committed code the deadline cannot poll.
+
+    sid_arma's own passes check the deadline between chunks, but sid_lib.hmm_rate and
+    sid_lib.simulate are single uninterruptible loops. Inside this guard a timer signal raises
+    DeadlineReached within them. Off the main thread, or without setitimer, the guard falls back to
+    the checks before and after, and reports that in its artifact."""
+    _, sa, _ = numerical_imports()
+
+    @contextmanager
+    def guard():
+        deadline.check()                           # nothing starts after the deadline
+        armed = hasattr(signal, "setitimer") and threading.current_thread() is threading.main_thread()
+        if not armed:
+            yield False
+            return
+
+        def fire(signum, frame):
+            raise sa.DeadlineReached("deadline reached inside committed code")
+
+        previous = signal.signal(signal.SIGALRM, fire)
+        signal.setitimer(signal.ITIMER_REAL, max(deadline.remaining(), 1e-6))
+        try:
+            yield True
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, previous)
+    return guard
+
+
 def nc1_step(plan, deadline):
     numpy, sa, _ = numerical_imports()
     import sid_lib
     C, s, _, c = point_tuple(plan, "N0")
     W, N, seed = sa.burn_in(c), plan["nc1"]["N"], plan["nc1"]["seed"]
+    guard = alarm_guard(deadline)
     deadline.check()
-    y = sid_lib.simulate(C, s, sa.THETA, math.exp(-c), N, numpy.random.default_rng(seed))
+    with guard():                                  # sid_lib.simulate is committed, uninterruptible
+        y = sid_lib.simulate(C, s, sa.THETA, math.exp(-c), N, numpy.random.default_rng(seed))
     grids = {}
     for label in plan["nc1"]["grids"]:
         deadline.check()
         grids[label] = sa.nesting_check(y, C, s, c, *grid_of(label), W, deadline=deadline)
     deadline.check()
-    tie = sa.committed_code_tie(C, s, c, N, seed, M=121)
+    tie = sa.committed_code_tie(C, s, c, N, seed, M=121, deadline=deadline, guard=guard)
     deadline.check()
     ok = all(g["pass"] and g["NC4"]["pass"] for g in grids.values()) and tie["pass"]
     return {"point": "N0", "seed": seed, "N": N, "W": W, "grids": grids, "committed_code_tie": tie,
@@ -447,51 +489,70 @@ def run_checks_and_pilots(doc, plan, prov, paths, spent, clock=time.monotonic, s
     run = {"phase": "checks-and-pilots", "run_id": uuid.uuid4().hex, "spent_before_seconds": spent,
            "remaining_aggregate_at_start_seconds": remaining, "deadline_seconds": deadline_seconds,
            "run_wall_seconds": 0.0, "complete": False}
-    checks = {**new_artifact("numerical checks", doc, prov, run), "NC1": None, "NC3": {}, "points": {}}
-    pilots = {**new_artifact("pilots", doc, prov, run), "points": {}}
+    checks = {**new_artifact("numerical checks", doc, prov, run), "NC1": {"status": "NOT_STARTED"},
+              "NC3": {"status": "NOT_STARTED", "points": {}},
+              "points": {name: {"status": "NOT_STARTED"} for name in POINTS}}
+    pilots = {**new_artifact("pilots", doc, prov, run),
+              "points": {name: {"status": "NOT_STARTED"} for name in POINTS}}
 
     def save(complete=False):
         run["run_wall_seconds"], run["complete"] = clock() - t0, complete
         write_artifact(paths["numerical_checks"], checks)
         write_artifact(paths["pilot"], pilots)
 
+    save()                       # on the aggregate clock, and on disk, before anything is computed
     try:
-        nc1 = steps["nc1"](plan, deadline)
-        checks["NC1"] = {**nc1, "status": "PASSED" if nc1["pass"] else "FAILED"}
-    except sa.DeadlineReached:
-        checks["NC1"] = {"status": "INCOMPLETE"}
-    checks["NC3"] = {name: sa.series_convergence_check(*point_tuple(plan, name)) for name in POINTS}
-    save()
+        try:
+            nc1 = steps["nc1"](plan, deadline)
+            checks["NC1"] = {**nc1, "status": "PASSED" if nc1["pass"] else "FAILED"}
+        except sa.DeadlineReached:
+            checks["NC1"] = {"status": "INCOMPLETE"}
+        save()
+        nc3 = {}
+        try:
+            for name in POINTS:
+                deadline.check()             # NC3 is cheap but may not start after the deadline
+                nc3[name] = sa.series_convergence_check(*point_tuple(plan, name))
+            checks["NC3"] = {"status": "COMPLETE", "points": nc3}
+        except sa.DeadlineReached:
+            checks["NC3"] = {"status": "INCOMPLETE", "points": nc3}
+        save()
 
-    point_seconds, filter_steps = 0.0, 0
-    for group in GROUPS:
-        if checks["NC1"]["status"] != "PASSED":
+        point_seconds, filter_steps = 0.0, 0
+        for group in GROUPS:
+            if checks["NC1"]["status"] != "PASSED":
+                for name in group:
+                    checks["points"][name] = {"status": "BLOCKED_BY_NC1"}
+                    pilots["points"][name] = {"status": "NO_PILOT"}
+                save()
+                continue
+            Ws = {name: sa.burn_in(point_tuple(plan, name)[3]) for name in group}
+            rate = point_seconds / filter_steps if filter_steps else None
+            units = {name: gate3_units(plan, name, Ws[name]) for name in group}
+            left = deadline.remaining()
+            predicted = None if rate is None else rate * sum(units.values())
+            without_nc3 = [name for name in group if name not in checks["NC3"]["points"]]
+            admission = {"rate_seconds_per_unit": rate, "units": units, "predicted_seconds": predicted,
+                         "seconds_left_before_deadline": left, "without_NC3": without_nc3}
+            if left <= 0 or without_nc3 or (predicted is not None and predicted > left):
+                for name in group:
+                    checks["points"][name] = {"status": "NOT_ATTEMPTED", "admission": admission}
+                    pilots["points"][name] = {"status": "NOT_ATTEMPTED"}
+                save()
+                continue
             for name in group:
-                checks["points"][name] = {"status": "BLOCKED_BY_NC1"}
-                pilots["points"][name] = {"status": "NO_PILOT"}
-            continue
-        Ws = {name: sa.burn_in(point_tuple(plan, name)[3]) for name in group}
-        rate = point_seconds / filter_steps if filter_steps else None
-        units = {name: gate3_units(plan, name, Ws[name]) for name in group}
-        left = deadline.remaining()
-        predicted = None if rate is None else rate * sum(units.values())
-        admission = {"rate_seconds_per_unit": rate, "units": units, "predicted_seconds": predicted,
-                     "seconds_left_before_deadline": left}
-        if left <= 0 or (predicted is not None and predicted > left):
-            for name in group:
-                checks["points"][name] = {"status": "NOT_ATTEMPTED", "admission": admission}
-                pilots["points"][name] = {"status": "NOT_ATTEMPTED"}
-            save()
-            continue
-        for name in group:
-            t_point = clock()
-            rec, pilot, done = steps["point"](plan, name, checks["NC3"][name], deadline, clock)
-            point_seconds += clock() - t_point
-            filter_steps += done
-            checks["points"][name] = {**rec, "admission": admission, "seconds": clock() - t_point}
-            pilots["points"][name] = pilot
-            save()
-    save(complete=True)
+                t_point = clock()
+                rec, pilot, done = steps["point"](plan, name, checks["NC3"]["points"][name], deadline, clock)
+                point_seconds += clock() - t_point
+                filter_steps += done
+                checks["points"][name] = {**rec, "admission": admission, "seconds": clock() - t_point}
+                pilots["points"][name] = pilot
+                save()
+        save(complete=True)
+    except BaseException as exc:             # including KeyboardInterrupt: the clock is still spent
+        run["interrupted"] = f"{type(exc).__name__}: {exc}"[:200]
+        save()
+        raise
     return checks, pilots
 
 
@@ -504,12 +565,26 @@ def run_evaluation(doc, plan, prov, checks, pilots, path, spent, clock=time.mono
            "remaining_aggregate_at_start_seconds": cap - spent, "run_wall_seconds": 0.0, "complete": False}
     art = {**new_artifact("evaluation", doc, prov, run),
            "inputs": {"numerical_checks_digest": checks["digest"], "pilot_digest": pilots["digest"],
-                      "gate3_run_id": checks["run"]["run_id"]}, "points": {}}
+                      "gate3_run_id": checks["run"]["run_id"]},
+           "points": {name: {"status": "NOT_STARTED"} for name in POINTS}}
 
     def save(complete=False):
         run["run_wall_seconds"], run["complete"] = clock() - t0, complete
         write_artifact(path, art)
 
+    save()                       # on the aggregate clock, and on disk, before anything is computed
+    try:
+        return _evaluate_points(plan, art, save, checks, pilots, spent, clock)
+    except BaseException as exc:             # including KeyboardInterrupt: the clock is still spent
+        run["interrupted"] = f"{type(exc).__name__}: {exc}"[:200]
+        save()
+        raise
+
+
+def _evaluate_points(plan, art, save, checks, pilots, spent, clock):
+    numpy, sa, bp = numerical_imports()
+    cap, t15 = plan["aggregate_cap_seconds"], plan["constants"]["t_0975_df15"]
+    t0 = clock() - art["run"]["run_wall_seconds"]
     for group in GROUPS:
         recs, eligible, predicted = {}, {}, {}
         for name in group:
@@ -531,6 +606,7 @@ def run_evaluation(doc, plan, prov, checks, pilots, path, spent, clock=time.mono
             if not admitted:
                 rec["status"] = "NOT_ATTEMPTED" if eligible[name] else "NO_EVALUATION"
                 art["points"][name] = rec
+                save()
                 continue
             C, s, u, c = point_tuple(plan, name)
             rec["stop_seconds"] = bp.stop_seconds(rec["predicted_seconds"], cap - spent - (clock() - t0))
@@ -563,7 +639,7 @@ def run_evaluation(doc, plan, prov, checks, pilots, path, spent, clock=time.mono
             art["points"][name] = rec
             save()
 
-    k1 = {name: art["points"][name]["verdicts"]["K1"] for name in POINTS}
+    k1 = {name: art["points"][name].get("verdicts", {}).get("K1", "NO_VERDICT") for name in POINTS}
     art["closure"] = {
         "k1_verdicts": k1, "roadmap_F": bp.roadmap_F_status(k1),
         "wording": bp.closure_wording(k1, plan["points"]),

@@ -153,6 +153,42 @@ def test_committed_code_tie_passes_and_other_initialisations_fail_it():
         assert abs(rate - committed) / committed > 1e-12, kwargs
 
 
+def test_committed_code_tie_uses_hmm_rates_own_accumulation():
+    """Gate-2 review regression: a correct filter summed with math.fsum fails the frozen 1e-12
+    tolerance at N = 200000, because the two accumulations round differently."""
+    C, s, c, N, seed = 0.6, 0.8, 0.5, 200000, 203
+    tie = sa.committed_code_tie(C, s, c, N, seed, M=121)
+    assert tie["pass"] and tie["accumulation"] == "sid_lib.hmm_rate", tie
+    phi = math.exp(-c)
+    committed = sid_lib.hmm_rate(C, s, sa.THETA, phi, N=N, seed=seed, M=121)
+    y = sid_lib.simulate(C, s, sa.THETA, phi, N, np.random.default_rng(seed))
+    prior = sid_lib.make_hmm(C, s, sa.THETA, phi, 121)[4]
+    stable = math.fsum(sa.ar1_filter(y, sa.ar1_model(C, s, phi, 121, 5.0), initial=prior,
+                                     propagate_first=True)) / N
+    assert abs(stable - committed) / abs(committed) > 1e-12          # the summation, not the filter
+
+
+def test_committed_code_tie_starts_no_committed_work_after_the_deadline(monkeypatch):
+    monkeypatch.setattr(sid_lib, "hmm_rate", lambda *a, **k: pytest.fail("ran after the deadline"))
+    with pytest.raises(sa.DeadlineReached):
+        sa.committed_code_tie(0.8, 1.0, 0.1, 100, 202, deadline=sa.Deadline(0.0, StepClock(1.0)))
+
+
+def test_committed_code_tie_runs_the_committed_calls_inside_the_guard():
+    seen = []
+
+    class Guard:
+        def __enter__(self):
+            seen.append("enter")
+
+        def __exit__(self, *exc):
+            seen.append("exit")
+            return False
+
+    assert sa.committed_code_tie(0.8, 1.0, 0.1, 2000, 202, guard=Guard)["pass"]
+    assert seen == ["enter", "exit"]
+
+
 # ------------------------------------------------------------------------------------------- simulator and NC2
 def _loop_simulator(C, s, u, c, n, rng, block):
     eu, d = math.exp(-u), c - u
@@ -327,5 +363,5 @@ def test_library_does_no_file_io_and_configures_no_threads():
     calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     assert "open" not in calls
     imports = {a.name for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) for a in n.names}
-    assert imports <= {"math", "time", "numpy", "lfilter", "sid_lib"}
+    assert imports <= {"math", "time", "nullcontext", "numpy", "lfilter", "sid_lib"}
     assert "environ" not in source

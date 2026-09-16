@@ -9,8 +9,10 @@ import copy
 import json
 import math
 import os
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -272,17 +274,21 @@ def test_tiny_gate3_run_writes_verifiable_blind_artifacts(tiny_gate3):
     assert checks["points"]["E4"]["admission"]["predicted_seconds"] is not None     # E3 measured the rate
 
 
-def test_gate3_incomplete_NC1_or_failed_NC1_blocks_every_point(tmp_path):
+def test_gate3_incomplete_NC1_or_failed_NC1_blocks_every_point(tmp_path, monkeypatch):
     plan = _tiny_plan()
-    called = []
+    called, nc3_calls = [], []
 
     def point(*args):
         called.append(args)
         raise AssertionError("no point may run")
 
+    _, sa, _ = run13.numerical_imports()
+    monkeypatch.setattr(sa, "series_convergence_check", lambda *a, **k: nc3_calls.append(a))
     plan_zero = dict(plan, gate3_deadline_seconds=0)
     checks, pilots = run13.run_checks_and_pilots(DOC, plan_zero, PROV, _paths(tmp_path), 0.0, steps={"point": point})
     assert checks["NC1"]["status"] == "INCOMPLETE"
+    assert checks["NC3"] == {"status": "INCOMPLETE", "points": {}} and nc3_calls == []
+    monkeypatch.undo()
     checks2, _ = run13.run_checks_and_pilots(DOC, plan, PROV, _paths(tmp_path), 0.0,
                                              steps={"nc1": lambda plan, deadline: {"pass": False}, "point": point})
     assert checks2["NC1"]["status"] == "FAILED"
@@ -291,13 +297,27 @@ def test_gate3_incomplete_NC1_or_failed_NC1_blocks_every_point(tmp_path):
     assert not called and checks["run"]["complete"]
 
 
-def test_gate3_deadline_marks_the_running_point_incomplete_and_later_points_not_attempted(tmp_path):
+def test_gate3_honours_the_deadline_for_the_first_point_and_never_starts_a_later_one(tmp_path):
     plan = _tiny_plan()
     checks, pilots = run13.run_checks_and_pilots(DOC, plan, PROV, _paths(tmp_path), 0.0, clock=StepClock(400.0),
                                                  steps={"nc1": lambda plan, deadline: {"pass": True}})
-    assert checks["points"]["E3"]["status"] == "INCOMPLETE" and checks["points"]["E3"]["incomplete_step"]
+    e3 = checks["points"]["E3"]
+    assert e3["status"] in ("INCOMPLETE", "NOT_ATTEMPTED")      # stopped, or never started: never run past
+    assert e3["status"] == "NOT_ATTEMPTED" or e3["incomplete_step"]
     assert all(checks["points"][n]["status"] == "NOT_ATTEMPTED" for n in ("E4", "E5", "E1", "E2"))
+    assert all(pilots["points"][n]["status"] in ("NO_PILOT", "NOT_ATTEMPTED", "INCOMPLETE") for n in run13.POINTS)
     assert checks["run"]["deadline_seconds"] == 1800 and checks["run"]["complete"]
+
+
+def test_a_point_reaching_the_deadline_is_incomplete_and_names_the_step_it_stopped_in():
+    """The point-level path: work already under way is stopped and recorded, with no pilot."""
+    _, sa, _ = run13.numerical_imports()
+    plan = _tiny_plan()
+    clock = StepClock(1.0)
+    rec, pilot, steps = run13.point_step(plan, "E3", {"pass": True}, sa.Deadline(3.0, clock), clock)
+    assert rec["status"] == "INCOMPLETE" and rec["incomplete_step"] in ("NC4", "NC2", "NC5_NC6", "pilot")
+    assert pilot["status"] in ("NO_PILOT", "INCOMPLETE") and steps == 0
+    assert "NC5" not in rec and "NC6" not in rec
 
 
 def test_gate3_deadline_never_exceeds_the_remaining_aggregate_budget(tmp_path):
@@ -305,6 +325,18 @@ def test_gate3_deadline_never_exceeds_the_remaining_aggregate_budget(tmp_path):
     checks, _ = run13.run_checks_and_pilots(DOC, plan, PROV, _paths(tmp_path), spent=28800 - 5.0,
                                             steps={"nc1": lambda plan, deadline: {"pass": False}})
     assert checks["run"]["deadline_seconds"] == 5.0
+
+
+def test_gate3_does_not_start_a_point_whose_NC3_never_ran(tmp_path):
+    """NC3 stopping at the deadline must not leave a point running on a missing record."""
+    plan = _tiny_plan()
+    checks, _ = run13.run_checks_and_pilots(
+        DOC, plan, PROV, _paths(tmp_path), 0.0, clock=StepClock(300.0),
+        steps={"nc1": lambda plan, deadline: {"pass": True},
+               "point": lambda *a: pytest.fail("a point ran without its NC3 record")})
+    assert checks["NC3"]["status"] == "INCOMPLETE"
+    missing = [n for n in run13.POINTS if n not in checks["NC3"]["points"]]
+    assert missing and all(checks["points"][n]["status"] == "NOT_ATTEMPTED" for n in missing)
 
 
 def test_gate3_prediction_exceeding_the_time_left_is_not_attempted_and_E1_E2_go_together(tmp_path):
@@ -359,3 +391,71 @@ def test_tiny_evaluation_that_reaches_its_stop_is_incomplete_without_verdict(tin
     e3 = art["points"]["E3"]
     assert e3["status"] == "INCOMPLETE" and set(e3["verdicts"].values()) == {"NO_VERDICT"}
     assert "interval" not in e3 and art["closure"]["k1_verdicts"]["E3"] == "NO_VERDICT"
+
+
+# ------------------------------------------------------------------------------------------- interruption and records
+def test_the_timer_guard_interrupts_an_uninterruptible_committed_call(monkeypatch):
+    """sid_lib.hmm_rate cannot poll a deadline; the guard must stop it from overrunning."""
+    _, sa, _ = run13.numerical_imports()
+    import sid_lib
+    monkeypatch.setattr(sid_lib, "hmm_rate", lambda *a, **k: time.sleep(5.0))
+    before = signal.getsignal(signal.SIGALRM)
+    deadline = sa.Deadline(0.3)
+    start = time.monotonic()
+    with pytest.raises(sa.DeadlineReached):
+        sa.committed_code_tie(0.8, 1.0, 0.1, 100, 202, deadline=deadline, guard=run13.alarm_guard(deadline))
+    assert time.monotonic() - start < 2.0, "the tie ran past its deadline"
+    assert signal.getitimer(signal.ITIMER_REAL)[0] == 0.0 and signal.getsignal(signal.SIGALRM) is before
+
+
+def test_gate3_writes_its_artifacts_before_it_computes_anything(tmp_path):
+    paths = _paths(tmp_path)
+    seen = {}
+
+    def nc1(plan, deadline):
+        seen["files"] = {key: p.exists() for key, p in paths.items() if key != "evaluation"}
+        seen["record"] = json.loads(paths["numerical_checks"].read_text())
+        return {"pass": False}
+
+    run13.run_checks_and_pilots(DOC, _tiny_plan(), PROV, paths, 0.0, steps={"nc1": nc1})
+    assert seen["files"] == {"numerical_checks": True, "pilot": True}
+    assert seen["record"]["run"]["complete"] is False
+    assert seen["record"]["NC1"]["status"] == "NOT_STARTED"
+    assert {p["status"] for p in seen["record"]["points"].values()} == {"NOT_STARTED"}
+
+
+@pytest.mark.parametrize("error", [RuntimeError("synthetic failure"), KeyboardInterrupt()])
+def test_gate3_preserves_elapsed_time_and_progress_when_a_step_raises(tmp_path, error):
+    paths = _paths(tmp_path)
+
+    def nc1(plan, deadline):
+        raise error
+
+    with pytest.raises(type(error)):
+        run13.run_checks_and_pilots(DOC, _tiny_plan(), PROV, paths, 0.0, clock=StepClock(37.0), steps={"nc1": nc1})
+    for key in ("numerical_checks", "pilot"):
+        art = json.loads(paths[key].read_text())
+        assert art["digest"] == run13.digest_of(art)
+        assert art["run"]["complete"] is False and art["run"]["run_wall_seconds"] > 0
+        assert type(error).__name__ in art["run"]["interrupted"]
+    assert run13.spent_seconds([json.loads(paths[k].read_text()) for k in ("numerical_checks", "pilot")]) > 0
+
+
+def test_gate4_writes_its_artifact_before_computing_and_keeps_the_clock_on_failure(tiny_gate3, tmp_path, monkeypatch):
+    plan, checks, pilots = _evaluation_inputs(tiny_gate3, t_step=1e-3)
+    path = tmp_path / "res13_F_evaluation.json"
+    _, sa, _ = run13.numerical_imports()
+    seen = {}
+
+    def fail(*args, **kwargs):
+        seen["written_before_computing"] = path.exists()
+        raise RuntimeError("synthetic failure")
+
+    monkeypatch.setattr(sa, "simulate_window_record", fail)
+    with pytest.raises(RuntimeError):
+        run13.run_evaluation(DOC, plan, PROV, checks, pilots, path, spent=100.0, clock=StepClock(11.0))
+    art = json.loads(path.read_text())
+    assert seen["written_before_computing"] is True
+    assert art["digest"] == run13.digest_of(art)
+    assert art["run"]["complete"] is False and art["run"]["run_wall_seconds"] > 0
+    assert "RuntimeError" in art["run"]["interrupted"] and "closure" not in art

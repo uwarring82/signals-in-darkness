@@ -35,9 +35,15 @@ Choices the protocol leaves open, recorded for review:
   4. NC2 statistics use the sample mean: the variance with ddof = 1, and the lag-k
      autocorrelation sum_n e_n e_{n+k} / sum_n e_n^2 of the centred phase.
   5. Band edges. "Inside [1 - delta, 1 + delta]" includes the edges; "disjoint" excludes them.
+  6. Tie arithmetic. committed_code_tie reproduces sid_lib.hmm_rate's own accumulation: log Z summed
+     into a running float and the null summed by numpy. Estimators keep math.fsum over the
+     increments, which is the better summation but a different rounding: at N = 200000 the two
+     differ by about 1e-12 relative, enough to fail the frozen tie tolerance on a correct filter
+     (Gate-2 review).
 """
 import math
 import time
+from contextlib import nullcontext
 
 import numpy as np
 from scipy.signal import lfilter
@@ -238,14 +244,18 @@ def ar1_model(C, s, phi, M, L):
     return {"grid": f"M{M}_L{L}", "g": g, "T": T, "E": (1 - e1, e1), "pi": pi, "stationary": report}
 
 
-def ar1_filter(y, model, initial=None, propagate_first=False, deadline=None):
+def ar1_filter(y, model, initial=None, propagate_first=False, deadline=None, log_evidence=False):
     """alpha~_1(i) = w(i) E_{y1}(i), with w = pi unless given; alpha~_n(i') = sum_i alpha_{n-1}(i) T[i, i'] E_{yn}(i').
 
-    propagate_first applies T before the first emission as well, as sid_lib.hmm_rate does."""
+    propagate_first applies T before the first emission as well, as sid_lib.hmm_rate does.
+    log_evidence returns sum_n log Z_n accumulated in hmm_rate's own order and arithmetic, for the
+    committed-code tie only; otherwise the increments l_n = log Z_n - log(1/2) are returned, and
+    every estimator sums those with math.fsum."""
     T, E = model["T"], model["E"]
     alpha = (model["pi"] if initial is None else np.asarray(initial, dtype=float)).copy()
     ys = _binary(y).tolist()
-    out = np.empty(len(ys))
+    out = None if log_evidence else np.empty(len(ys))
+    total = 0.0
     for k, yk in enumerate(ys):
         if k % CHUNK == 0:
             _check(deadline)
@@ -254,9 +264,12 @@ def ar1_filter(y, model, initial=None, propagate_first=False, deadline=None):
         alpha = alpha * E[yk]
         z = alpha.sum()
         alpha /= z
-        out[k] = math.log(z) - LOG_HALF
+        if log_evidence:
+            total += math.log(z)                     # hmm_rate's running accumulation, bit for bit
+        else:
+            out[k] = math.log(z) - LOG_HALF
     _check(deadline)
-    return out
+    return total if log_evidence else out
 
 
 def nesting_check(y, C, s, c_over_tau_c, M, L, W, arma=None, deadline=None):
@@ -279,17 +292,30 @@ def nesting_check(y, C, s, c_over_tau_c, M, L, W, arma=None, deadline=None):
             "NC4": arma["stationary"], "pass": per_increment and window_sum}
 
 
-def committed_code_tie(C, s, c_over_tau_c, N, seed, M=121):
+def committed_code_tie(C, s, c_over_tau_c, N, seed, M=121, deadline=None, guard=None):
     """The AR(1) reference, started from make_hmm's Gaussian-weight prior with one propagation by T
-    before the first emission and W = 0, against sid_lib.hmm_rate on hmm_rate's own record."""
+    before the first emission and W = 0, against sid_lib.hmm_rate on hmm_rate's own record.
+
+    The comparison uses hmm_rate's own accumulation, so that the tie tests the filter and not the
+    summation: stable summation of the same increments differs by about 1e-12 relative at
+    N = 200000 and would fail the frozen tolerance on a correct filter.
+
+    guard wraps the committed calls, which are uninterruptible loops; the driver passes one that
+    raises DeadlineReached from a timer. Nothing starts once the deadline has passed."""
     import sid_lib
+    _check(deadline)
     phi = math.exp(-c_over_tau_c)
-    committed = float(sid_lib.hmm_rate(C, s, THETA, phi, N=N, seed=seed, M=M))
-    y = sid_lib.simulate(C, s, THETA, phi, N, np.random.default_rng(seed))
-    prior = sid_lib.make_hmm(C, s, THETA, phi, M)[4]
-    mine = math.fsum(ar1_filter(y, ar1_model(C, s, phi, M, 5.0), initial=prior, propagate_first=True)) / N
-    rel = abs(mine - committed) / abs(committed)
-    return {"N": N, "seed": seed, "M": M, "L": 5.0, "relative_difference": rel, "pass": bool(rel <= 1e-12)}
+    with (guard or nullcontext)():
+        committed = float(sid_lib.hmm_rate(C, s, THETA, phi, N=N, seed=seed, M=M))
+        y = sid_lib.simulate(C, s, THETA, phi, N, np.random.default_rng(seed))
+        prior = sid_lib.make_hmm(C, s, THETA, phi, M)[4]
+    ll1 = ar1_filter(y, ar1_model(C, s, phi, M, 5.0), initial=prior, propagate_first=True,
+                     deadline=deadline, log_evidence=True)
+    p0 = sid_lib.ramsey_probability(C, THETA)
+    ll0 = float(np.sum(y * np.log(p0) + (1 - y) * np.log(1 - p0)))
+    rel = abs((ll1 - ll0) / N - committed) / abs(committed)
+    return {"N": N, "seed": seed, "M": M, "L": 5.0, "accumulation": "sid_lib.hmm_rate",
+            "relative_difference": rel, "pass": bool(rel <= 1e-12)}
 
 
 # ------------------------------------------------------------------------------------------- simulator
