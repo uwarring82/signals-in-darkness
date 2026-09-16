@@ -1,0 +1,603 @@
+{
+ "record": "roadmap F pilots, analysis/runs/sid_run13.py",
+ "protocol": "analysis/protocol_F.json",
+ "protocol_digest": "b7c09ce90f33c37b",
+ "provenance": {
+  "started_utc": "2026-09-16T05:43:28Z",
+  "python": "3.12.14",
+  "machine": "arm64",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "numpy_build_configuration": {
+   "Compilers": {
+    "c": {
+     "name": "clang",
+     "linker": "ld64",
+     "version": "19.1.7",
+     "commands": "arm64-apple-darwin20.0.0-clang",
+     "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+     "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+    },
+    "cython": {
+     "name": "cython",
+     "linker": "cython",
+     "version": "3.2.4",
+     "commands": "cython"
+    },
+    "c++": {
+     "name": "clang",
+     "linker": "ld64",
+     "version": "19.1.7",
+     "commands": "arm64-apple-darwin20.0.0-clang++",
+     "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+     "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+    }
+   },
+   "Machine Information": {
+    "host": {
+     "cpu": "aarch64",
+     "family": "aarch64",
+     "endian": "little",
+     "system": "darwin"
+    },
+    "build": {
+     "cpu": "aarch64",
+     "family": "aarch64",
+     "endian": "little",
+     "system": "darwin"
+    }
+   },
+   "Build Dependencies": {
+    "blas": {
+     "name": "blas",
+     "found": true,
+     "version": "3.9.0",
+     "detection method": "pkgconfig",
+     "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+     "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+     "openblas configuration": "unknown",
+     "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+    },
+    "lapack": {
+     "name": "lapack",
+     "found": true,
+     "version": "3.9.0",
+     "detection method": "pkgconfig",
+     "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+     "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+     "openblas configuration": "unknown",
+     "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+    }
+   },
+   "Python Information": {
+    "path": "/Users/uwarring/opt/anaconda3/envs/sid-f/bin/python",
+    "version": "3.12"
+   },
+   "SIMD Extensions": {
+    "baseline": [
+     "NEON",
+     "NEON_FP16",
+     "NEON_VFPV4",
+     "ASIMD"
+    ],
+    "found": [
+     "ASIMDHP",
+     "ASIMDDP"
+    ],
+    "not found": [
+     "ASIMDFHM"
+    ]
+   }
+  },
+  "libblas_build": "11_h51639a9_openblas",
+  "libopenblas_build": "openmp_h5e6e99c_1",
+  "thread_variables": {
+   "OMP_NUM_THREADS": "1",
+   "OPENBLAS_NUM_THREADS": "1",
+   "MKL_NUM_THREADS": "1",
+   "VECLIB_MAXIMUM_THREADS": "1",
+   "NUMEXPR_NUM_THREADS": "1"
+  },
+  "git_revision": "b884cfa670794c30f00e6139854c10aa0a7e2dcc",
+  "git_clean": true,
+  "protocol_digest": "b7c09ce90f33c37b"
+ },
+ "run": {
+  "phase": "checks-and-pilots",
+  "run_id": "46ffde5ab16240e4ab4c14fcaaf85902",
+  "spent_before_seconds": 0.0,
+  "remaining_aggregate_at_start_seconds": 28800.0,
+  "deadline_seconds": 1800,
+  "run_wall_seconds": 238.2230595840374,
+  "complete": true
+ },
+ "points": {
+  "E1": {
+   "status": "PILOT_COMPLETE",
+   "grid": "M241_L7",
+   "W": 3460,
+   "n_p": 125000,
+   "per_seed": [
+    {
+     "seed": 13000,
+     "wall_seconds": 1.6189372499939054,
+     "shots": 128460
+    },
+    {
+     "seed": 13001,
+     "wall_seconds": 1.6575740409316495,
+     "shots": 128460
+    },
+    {
+     "seed": 13002,
+     "wall_seconds": 1.6080335419392213,
+     "shots": 128460
+    },
+    {
+     "seed": 13003,
+     "wall_seconds": 1.622969500022009,
+     "shots": 128460
+    },
+    {
+     "seed": 13004,
+     "wall_seconds": 1.6130307500716299,
+     "shots": 128460
+    },
+    {
+     "seed": 13005,
+     "wall_seconds": 1.6092672079103068,
+     "shots": 128460
+    },
+    {
+     "seed": 13006,
+     "wall_seconds": 1.619822416920215,
+     "shots": 128460
+    },
+    {
+     "seed": 13007,
+     "wall_seconds": 1.6130493340315297,
+     "shots": 128460
+    },
+    {
+     "seed": 13008,
+     "wall_seconds": 1.6104087500134483,
+     "shots": 128460
+    },
+    {
+     "seed": 13009,
+     "wall_seconds": 1.612672165967524,
+     "shots": 128460
+    },
+    {
+     "seed": 13010,
+     "wall_seconds": 1.616553874919191,
+     "shots": 128460
+    },
+    {
+     "seed": 13011,
+     "wall_seconds": 1.6109286659630015,
+     "shots": 128460
+    },
+    {
+     "seed": 13012,
+     "wall_seconds": 1.6040739580057561,
+     "shots": 128460
+    },
+    {
+     "seed": 13013,
+     "wall_seconds": 1.6015039579942822,
+     "shots": 128460
+    },
+    {
+     "seed": 13014,
+     "wall_seconds": 1.607271583052352,
+     "shots": 128460
+    },
+    {
+     "seed": 13015,
+     "wall_seconds": 1.6136317919008434,
+     "shots": 128460
+    }
+   ],
+   "S2": 1.5219178998121864e-09,
+   "vbar_10": 1.6459673979741576e-09,
+   "vbar_20": 1.698356613844895e-09,
+   "U_seed": 3.14404968893739e-09,
+   "U_bm10": 2.0211714756462936e-09,
+   "U_bm20": 1.9511734721529612e-09,
+   "U": 3.14404968893739e-09,
+   "stable": true,
+   "t_step": 1.2571874897651441e-05
+  },
+  "E2": {
+   "status": "PILOT_COMPLETE",
+   "grid": "M241_L7",
+   "W": 2287,
+   "n_p": 125000,
+   "per_seed": [
+    {
+     "seed": 13020,
+     "wall_seconds": 1.5928036249242723,
+     "shots": 127287
+    },
+    {
+     "seed": 13021,
+     "wall_seconds": 1.5923093750607222,
+     "shots": 127287
+    },
+    {
+     "seed": 13022,
+     "wall_seconds": 1.5893775000004098,
+     "shots": 127287
+    },
+    {
+     "seed": 13023,
+     "wall_seconds": 1.5885517079150304,
+     "shots": 127287
+    },
+    {
+     "seed": 13024,
+     "wall_seconds": 1.59723741596099,
+     "shots": 127287
+    },
+    {
+     "seed": 13025,
+     "wall_seconds": 1.5978439589962363,
+     "shots": 127287
+    },
+    {
+     "seed": 13026,
+     "wall_seconds": 1.5972527500707656,
+     "shots": 127287
+    },
+    {
+     "seed": 13027,
+     "wall_seconds": 1.5969901670468971,
+     "shots": 127287
+    },
+    {
+     "seed": 13028,
+     "wall_seconds": 1.6857359999557957,
+     "shots": 127287
+    },
+    {
+     "seed": 13029,
+     "wall_seconds": 1.6573667080374435,
+     "shots": 127287
+    },
+    {
+     "seed": 13030,
+     "wall_seconds": 1.6120284160133451,
+     "shots": 127287
+    },
+    {
+     "seed": 13031,
+     "wall_seconds": 1.6077084159478545,
+     "shots": 127287
+    },
+    {
+     "seed": 13032,
+     "wall_seconds": 1.6126444999827072,
+     "shots": 127287
+    },
+    {
+     "seed": 13033,
+     "wall_seconds": 1.6134854999836534,
+     "shots": 127287
+    },
+    {
+     "seed": 13034,
+     "wall_seconds": 1.603133000084199,
+     "shots": 127287
+    },
+    {
+     "seed": 13035,
+     "wall_seconds": 1.6034468750003725,
+     "shots": 127287
+    }
+   ],
+   "S2": 2.036503304270859e-09,
+   "vbar_10": 2.275983745229023e-09,
+   "vbar_20": 2.47053185390381e-09,
+   "U_seed": 4.207104457541969e-09,
+   "U_bm10": 2.7948022728477797e-09,
+   "U_bm20": 2.838294487830236e-09,
+   "U": 4.207104457541969e-09,
+   "stable": true,
+   "t_step": 1.2642648068430346e-05
+  },
+  "E3": {
+   "status": "PILOT_COMPLETE",
+   "grid": "M241_L7",
+   "W": 1000,
+   "n_p": 125000,
+   "per_seed": [
+    {
+     "seed": 13040,
+     "wall_seconds": 1.5957663339795545,
+     "shots": 126000
+    },
+    {
+     "seed": 13041,
+     "wall_seconds": 1.5806670000310987,
+     "shots": 126000
+    },
+    {
+     "seed": 13042,
+     "wall_seconds": 1.5775907919742167,
+     "shots": 126000
+    },
+    {
+     "seed": 13043,
+     "wall_seconds": 1.6101025840034708,
+     "shots": 126000
+    },
+    {
+     "seed": 13044,
+     "wall_seconds": 1.6039884170750156,
+     "shots": 126000
+    },
+    {
+     "seed": 13045,
+     "wall_seconds": 1.583852207986638,
+     "shots": 126000
+    },
+    {
+     "seed": 13046,
+     "wall_seconds": 1.581303208018653,
+     "shots": 126000
+    },
+    {
+     "seed": 13047,
+     "wall_seconds": 1.5911180829862133,
+     "shots": 126000
+    },
+    {
+     "seed": 13048,
+     "wall_seconds": 1.69878387497738,
+     "shots": 126000
+    },
+    {
+     "seed": 13049,
+     "wall_seconds": 1.8448906670091674,
+     "shots": 126000
+    },
+    {
+     "seed": 13050,
+     "wall_seconds": 1.9880703330272809,
+     "shots": 126000
+    },
+    {
+     "seed": 13051,
+     "wall_seconds": 1.6018442088970914,
+     "shots": 126000
+    },
+    {
+     "seed": 13052,
+     "wall_seconds": 1.6443683339748532,
+     "shots": 126000
+    },
+    {
+     "seed": 13053,
+     "wall_seconds": 1.5874265829334036,
+     "shots": 126000
+    },
+    {
+     "seed": 13054,
+     "wall_seconds": 1.6213748330483213,
+     "shots": 126000
+    },
+    {
+     "seed": 13055,
+     "wall_seconds": 1.6902303339447826,
+     "shots": 126000
+    }
+   ],
+   "S2": 1.5772734914576903e-08,
+   "vbar_10": 2.8235344411466158e-08,
+   "vbar_20": 2.684444900020479e-08,
+   "U_seed": 3.2584058777406556e-08,
+   "U_bm10": 3.46716908243406e-08,
+   "U_bm20": 3.0840505661048516e-08,
+   "U": 3.46716908243406e-08,
+   "stable": true,
+   "t_step": 1.3095921524735685e-05
+  },
+  "E4": {
+   "status": "PILOT_COMPLETE",
+   "grid": "M241_L7",
+   "W": 1000,
+   "n_p": 125000,
+   "per_seed": [
+    {
+     "seed": 13060,
+     "wall_seconds": 1.6857495830627158,
+     "shots": 126000
+    },
+    {
+     "seed": 13061,
+     "wall_seconds": 1.6474542500218377,
+     "shots": 126000
+    },
+    {
+     "seed": 13062,
+     "wall_seconds": 1.5879450420616195,
+     "shots": 126000
+    },
+    {
+     "seed": 13063,
+     "wall_seconds": 1.585811416967772,
+     "shots": 126000
+    },
+    {
+     "seed": 13064,
+     "wall_seconds": 1.5716676249867305,
+     "shots": 126000
+    },
+    {
+     "seed": 13065,
+     "wall_seconds": 1.5814574171090499,
+     "shots": 126000
+    },
+    {
+     "seed": 13066,
+     "wall_seconds": 1.5888873749645427,
+     "shots": 126000
+    },
+    {
+     "seed": 13067,
+     "wall_seconds": 1.675507584004663,
+     "shots": 126000
+    },
+    {
+     "seed": 13068,
+     "wall_seconds": 1.6120716659352183,
+     "shots": 126000
+    },
+    {
+     "seed": 13069,
+     "wall_seconds": 1.7430864589987323,
+     "shots": 126000
+    },
+    {
+     "seed": 13070,
+     "wall_seconds": 1.6027608329895884,
+     "shots": 126000
+    },
+    {
+     "seed": 13071,
+     "wall_seconds": 1.5869516669772565,
+     "shots": 126000
+    },
+    {
+     "seed": 13072,
+     "wall_seconds": 1.5768935829401016,
+     "shots": 126000
+    },
+    {
+     "seed": 13073,
+     "wall_seconds": 1.5877919170306996,
+     "shots": 126000
+    },
+    {
+     "seed": 13074,
+     "wall_seconds": 1.5893515420611948,
+     "shots": 126000
+    },
+    {
+     "seed": 13075,
+     "wall_seconds": 1.5755761249456555,
+     "shots": 126000
+    }
+   ],
+   "S2": 1.2167966813882256e-08,
+   "vbar_10": 1.1130907300009957e-08,
+   "vbar_20": 1.0802736834248137e-08,
+   "U_seed": 2.5137159028688794e-08,
+   "U_bm10": 1.3668236904651281e-08,
+   "U_bm20": 1.2410829013063572e-08,
+   "U": 2.5137159028688794e-08,
+   "stable": true,
+   "t_step": 1.2797105200921318e-05
+  },
+  "E5": {
+   "status": "PILOT_COMPLETE",
+   "grid": "M241_L7",
+   "W": 1000,
+   "n_p": 125000,
+   "per_seed": [
+    {
+     "seed": 13080,
+     "wall_seconds": 1.5845522499876097,
+     "shots": 126000
+    },
+    {
+     "seed": 13081,
+     "wall_seconds": 1.584576457971707,
+     "shots": 126000
+    },
+    {
+     "seed": 13082,
+     "wall_seconds": 1.5806957500753924,
+     "shots": 126000
+    },
+    {
+     "seed": 13083,
+     "wall_seconds": 1.585072125075385,
+     "shots": 126000
+    },
+    {
+     "seed": 13084,
+     "wall_seconds": 1.5785652920603752,
+     "shots": 126000
+    },
+    {
+     "seed": 13085,
+     "wall_seconds": 1.564021416939795,
+     "shots": 126000
+    },
+    {
+     "seed": 13086,
+     "wall_seconds": 1.5771759169874713,
+     "shots": 126000
+    },
+    {
+     "seed": 13087,
+     "wall_seconds": 1.5733682919526473,
+     "shots": 126000
+    },
+    {
+     "seed": 13088,
+     "wall_seconds": 1.571311958017759,
+     "shots": 126000
+    },
+    {
+     "seed": 13089,
+     "wall_seconds": 1.5701617089798674,
+     "shots": 126000
+    },
+    {
+     "seed": 13090,
+     "wall_seconds": 1.5689110830426216,
+     "shots": 126000
+    },
+    {
+     "seed": 13091,
+     "wall_seconds": 1.5746466250857338,
+     "shots": 126000
+    },
+    {
+     "seed": 13092,
+     "wall_seconds": 1.566991375060752,
+     "shots": 126000
+    },
+    {
+     "seed": 13093,
+     "wall_seconds": 1.568510791985318,
+     "shots": 126000
+    },
+    {
+     "seed": 13094,
+     "wall_seconds": 1.574846624978818,
+     "shots": 126000
+    },
+    {
+     "seed": 13095,
+     "wall_seconds": 1.5692148329690099,
+     "shots": 126000
+    }
+   ],
+   "S2": 7.811291353993199e-09,
+   "vbar_10": 1.0283948829542443e-08,
+   "vbar_20": 1.0225866837242082e-08,
+   "U_seed": 1.6136933637979008e-08,
+   "U_bm10": 1.2628211261571788e-08,
+   "U_bm20": 1.1748086320590408e-08,
+   "U": 1.6136933637979008e-08,
+   "stable": true,
+   "t_step": 1.2496340526374138e-05
+  }
+ },
+ "digest": "2928503b8ba4f778"
+}

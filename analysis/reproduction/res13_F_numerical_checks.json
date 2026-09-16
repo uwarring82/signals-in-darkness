@@ -1,0 +1,1073 @@
+{
+ "record": "roadmap F numerical checks, analysis/runs/sid_run13.py",
+ "protocol": "analysis/protocol_F.json",
+ "protocol_digest": "b7c09ce90f33c37b",
+ "provenance": {
+  "started_utc": "2026-09-16T05:43:28Z",
+  "python": "3.12.14",
+  "machine": "arm64",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "numpy": "2.4.4",
+  "scipy": "1.17.1",
+  "numpy_build_configuration": {
+   "Compilers": {
+    "c": {
+     "name": "clang",
+     "linker": "ld64",
+     "version": "19.1.7",
+     "commands": "arm64-apple-darwin20.0.0-clang",
+     "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+     "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+    },
+    "cython": {
+     "name": "cython",
+     "linker": "cython",
+     "version": "3.2.4",
+     "commands": "cython"
+    },
+    "c++": {
+     "name": "clang",
+     "linker": "ld64",
+     "version": "19.1.7",
+     "commands": "arm64-apple-darwin20.0.0-clang++",
+     "args": "-ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0",
+     "linker args": "-Wl,-headerpad_max_install_names, -Wl,-dead_strip_dylibs, -Wl,-rpath,/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -L/Users/uwarring/opt/anaconda3/envs/sid-f/lib, -ftree-vectorize, -fPIC, -fstack-protector-strong, -O2, -pipe, -stdlib=libc++, -fvisibility-inlines-hidden, -fmessage-length=0, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -fdebug-prefix-map=/Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1778655476/work=/usr/local/src/conda/numpy-2.4.4, -fdebug-prefix-map=/Users/uwarring/opt/anaconda3/envs/sid-f=/usr/local/src/conda-prefix, -DACCELERATE_NEW_LAPACK, -D_FORTIFY_SOURCE=2, -isystem, /Users/uwarring/opt/anaconda3/envs/sid-f/include, -mmacosx-version-min=11.0, -mmacosx-version-min=11.0"
+    }
+   },
+   "Machine Information": {
+    "host": {
+     "cpu": "aarch64",
+     "family": "aarch64",
+     "endian": "little",
+     "system": "darwin"
+    },
+    "build": {
+     "cpu": "aarch64",
+     "family": "aarch64",
+     "endian": "little",
+     "system": "darwin"
+    }
+   },
+   "Build Dependencies": {
+    "blas": {
+     "name": "blas",
+     "found": true,
+     "version": "3.9.0",
+     "detection method": "pkgconfig",
+     "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+     "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+     "openblas configuration": "unknown",
+     "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+    },
+    "lapack": {
+     "name": "lapack",
+     "found": true,
+     "version": "3.9.0",
+     "detection method": "pkgconfig",
+     "include directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/include",
+     "lib directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib",
+     "openblas configuration": "unknown",
+     "pc file directory": "/Users/uwarring/opt/anaconda3/envs/sid-f/lib/pkgconfig"
+    }
+   },
+   "Python Information": {
+    "path": "/Users/uwarring/opt/anaconda3/envs/sid-f/bin/python",
+    "version": "3.12"
+   },
+   "SIMD Extensions": {
+    "baseline": [
+     "NEON",
+     "NEON_FP16",
+     "NEON_VFPV4",
+     "ASIMD"
+    ],
+    "found": [
+     "ASIMDHP",
+     "ASIMDDP"
+    ],
+    "not found": [
+     "ASIMDFHM"
+    ]
+   }
+  },
+  "libblas_build": "11_h51639a9_openblas",
+  "libopenblas_build": "openmp_h5e6e99c_1",
+  "thread_variables": {
+   "OMP_NUM_THREADS": "1",
+   "OPENBLAS_NUM_THREADS": "1",
+   "MKL_NUM_THREADS": "1",
+   "VECLIB_MAXIMUM_THREADS": "1",
+   "NUMEXPR_NUM_THREADS": "1"
+  },
+  "git_revision": "b884cfa670794c30f00e6139854c10aa0a7e2dcc",
+  "git_clean": true,
+  "protocol_digest": "b7c09ce90f33c37b"
+ },
+ "run": {
+  "phase": "checks-and-pilots",
+  "run_id": "46ffde5ab16240e4ab4c14fcaaf85902",
+  "spent_before_seconds": 0.0,
+  "remaining_aggregate_at_start_seconds": 28800.0,
+  "deadline_seconds": 1800,
+  "run_wall_seconds": 238.2230595840374,
+  "complete": true
+ },
+ "NC1": {
+  "point": "N0",
+  "seed": 15900,
+  "N": 200000,
+  "W": 2000,
+  "grids": {
+   "M121_L5": {
+    "grid": "M121_L5",
+    "b": 0.0,
+    "max_abs_increment_difference": 8.881784197001252e-16,
+    "window_abs_sum_difference_over_sum_abs": 3.5214634919388185e-16,
+    "per_increment_within_tolerance": true,
+    "window_sum_within_tolerance": true,
+    "NC4": {
+     "residual": 1.5376390261832287e-15,
+     "minimum": 1.0201338510049437e-07,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "pass": true
+   },
+   "M241_L7": {
+    "grid": "M241_L7",
+    "b": 0.0,
+    "max_abs_increment_difference": 7.771561172376096e-16,
+    "window_abs_sum_difference_over_sum_abs": 4.555789741559207e-16,
+    "per_increment_within_tolerance": true,
+    "window_sum_within_tolerance": true,
+    "NC4": {
+     "residual": 2.0892832300426223e-15,
+     "minimum": 4.71854155167603e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "pass": true
+   }
+  },
+  "committed_code_tie": {
+   "N": 200000,
+   "seed": 15900,
+   "M": 121,
+   "L": 5.0,
+   "accumulation": "sid_lib.hmm_rate",
+   "relative_difference": 0.0,
+   "pass": true
+  },
+  "committed_code_timer_armed": true,
+  "NC4_on_N0_grids_enters_NC1": true,
+  "pass": true,
+  "status": "PASSED"
+ },
+ "NC3": {
+  "status": "COMPLETE",
+  "points": {
+   "E1": {
+    "K1": {
+     "relative_change": -5.750955267558311e-14,
+     "pass": true
+    },
+    "K4": {
+     "relative_change": -5.795364188543317e-14,
+     "pass": true
+    },
+    "pass": true
+   },
+   "E2": {
+    "K1": {
+     "relative_change": -5.784261958297066e-14,
+     "pass": true
+    },
+    "K4": {
+     "relative_change": -5.828670879282072e-14,
+     "pass": true
+    },
+    "pass": true
+   },
+   "E3": {
+    "K1": {
+     "relative_change": -2.220446049250313e-16,
+     "pass": true
+    },
+    "K4": {
+     "relative_change": -3.3306690738754696e-16,
+     "pass": true
+    },
+    "pass": true
+   },
+   "E4": {
+    "K1": {
+     "relative_change": 2.220446049250313e-16,
+     "pass": true
+    },
+    "K4": {
+     "relative_change": 2.220446049250313e-16,
+     "pass": true
+    },
+    "pass": true
+   },
+   "E5": {
+    "K1": {
+     "relative_change": 9.85878045867139e-14,
+     "pass": true
+    },
+    "K4": {
+     "relative_change": 8.881784197001252e-16,
+     "pass": true
+    },
+    "pass": true
+   }
+  }
+ },
+ "points": {
+  "E1": {
+   "W": 3460,
+   "status": "CHECKS_PASSED",
+   "NC4": {
+    "M121_L5": {
+     "residual": 3.5321585582159134e-15,
+     "minimum": 9.69572562198524e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M121_L7": {
+     "residual": 2.6773961346904734e-15,
+     "minimum": 9.208470073294129e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L5": {
+     "residual": 1.9888740905264593e-15,
+     "minimum": 4.676195807783149e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L7": {
+     "residual": 2.3496487967318416e-15,
+     "minimum": 4.440024964212926e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    }
+   },
+   "NC2": {
+    "seeds": [
+     15008,
+     15009,
+     15010,
+     15011,
+     15012,
+     15013,
+     15014,
+     15015
+    ],
+    "shots_per_seed": 250000,
+    "statistics": [
+     {
+      "statistic": "variance",
+      "exact": 0.06506049169605375,
+      "mean_over_seeds": 0.06472621894355007,
+      "standard_error": 0.00039180562208321454,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_1",
+      "exact": 0.9794002313815774,
+      "mean_over_seeds": 0.9792523007024965,
+      "standard_error": 0.00012510927991413008,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_2",
+      "exact": 0.9514911744438991,
+      "mean_over_seeds": 0.9511390063564709,
+      "standard_error": 0.0002916710518391469,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_3",
+      "exact": 0.9243774159288605,
+      "mean_over_seeds": 0.9238019473622028,
+      "standard_error": 0.0004595217334974762,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_4",
+      "exact": 0.8980362929574371,
+      "mean_over_seeds": 0.8972243222570592,
+      "standard_error": 0.0006205964974210507,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_5",
+      "exact": 0.8724457884535782,
+      "mean_over_seeds": 0.871414667490483,
+      "standard_error": 0.0007656627583907354,
+      "pass": true
+     }
+    ],
+    "pass": true
+   },
+   "NC5": {
+    "seeds": [
+     15000,
+     15001,
+     15002,
+     15003,
+     15004,
+     15005,
+     15006,
+     15007
+    ],
+    "record_length": 56920,
+    "window": [
+     6921,
+     56920
+    ],
+    "pairs": {
+     "M121_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 6.689252075731365e-11,
+      "standard_error": 2.505908644476944e-10,
+      "lhs": 6.594457559119665e-10,
+      "limit": 9.429134121949886e-08,
+      "pass": true
+     },
+     "M121_L7_W_history - M241_L7_W_history": {
+      "mean_paired_difference": -2.0776018836297558e-16,
+      "standard_error": 3.097801574643475e-16,
+      "lhs": 9.402738611849609e-16,
+      "limit": 9.429134121949886e-08,
+      "pass": true
+     },
+     "M241_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 7.325174460290796e-11,
+      "standard_error": 2.805476048306325e-10,
+      "lhs": 7.366414145482758e-10,
+      "limit": 9.429134121949886e-08,
+      "pass": true
+     }
+    }
+   },
+   "NC6": {
+    "seeds": [
+     15000,
+     15001,
+     15002,
+     15003,
+     15004,
+     15005,
+     15006,
+     15007
+    ],
+    "record_length": 56920,
+    "window": [
+     6921,
+     56920
+    ],
+    "pairs": {
+     "M241_L7_W_history - M241_L7_2W_history": {
+      "mean_paired_difference": 1.2705494208814505e-21,
+      "standard_error": 5.430739230818352e-21,
+      "lhs": 1.4112207106987545e-20,
+      "limit": 9.429134121949886e-08,
+      "pass": true
+     }
+    }
+   },
+   "admission": {
+    "rate_seconds_per_unit": 1.1181077263775185e-05,
+    "units": {
+     "E1": 6676800,
+     "E2": 6582960
+    },
+    "predicted_seconds": 148.25840105911564,
+    "seconds_left_before_deadline": 1654.376262292033,
+    "without_NC3": []
+   },
+   "seconds": 46.84654537495226
+  },
+  "E2": {
+   "W": 2287,
+   "status": "CHECKS_PASSED",
+   "NC4": {
+    "M121_L5": {
+     "residual": 1.775776370368475e-15,
+     "minimum": 1.0063737328658321e-07,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M121_L7": {
+     "residual": 1.5992285621736092e-15,
+     "minimum": 9.521658265808282e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L5": {
+     "residual": 1.0464559623710193e-15,
+     "minimum": 4.90374203726402e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L7": {
+     "residual": 1.6173275977025706e-15,
+     "minimum": 4.648602332175825e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    }
+   },
+   "NC2": {
+    "seeds": [
+     15028,
+     15029,
+     15030,
+     15031,
+     15032,
+     15033,
+     15034,
+     15035
+    ],
+    "shots_per_seed": 250000,
+    "statistics": [
+     {
+      "statistic": "variance",
+      "exact": 0.06479342155576832,
+      "mean_over_seeds": 0.06462293879134733,
+      "standard_error": 0.0003514665555522254,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_1",
+      "exact": 0.9690267245420164,
+      "mean_over_seeds": 0.9689418721209784,
+      "standard_error": 0.00015774977765077445,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_2",
+      "exact": 0.9275603177627636,
+      "mean_over_seeds": 0.9273778513304851,
+      "standard_error": 0.00033680393166768126,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_3",
+      "exact": 0.8878683335537398,
+      "mean_over_seeds": 0.8875607012569068,
+      "standard_error": 0.0004919791538111593,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_4",
+      "exact": 0.8498748411627461,
+      "mean_over_seeds": 0.8494282463870715,
+      "standard_error": 0.0006568967976565447,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_5",
+      "exact": 0.8135071590518497,
+      "mean_over_seeds": 0.8129015960156791,
+      "standard_error": 0.0008353184402108186,
+      "pass": true
+     }
+    ],
+    "pass": true
+   },
+   "NC5": {
+    "seeds": [
+     15020,
+     15021,
+     15022,
+     15023,
+     15024,
+     15025,
+     15026,
+     15027
+    ],
+    "record_length": 54574,
+    "window": [
+     4575,
+     54574
+    ],
+    "pairs": {
+     "M121_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.9454177055181328e-10,
+      "standard_error": 7.327303790772583e-10,
+      "lhs": 1.9271737943698676e-09,
+      "limit": 1.4466719661973314e-07,
+      "pass": true
+     },
+     "M121_L7_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 5.81937045752122e-17,
+      "standard_error": 1.3881646354720956e-15,
+      "lhs": 3.3406814660074012e-15,
+      "limit": 1.4466719661973314e-07,
+      "pass": true
+     },
+     "M241_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 2.1936462625842231e-10,
+      "standard_error": 8.13249614766138e-10,
+      "lhs": 2.142394387459216e-09,
+      "limit": 1.4466719661973314e-07,
+      "pass": true
+     }
+    }
+   },
+   "NC6": {
+    "seeds": [
+     15020,
+     15021,
+     15022,
+     15023,
+     15024,
+     15025,
+     15026,
+     15027
+    ],
+    "record_length": 54574,
+    "window": [
+     4575,
+     54574
+    ],
+    "pairs": {
+     "M241_L7_W_history - M241_L7_2W_history": {
+      "mean_paired_difference": 1.6940658945086007e-21,
+      "standard_error": 1.6940658945086007e-21,
+      "lhs": 5.699895191473093e-21,
+      "limit": 1.4466719661973314e-07,
+      "pass": true
+     }
+    }
+   },
+   "admission": {
+    "rate_seconds_per_unit": 1.1181077263775185e-05,
+    "units": {
+     "E1": 6676800,
+     "E2": 6582960
+    },
+    "predicted_seconds": 148.25840105911564,
+    "seconds_left_before_deadline": 1654.376262292033,
+    "without_NC3": []
+   },
+   "seconds": 45.74193387501873
+  },
+  "E3": {
+   "W": 1000,
+   "status": "CHECKS_PASSED",
+   "NC4": {
+    "M121_L5": {
+     "residual": 1.0108540293973981e-15,
+     "minimum": 1.1480932895143561e-07,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M121_L7": {
+     "residual": 1.2646681841107238e-15,
+     "minimum": 1.0433774683249896e-12,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L5": {
+     "residual": 6.008648109042421e-16,
+     "minimum": 5.703016383444735e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L7": {
+     "residual": 1.2299703436205691e-15,
+     "minimum": 5.199564189070317e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    }
+   },
+   "NC2": {
+    "seeds": [
+     15048,
+     15049,
+     15050,
+     15051,
+     15052,
+     15053,
+     15054,
+     15055
+    ],
+    "shots_per_seed": 250000,
+    "statistics": [
+     {
+      "statistic": "variance",
+      "exact": 0.25,
+      "mean_over_seeds": 0.24882187223209257,
+      "standard_error": 0.0005905717375743614,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_1",
+      "exact": 0.8903773312506859,
+      "mean_over_seeds": 0.8899308734747686,
+      "standard_error": 0.00023222850445676503,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_2",
+      "exact": 0.7663548710355212,
+      "mean_over_seeds": 0.7652755757771832,
+      "standard_error": 0.0004735415712667869,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_3",
+      "exact": 0.6596077502724697,
+      "mean_over_seeds": 0.6580354227990683,
+      "standard_error": 0.000647346829120299,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_4",
+      "exact": 0.5677296519713021,
+      "mean_over_seeds": 0.565898480512548,
+      "standard_error": 0.0007278465224954188,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_5",
+      "exact": 0.4886494399047218,
+      "mean_over_seeds": 0.48644847020184645,
+      "standard_error": 0.0008475444123557305,
+      "pass": true
+     }
+    ],
+    "pass": true
+   },
+   "NC5": {
+    "seeds": [
+     15040,
+     15041,
+     15042,
+     15043,
+     15044,
+     15045,
+     15046,
+     15047
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M121_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 9.355316872474827e-11,
+      "standard_error": 2.8670914995675363e-10,
+      "lhs": 7.715125776990364e-10,
+      "limit": 1.277055084092443e-06,
+      "pass": true
+     },
+     "M121_L7_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 5.884236240621954e-16,
+      "standard_error": 3.628331015172324e-16,
+      "lhs": 1.446387574979125e-15,
+      "limit": 1.277055084092443e-06,
+      "pass": true
+     },
+     "M241_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.1501788817159728e-10,
+      "standard_error": 3.226271381986906e-10,
+      "lhs": 8.779098431902723e-10,
+      "limit": 1.277055084092443e-06,
+      "pass": true
+     }
+    }
+   },
+   "NC6": {
+    "seeds": [
+     15040,
+     15041,
+     15042,
+     15043,
+     15044,
+     15045,
+     15046,
+     15047
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M241_L7_W_history - M241_L7_2W_history": {
+      "mean_paired_difference": 2.710505431213761e-20,
+      "standard_error": 2.710505431213761e-20,
+      "lhs": 9.119832306356949e-20,
+      "limit": 1.277055084092443e-06,
+      "pass": true
+     }
+    }
+   },
+   "admission": {
+    "rate_seconds_per_unit": null,
+    "units": {
+     "E3": 6480000
+    },
+    "predicted_seconds": null,
+    "seconds_left_before_deadline": 1790.7118679169798,
+    "without_NC3": []
+   },
+   "seconds": 45.853399624931626
+  },
+  "E4": {
+   "W": 1000,
+   "status": "CHECKS_PASSED",
+   "NC4": {
+    "M121_L5": {
+     "residual": 1.2815299854327408e-15,
+     "minimum": 1.2189429687214957e-07,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M121_L7": {
+     "residual": 6.800707899422916e-16,
+     "minimum": 1.0642745057280883e-12,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L5": {
+     "residual": 1.1444113257842592e-15,
+     "minimum": 6.08690079387453e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L7": {
+     "residual": 6.938931708452291e-16,
+     "minimum": 5.320268543796067e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    }
+   },
+   "NC2": {
+    "seeds": [
+     15068,
+     15069,
+     15070,
+     15071,
+     15072,
+     15073,
+     15074,
+     15075
+    ],
+    "shots_per_seed": 250000,
+    "statistics": [
+     {
+      "statistic": "variance",
+      "exact": 0.25,
+      "mean_over_seeds": 0.2500857959563913,
+      "standard_error": 0.0003241253676967654,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_1",
+      "exact": 0.7827266935832277,
+      "mean_over_seeds": 0.7828051782380399,
+      "standard_error": 0.0002633570882461595,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_2",
+      "exact": 0.5515781784730095,
+      "mean_over_seeds": 0.5517725258281206,
+      "standard_error": 0.0005592556999281412,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_3",
+      "exact": 0.38869057291867265,
+      "mean_over_seeds": 0.3891070549248527,
+      "standard_error": 0.0005845146523259348,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_4",
+      "exact": 0.2739056173217317,
+      "mean_over_seeds": 0.2742088485459663,
+      "standard_error": 0.0007507787368561494,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_5",
+      "exact": 0.19301802623367606,
+      "mean_over_seeds": 0.19392082487776058,
+      "standard_error": 0.0009679966538878897,
+      "pass": true
+     }
+    ],
+    "pass": true
+   },
+   "NC5": {
+    "seeds": [
+     15060,
+     15061,
+     15062,
+     15063,
+     15064,
+     15065,
+     15066,
+     15067
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M121_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.3185048046453944e-10,
+      "standard_error": 2.1473020977077804e-10,
+      "lhs": 6.3960674191305e-10,
+      "limit": 5.589439621792796e-07,
+      "pass": true
+     },
+     "M121_L7_W_history - M241_L7_W_history": {
+      "mean_paired_difference": -6.742382260144231e-17,
+      "standard_error": 2.4680378479184805e-16,
+      "lhs": 6.510220373613731e-16,
+      "limit": 5.589439621792796e-07,
+      "pass": true
+     },
+     "M241_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.4850278340740927e-10,
+      "standard_error": 2.39457450262725e-10,
+      "lhs": 7.147296773837413e-10,
+      "limit": 5.589439621792796e-07,
+      "pass": true
+     }
+    }
+   },
+   "NC6": {
+    "seeds": [
+     15060,
+     15061,
+     15062,
+     15063,
+     15064,
+     15065,
+     15066,
+     15067
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M241_L7_W_history - M241_L7_2W_history": {
+      "mean_paired_difference": 0.0,
+      "standard_error": 2.0489495137947147e-20,
+      "lhs": 4.844995709414744e-20,
+      "limit": 5.589439621792796e-07,
+      "pass": true
+     }
+    }
+   },
+   "admission": {
+    "rate_seconds_per_unit": 1.1282823285659479e-05,
+    "units": {
+     "E4": 6480000
+    },
+    "predicted_seconds": 73.11269489107342,
+    "seconds_left_before_deadline": 1744.8494892079616,
+    "without_NC3": []
+   },
+   "seconds": 45.95154345803894
+  },
+  "E5": {
+   "W": 1000,
+   "status": "CHECKS_PASSED",
+   "NC4": {
+    "M121_L5": {
+     "residual": 4.967464423842247e-16,
+     "minimum": 1.2386619857327016e-07,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M121_L7": {
+     "residual": 6.166049150400596e-16,
+     "minimum": 1.0657169268599078e-12,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L5": {
+     "residual": 6.042979347011372e-16,
+     "minimum": 6.193187291150434e-08,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    },
+    "M241_L7": {
+     "residual": 5.096334238878557e-16,
+     "minimum": 5.328584209930683e-13,
+     "residual_within_1e-12": true,
+     "min_at_least_-1e-15": true,
+     "pass": true
+    }
+   },
+   "NC2": {
+    "seeds": [
+     15088,
+     15089,
+     15090,
+     15091,
+     15092,
+     15093,
+     15094,
+     15095
+    ],
+    "shots_per_seed": 250000,
+    "statistics": [
+     {
+      "statistic": "variance",
+      "exact": 1.0,
+      "mean_over_seeds": 0.9989448348461933,
+      "standard_error": 0.0019670878176262217,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_1",
+      "exact": 0.5165942797127867,
+      "mean_over_seeds": 0.5157537733965274,
+      "standard_error": 0.0006963712463685732,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_2",
+      "exact": 0.18077583944639114,
+      "mean_over_seeds": 0.1800796517119105,
+      "standard_error": 0.0009114165682333859,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_3",
+      "exact": 0.06326029034954972,
+      "mean_over_seeds": 0.062059697221005086,
+      "standard_error": 0.0012791491983820443,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_4",
+      "exact": 0.02213716361303957,
+      "mean_over_seeds": 0.020560378177736444,
+      "standard_error": 0.0013779464092312764,
+      "pass": true
+     },
+     {
+      "statistic": "acf_lag_5",
+      "exact": 0.007746629206452437,
+      "mean_over_seeds": 0.006419956870353738,
+      "standard_error": 0.001326964416151595,
+      "pass": true
+     }
+    ],
+    "pass": true
+   },
+   "NC5": {
+    "seeds": [
+     15080,
+     15081,
+     15082,
+     15083,
+     15084,
+     15085,
+     15086,
+     15087
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M121_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.2643516356087127e-10,
+      "standard_error": 1.3068342204202318e-10,
+      "lhs": 4.354523525264532e-10,
+      "limit": 5.574999070430821e-07,
+      "pass": true
+     },
+     "M121_L7_W_history - M241_L7_W_history": {
+      "mean_paired_difference": -4.4858864886587746e-18,
+      "standard_error": 1.2127664183028012e-16,
+      "lhs": 2.912595748416292e-16,
+      "limit": 5.574999070430821e-07,
+      "pass": true
+     },
+     "M241_L5_W_history - M241_L7_W_history": {
+      "mean_paired_difference": 1.40250080327847e-10,
+      "standard_error": 1.479735671590815e-10,
+      "lhs": 4.901519657407123e-10,
+      "limit": 5.574999070430821e-07,
+      "pass": true
+     }
+    }
+   },
+   "NC6": {
+    "seeds": [
+     15080,
+     15081,
+     15082,
+     15083,
+     15084,
+     15085,
+     15086,
+     15087
+    ],
+    "record_length": 52000,
+    "window": [
+     2001,
+     52000
+    ],
+    "pairs": {
+     "M241_L7_W_history - M241_L7_2W_history": {
+      "mean_paired_difference": 0.0,
+      "standard_error": 0.0,
+      "lhs": 0.0,
+      "limit": 5.574999070430821e-07,
+      "pass": true
+     }
+    }
+   },
+   "admission": {
+    "rate_seconds_per_unit": 1.129489866817014e-05,
+    "units": {
+     "E5": 6480000
+    },
+    "predicted_seconds": 73.19094336974251,
+    "seconds_left_before_deadline": 1698.8939732500585,
+    "without_NC3": []
+   },
+   "seconds": 44.51475833298173
+  }
+ },
+ "digest": "6f4fd2565b2d7c98"
+}
