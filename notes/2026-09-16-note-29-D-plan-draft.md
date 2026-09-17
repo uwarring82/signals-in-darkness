@@ -83,6 +83,10 @@ at every step. On the review's synthetic two-state fixture, finite differences g
 **0.09116734785**, the corrected recursion agrees, and dividing by Z_n alone gives
 **0.36456553850**. ND4 rejects the omission explicitly.
 
+Confirmed independently here on a different two-state fixture: finite differences give
+0.47444921023, the corrected recursion 0.47444921032 with Σ_i α′_i = 0 to machine precision, while
+α̃′/Z alone gives 2.52093991548 and leaves Σ_i α′_i = 0.474. The invariant is what catches it.
+
 ### 4.3 The estimator is a conditional-information average
 
 S_N = Σ_n u_n is retained **for derivative checks only**. It is not the estimator: S_N²/N is
