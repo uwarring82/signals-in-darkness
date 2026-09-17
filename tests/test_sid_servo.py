@@ -8,9 +8,9 @@ Nothing here models a correlated phase: this module is the independent-phase bas
 assumption roadmap D exists to test.
 """
 import ast
+import hashlib
 import json
 import math
-import subprocess
 import sys
 from pathlib import Path
 
@@ -24,6 +24,12 @@ from sid_lib import I_ext_exact  # noqa: E402
 
 ARTIFACT_PATH = ROOT / "analysis" / "outputs" / "res7B_servo.json"
 STORED = json.loads(ARTIFACT_PATH.read_text())
+ARCHIVE_DIGESTS = {   # sha256 of the files this extraction reproduces, pinned at 17 Sept 2026
+    "analysis/outputs/res7B_servo.json":
+        "10581b505fb7c34cd8bf2c1a044f4f36adf0f275c8fed355d5a5fc5a14f20157",
+    "analysis/runs/sid_run7.py":
+        "ac1466f4a5eaa9c5e1c7504465a5e0a5c42f8a9da81552f0644bc13156e6227f",
+}
 C14_KAPPA_5 = (0.6653, 0.8126, 0.6650, 0.8073)     # the row C14's statement rests on
 
 
@@ -99,11 +105,11 @@ def test_the_extraction_models_an_independent_phase_and_leaves_run7_alone():
     assert not any("run7" in name for name in imports), "the library must not import a run script"
     names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
     assert "rho" not in names, "this module is the independent-phase baseline; D adds correlation"
-    # the published baseline and its producer must be untouched by the extraction: compare the
-    # working tree with what is committed, which is a check that can actually fail
-    for tracked in ("analysis/outputs/res7B_servo.json", "analysis/runs/sid_run7.py"):
-        proc = subprocess.run(["git", "-C", str(ROOT), "diff", "--quiet", "HEAD", "--", tracked],
-                              capture_output=True, text=True, timeout=60)
-        assert proc.returncode == 0, f"{tracked} differs from its committed copy"
+    # Pinned digests, not a comparison with HEAD: comparing with HEAD detects only uncommitted
+    # edits and would accept a committed alteration of the archive, which is what this guard exists
+    # to prevent (review, 17 Sept 2026).
+    for tracked, digest in ARCHIVE_DIGESTS.items():
+        assert hashlib.sha256((ROOT / tracked).read_bytes()).hexdigest() == digest, \
+            f"{tracked} is not the archived file this extraction was checked against"
     run7 = (ROOT / "analysis" / "runs" / "sid_run7.py").read_text()
     assert "def four_outcome" in run7, "run7 keeps its own copy; the extraction does not replace it"

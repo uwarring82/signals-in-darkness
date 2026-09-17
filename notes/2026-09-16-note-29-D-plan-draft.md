@@ -1,4 +1,4 @@
-# Signals in Darkness — note 29: roadmap D, the D0 specification — DRAFT r3 for review
+# Signals in Darkness — note 29: roadmap D, the D0 specification — ACCEPTED r3
 
 **Revision log**
 
@@ -8,9 +8,12 @@
 | 2 | 17 Sept 2026 | `986c48b` | The review's eight decisions adopted; matched marginal, two estimands, a proposed algorithm, checks, uncertainty rules, gates. |
 | 3 | 17 Sept 2026 | this draft | Three mathematical corrections from the review: the latent state is filtered **unwrapped** (the wrapped kernel is a different process); the score recursion carries its **quotient-rule term**; the Fisher estimator becomes the **conditional-information average**, because S_N²/N does not concentrate. Adds the interval construction, corrected cost arithmetic and pre-pilot freezing rules. |
 
-**Status: DRAFT r3.** No D calculation has been run and C14 is unchanged. D gates nothing. The
-baseline library extraction and its synthetic tests are approved to proceed independently of this
-draft; correlated-model checks and pilots await its acceptance.
+**Status: ACCEPTED as the design for implementation, 17 September 2026.** The three mathematical
+blockers of r2 are resolved. Approval covers **D1 implementation, synthetic tests and preparation of
+`analysis/protocol_D.json`**. Correlated design-point checks and pilots await review of that
+concrete protocol, which must supply the tolerances, seeds, record lengths, sizing rule and resource
+limits this note only names. **D2 and roadmap-F Gate 4 remain unapproved.** No D calculation has
+been run and C14 is unchanged; D gates nothing.
 
 ## 1. The problem
 
@@ -113,15 +116,17 @@ time average of log ratios and does concentrate; its precision is still set by t
 
 | Check | Requirement |
 |---|---|
-| ND1 nesting | At ρ = 0, Ĵ and D̂ reproduce the i.i.d. single-shot Fisher information and KL from the extracted run7 functions, under the same discretised marginal, to a stated tolerance. |
+| ND1a Fisher nesting | At ρ = 0 the conditional-information estimator reproduces the i.i.d. single-shot Fisher information **exactly**, to a stated numerical tolerance: it nests by construction, with no sampling term. |
+| ND1b KL nesting | At ρ = 0 the sampled KL average still fluctuates, so it is checked differently: its per-shot increments against the i.i.d. log-likelihood ratios, and its mean against the analytic i.i.d. KL **within sampling uncertainty**, never as an exact identity. |
 | ND2 grid | Convergence in spacing M and tail range L, below a stated fraction of the 2 % tolerance. |
 | ND3 brute force | On short records (N ≤ 8) the filter's likelihood equals an explicit sum over latent grid paths. |
 | ND4 score | The analytic tangent matches central differences on fixed records **and** the un-corrected normalisation (α̃′/Z alone) is rejected, using the two-state fixture above. |
 | ND5 simulator | Stationary variance, first circular moment and ρ̂ reproduce their targets within sampling error. |
 | ND6 marginal | The von Mises baseline (ρ = 0) against the Gaussian baseline (ρ = 0), reported separately as the marginal effect. |
-| ND7 burn-in | The conditional-information average is stable in the discarded burn-in length, by a stated criterion, for both filter and tangent. |
+| ND7 burn-in | The conditional-information average is stable in the discarded burn-in length, by a stated criterion, for the filter, the tangent **and both KL filters**. |
 
-A failed check blocks the outcome.
+A failed check blocks the outcome. Every criterion here — tolerances, record lengths and sampling
+allowances — is frozen in `analysis/protocol_D.json` **before** the checks run.
 
 ## 6. Interval construction and classification
 
@@ -139,8 +144,12 @@ r2 named a generic t-interval without saying how a rate becomes a contrast ratio
    **UNRESOLVED if it straddles 2 %**.
 6. **Nonpositive bounds.** If the lower bound of Ĵ(ρ) is ≤ 0, the ratio is not formed and the point
    is UNRESOLVED, as roadmap F does for R_lo ≤ 0.
-7. **Numerical error.** If the ND2 and ND7 residuals are not below their stated fraction of the
-   tolerance, the point is UNRESOLVED on numerical grounds rather than classified.
+7. **The numerical allowance widens the interval.** Passing a convergence threshold cannot settle a
+   result arbitrarily close to 2 %. The adopted allowance — the ND2 grid and tail residuals, the
+   ND7 burn-in residual, and the numerical uncertainty of J(0) itself — widens the absolute
+   interval before it is compared with the tolerance, and the verdict must survive that widening.
+8. **Touching the boundary is UNRESOLVED.** A widened endpoint that reaches 2 % is neither BELOW
+   nor ABOVE.
 
 The variance channel is reported separately with its own interval. Agreement between the two
 channels is a further statistic, never D's change-from-independence criterion.

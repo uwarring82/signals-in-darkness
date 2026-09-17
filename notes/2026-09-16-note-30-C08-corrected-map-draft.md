@@ -1,4 +1,4 @@
-# Signals in Darkness — note 30: the corrected mid-fringe map — DRAFT r2 for review
+# Signals in Darkness — note 30: the corrected mid-fringe map — ACCEPTED r3
 
 **Revision log**
 
@@ -8,8 +8,10 @@
 | 2 | 17 Sept 2026 | `2f10eb7` | The review's numerical finding adopted. A fourth form separates the numerical correction from the normalisation correction; the contour statistic is corrected from 22 % to 34.4 %; a second, milder cancellation in `rk_exact` is disclosed; the "differ only in the normalisation" sentence is narrowed to the fit; the five decisions are recorded as adopted. |
 | 3 | 17 Sept 2026 | this draft | Three record corrections: the small-signal limit carries its denominator, ρ²a²/(2(1−a²)); the artifact's `forms` metadata lists `archived_stable`; the two high-precision references are distinguished, and the precision finding is stated for the tested cell rather than as a uniform bound. The `rk_exact` decision is recorded as retained. |
 
-**Status: DRAFT r2.** A deterministic recomputation. No claim changes here: C08 keeps the scope note
-27 gave it, its four quoted coarse-grid thresholds. `sid_run3.py`, `res3_comparator.json` and the
+**Status: ACCEPTED, 17 September 2026, at r3.** The review reproduced all four committed maps and
+their comparison statistics, and confirmed that the numerical arrays are unchanged, that the
+metadata now lists all four forms, and that provenance names `277f18f`. No claim changes here: C08
+keeps the scope note 27 gave it, its four quoted coarse-grid thresholds. `sid_run3.py`, `res3_comparator.json` and the
 figure are untouched, and the guard pinning the archived defect still passes.
 
 ## 1. What was built
