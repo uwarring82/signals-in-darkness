@@ -95,8 +95,12 @@ def geometric_rate_stable(rho, a):
 
         R = -0.5 log1p(-eps),  eps = (a - t)^2 / (2 (1 - a t + S)),  a - t = 2 rho a,
 
-    and no step subtracts near-equal quantities. The small-signal limit R -> 0.5 rho^2 a^2 follows
-    directly. The historical form loses that limit entirely once rho a falls below about 1e-4."""
+    and no step subtracts near-equal quantities. At fixed a < 1 and rho -> 0 this gives
+
+        R ~ rho^2 a^2 / (2 (1 - a^2)) = 0.5 sum_{k>=1} (rho a^k)^2,
+
+    which reduces to 0.5 rho^2 a^2 only when a is small as well. The historical form loses that
+    limit entirely once rho a falls below about 1e-4."""
     t = a * (1 - 2 * rho)
     gap = 2 * rho * a                                    # a - t, formed exactly
     S = np.sqrt(np.maximum((1 - a * a) * (1 - t * t), 0.0))
@@ -252,9 +256,12 @@ def main(argv):
         "scope": "roadmap F is OPEN: no finite-window comparator is validated against the exact "
                  "binary likelihood. This corrects a comparator's lag-one normalisation and "
                  "establishes no finite-window truth map. C08's claim is unchanged.",
-        "forms": {"archived": "rho = r1/(F phi), a = phi (sid_run3.py, the defect)",
-                  "fit": "rho = r1/phi, a = phi (sid_run4.py gp_rate_geomfit, first lag r1)",
-                  "series": f"{TERMS}-term sinh series with A = F(u), {NF} midpoint frequencies"},
+        "forms": {"archived": "rho = r1/(F phi), a = phi, historical arithmetic (sid_run3.py, the defect)",
+                  "archived_stable": "rho = r1/(F phi), a = phi, cancellation-free arithmetic: "
+                                     "isolates the numerical correction at the archived normalisation",
+                  "fit": "rho = r1/phi, a = phi, cancellation-free (sid_run4.py gp_rate_geomfit, first lag r1)",
+                  "series": f"{TERMS}-term sinh series with A = F(u), {NF} midpoint frequencies; "
+                            "also replaces the geometric higher lags, so not a pure normalisation change"},
         "grid": {"T2_over_t_dead": grid["T2"], "t_dead": grid["td"], "g_sigma_x_T2": grid["gs"] * grid["T2"],
                  "C0": C0s.tolist(), "tau_c_over_t_dead": tcs.tolist(),
                  "tau": grid["taus"].tolist(), "source": "sid_run3.py, read through the AST"},

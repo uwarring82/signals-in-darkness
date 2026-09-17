@@ -5,7 +5,8 @@
 | r | Date | Commit | Change |
 |---|---|---|---|
 | 1 | 16 Sept 2026 | `19e3c46` | First draft: the producer, the three forms, the threshold comparison. |
-| 2 | 17 Sept 2026 | this draft | The review's numerical finding adopted. A fourth form separates the numerical correction from the normalisation correction; the contour statistic is corrected from 22 % to 34.4 %; a second, milder cancellation in `rk_exact` is disclosed; the "differ only in the normalisation" sentence is narrowed to the fit; the five decisions are recorded as adopted. |
+| 2 | 17 Sept 2026 | `2f10eb7` | The review's numerical finding adopted. A fourth form separates the numerical correction from the normalisation correction; the contour statistic is corrected from 22 % to 34.4 %; a second, milder cancellation in `rk_exact` is disclosed; the "differ only in the normalisation" sentence is narrowed to the fit; the five decisions are recorded as adopted. |
+| 3 | 17 Sept 2026 | this draft | Three record corrections: the small-signal limit carries its denominator, ρ²a²/(2(1−a²)); the artifact's `forms` metadata lists `archived_stable`; the two high-precision references are distinguished, and the precision finding is stated for the tested cell rather than as a uniform bound. The `rk_exact` decision is recorded as retained. |
 
 **Status: DRAFT r2.** A deterministic recomputation. No claim changes here: C08 keeps the scope note
 27 gave it, its four quoted coarse-grid thresholds. `sid_run3.py`, `res3_comparator.json` and the
@@ -67,7 +68,12 @@ form reduces exactly, with t = a(1−2ρ) and S = √((1−a²)(1−t²)):
   R = −½·log((1 + a t + S)/2),  and since (1 − a t)² − S² = (a − t)² exactly,
   **R = −½·log1p(−ε),  ε = (a − t)² / (2(1 − a t + S)),  a − t = 2ρa.**
 
-No step subtracts near-equal quantities, and the small-signal limit R → ½ρ²a² follows directly.
+No step subtracts near-equal quantities. At fixed a < 1 and ρ → 0 this gives
+
+  R ~ ρ²a² / (2(1 − a²)) = ½ Σ_{k≥1} (ρa^k)²,
+
+which reduces to ½ρ²a² only when a is small as well; r2 stated the limit without its denominator.
+The implemented formula gives the correct limit either way.
 
 At the review's cell (C̄₀ = 0.05, τ_c/t_dead = 0.1), maximised over the same τ grid:
 
@@ -87,12 +93,19 @@ rate formula: `sid_lib.rk_exact` computes r₁ as exp(−s²(1−a₁)) − exp(
 9.6×10⁻⁹ relative at this cell, and the rate goes as r₁². The algebraically equivalent
 C̄²e^{−s²}sinh(s²a₁) is accurate to 1×10⁻¹⁶ there.
 
-`rk_exact` is committed arithmetic shared by run3, run4 and the roadmap-F work, so this map keeps
-it: changing it would break comparability with the archive and reach beyond C08. The effect is far
-below anything that matters here — it moves no winner and no threshold — but the corrected rates in
-the far corner are accurate to about 10⁻⁸ relative, not to machine precision. **Decision requested:**
-leave `rk_exact` alone and keep this disclosure, or switch the corrected forms to the sinh form and
-report the difference.
+`rk_exact` is committed arithmetic shared by run3, run4 and the roadmap-F work. **Decision
+(review): retain it here, with this disclosure.** The measured residual does not warrant changing a
+shared library or roadmap F, and changing it would break comparability with the archive.
+
+The precision statement belongs to the tested cell, not to the map: **at C̄₀ = 0.05,
+τ_c/t_dead = 0.1 the stable value agrees with a 70-digit evaluation to 1.9×10⁻⁸**, and that gap is
+r₁'s cancellation entering as r₁². It is a measurement at one cell, not a uniform error bound, and
+it moves no winner and no threshold.
+
+**The two high-precision references differ in their last digits, for a reason.** The review's check
+held the floating-point ρ fixed and evaluated the rate formula alone; this note's recomputes r₁ at
+high precision as well. The first isolates the rate formula, the second isolates `rk_exact`, and
+their difference is exactly the second cancellation. Both confirm the stable rate formula.
 
 ## 4. Scope
 
@@ -120,6 +133,8 @@ arithmetic defect; it establishes no finite-window truth model.
 4. **The figure is deferred.**
 5. **The artifact is committed**, regenerated from the clean committed producer. (The r1 artifact
    recorded `29302f6+dirty`.)
+6. **`sid_lib.rk_exact` is retained** as it stands, with the §3 disclosure stated for the tested
+   cell. The shared library and roadmap F are not touched.
 
 ## 7. Independent verification by the review
 

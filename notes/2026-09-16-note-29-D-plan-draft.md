@@ -1,134 +1,159 @@
-# Signals in Darkness — note 29: roadmap D, the D0 specification — DRAFT r2 for review
+# Signals in Darkness — note 29: roadmap D, the D0 specification — DRAFT r3 for review
 
 **Revision log**
 
 | r | Date | Commit | Change |
 |---|---|---|---|
 | 1 | 16 Sept 2026 | `29302f6` | First plan: what exists, the information-rate diagnosis, eight open decisions. |
-| 2 | 17 Sept 2026 | this draft | The review's decisions adopted. Adds the phase model with a matched marginal, two separate estimands, an observed-record algorithm with convergence criteria and a cost estimate, numerical checks, uncertainty rules, the classification rule and the gate structure. Records the von Mises versus Gaussian marginal problem the review identified. |
+| 2 | 17 Sept 2026 | `986c48b` | The review's eight decisions adopted; matched marginal, two estimands, a proposed algorithm, checks, uncertainty rules, gates. |
+| 3 | 17 Sept 2026 | this draft | Three mathematical corrections from the review: the latent state is filtered **unwrapped** (the wrapped kernel is a different process); the score recursion carries its **quotient-rule term**; the Fisher estimator becomes the **conditional-information average**, because S_N²/N does not concentrate. Adds the interval construction, corrected cost arithmetic and pre-pilot freezing rules. |
 
-**Status: DRAFT r2.** No D calculation has been run, no D code exists yet, and C14 is unchanged. D
-gates nothing (`ledgers/roadmap.yaml`: `gates_freeze: false`).
+**Status: DRAFT r3.** No D calculation has been run and C14 is unchanged. D gates nothing. The
+baseline library extraction and its synthetic tests are approved to proceed independently of this
+draft; correlated-model checks and pilots await its acceptance.
 
-## 1. The problem, restated
+## 1. The problem
 
 The four-outcome likelihood exists only inline in [`sid_run7.py`](../analysis/runs/sid_run7.py) §B,
-where the oscillator phase is redrawn independently every shot. With an AR(1) oscillator phase the
-record is no longer i.i.d., so D's answer is a per-shot information **rate**. Marginalising a
-correlated phase shot by shot would keep exactly the independence assumption D exists to test.
-
-**The marginal problem** (review, r2). Run7's phase is von Mises with concentration κ. The
-project's AR(1) machinery is Gaussian, so adopting it changes the *marginal* as well as adding
-correlation, and a naive comparison would attribute both effects to correlation. D therefore fixes
-the marginal by construction and measures the marginal change separately.
+with the oscillator phase redrawn independently each shot. Under an AR(1) oscillator phase the
+record is not i.i.d., so D's answer is a per-shot information **rate**. Run7's phase is von Mises,
+so adopting a Gaussian AR(1) process changes the marginal as well as adding correlation; D fixes the
+marginal by construction and measures the residual difference separately.
 
 ## 2. Model
 
-**Phase.** A point-sampled Gaussian AR(1) process, wrapped to the circle:
+**Phase.** A point-sampled Gaussian AR(1) process:
 
-  x_n = ρ x_{n−1} + √(1−ρ²) σ ξ_n,  ξ_n ~ N(0,1) i.i.d.,  φ_n = x_n mod 2π,  x ~ N(0, σ²) stationary.
+  x_n = ρ x_{n−1} + √(1−ρ²) σ ξ_n,  ξ_n ~ N(0,1) i.i.d.,  x ~ N(0, σ²) stationary,
 
-**Marginal matching.** σ is fixed by matching the stationary first circular moment to the von Mises
-distribution at the same κ:
+with the emission periodic in x. **σ is fixed by matching the stationary first circular moment** to
+the von Mises at the same κ: E[e^{ix}] = e^{−σ²/2} = I₁(κ)/I₀(κ). Matching that moment does not make
+the distributions identical; the residual is measured in ND6 and never folded into the correlation
+effect. The exact σ values for κ = 5 and κ = 10 are computed to full precision and frozen at D1.
 
-  E[e^{i φ}] = e^{−σ²/2} = I₁(κ)/I₀(κ).
+**Correlation.** τ_osc = 5 shots, ρ = e^{−1/5}, with ρ = 0 as the matched control at the same σ. A
+declared sensitivity choice.
 
-Matching this moment does **not** make the two distributions identical; the residual difference is
-measured and reported separately (§5, ND6), never folded into the correlation effect. The exact σ
-values for κ = 5 and κ = 10 are computed to full precision and frozen in the D1 specification.
+**Emission.** Run7's law at fixed phase offsets, conditionally independent given the phase:
 
-**Correlation.** τ_osc = 5 shots, so ρ = e^{−1/5}, with ρ = 0 as the matched control at the same σ.
-This is a declared sensitivity choice, not an inference from any measurement.
+  P(B₁,B₂ | x, ε) = ¼ (1 + B₁ C̄₁ cos(x+ph₁)) (1 + B₂ C̄₂ cos(x+ε+ph₂)),  C̄₁ = C̄₂ = 0.9.
 
-**Emission.** Run7's four-outcome law at fixed phase offsets, conditionally independent given φ:
+**Signal.** The variance channel keeps run7's white Gaussian modulation, s = 0.3; oscillator
+parameters are identical under both hypotheses.
 
-  P(B₁,B₂ | φ, ε) = ¼ (1 + B₁ C̄₁ cos(φ+ph₁)) (1 + B₂ C̄₂ cos(φ+ε+ph₂)),  C̄₁ = C̄₂ = 0.9.
-
-**Signal.** The variance channel keeps run7's white Gaussian modulation, s = 0.3, and the oscillator
-parameters are held identical under both hypotheses.
-
-**Phase offsets and records.** The offsets are frozen at the maximisers found at ρ = 0 under the
-matched marginal, and the same offsets are used at every ρ. Records are paired across ρ by common
-random numbers: the same innovation and outcome streams drive both, so the comparison is paired.
+**Offsets and records.** Offsets are frozen at the maximisers found at ρ = 0 under the matched
+marginal and reused at every ρ. Records are paired across ρ by common random numbers.
 
 ## 3. Two estimands, kept distinct
 
-Run7 uses two different definitions, and the review requires both to survive.
-
 | Channel | Run7, independent phase | D, correlated phase |
 |---|---|---|
-| Slope | `sqrt(FI_eps)` | C_eff,slope(ρ) = √J(ρ), J = Fisher-information **rate** |
-| Variance | invert `I_ext_exact(C_eff, 0.3) = KL` | invert `I_ext_exact(C_eff, 0.3) = D(ρ)`, D = KL **rate** |
+| Slope | `sqrt(FI_eps)` | C_eff,slope(ρ) = √J(ρ), J a Fisher-information **rate** |
+| Variance | invert `I_ext_exact(C_eff, 0.3) = KL` | invert `I_ext_exact(C_eff, 0.3) = D(ρ)`, D a KL **rate** |
 
-  J(ρ) = lim_N (1/N) E[(∂_ε log p_ε(Y₁..Y_N)|_{ε=0})²],
-  D(ρ) = lim_N (1/N) E₁[log p₁(Y₁..Y_N) / p₀(Y₁..Y_N)].
+A small-ε Fisher calculation cannot substitute for the finite-amplitude variance KL.
 
-A small-ε Fisher calculation cannot substitute for the finite-amplitude variance KL, and neither
-channel's number is a substitute for the other's.
+## 4. Algorithm
 
-## 4. Algorithm: observed-record, no single-shot averaging
+### 4.1 The latent state is filtered unwrapped
 
-Averaging a single-shot Fisher information over the stationary phase would retain the original
-problem, so both estimands are computed from whole records through a grid filter.
+r2 proposed a filter over the wrapped phase. **That is a different process.** States x and x+2π
+share a wrapped phase, but their next-step means ρx and ρx + 2πρ differ by 2πρ, which is not
+equivalent modulo 2π for general ρ: the wrapped chain is not a lumping of the Gaussian one, and a
+projection preserves the Markov property only under lumpability conditions that do not hold here.
 
-**Filter.** M phase points on (−π, π]; transition T[i,j] from the wrapped normal density of
-x_j − ρ x_i with variance (1−ρ²)σ², summed over K wrapping images and row-normalised; the
-stationary vector is the discretised wrapped normal, checked against the filter's own fixed point.
-Forward step: α̃_n = (Tᵀ α_{n−1}) ⊙ E_{y_n}; Z_n = Σ α̃_n; α_n = α̃_n / Z_n.
+D therefore filters the **unwrapped Gaussian state on a truncated real grid**:
 
-**Score recursion (slope channel).** Differentiate that recursion in ε at ε = 0:
+- grid x_i on [−L σ, L σ] with M points;
+- T[i,j] ∝ N(x_j ; ρ x_i, (1−ρ²)σ²), rows normalised;
+- the periodic emissions are evaluated directly at x_i, no wrapping step;
+- initialisation is the **discretised chain's own stationary distribution** (left eigenvector of T),
+  not the continuous N(0, σ²);
+- convergence is in **grid spacing (M) and tail range (L)**, replacing r2's wrapping-range check.
 
-  α̃′_n = (Tᵀ α′_{n−1}) ⊙ E + (Tᵀ α_{n−1}) ⊙ ∂_ε E,  S_N = Σ_n Z′_n / Z_n,
+### 4.2 Filter and tangent, with the quotient-rule term
 
-with ∂_ε P = ¼ (1 + B₁C̄₁cos(φ+ph₁)) (−B₂ C̄₂ sin(φ+ε+ph₂)) analytic, both vectors renormalised by
-Z_n each step. Estimator: Ĵ = S_N²/N, averaged over R independent records generated at ε = 0.
+  α̃_n = (Tᵀ α_{n−1}) ⊙ E_{y_n},  Z_n = Σ_i α̃_{n,i},  α_n = α̃_n / Z_n,
+  α̃′_n = (Tᵀ α′_{n−1}) ⊙ E_{y_n} + (Tᵀ α_{n−1}) ⊙ ∂_ε E_{y_n},  Z′_n = Σ_i α̃′_{n,i},
+  **u_n = Z′_n / Z_n,  α′_n = α̃′_n / Z_n − α_n u_n.**
 
-**Variance channel.** Two filters per record — emissions marginalised over the per-shot white
-Gaussian on run7's own 41-point grid, against unmodulated emissions — accumulating the
-log-likelihood ratio under p₁; D̂ = (1/N) Σ_n log(Z¹_n / Z⁰_n).
+r2 said only that both vectors are renormalised by Z_n, which is wrong: the normalised filter is a
+quotient, so its derivative carries the second term. The invariant **Σ_i α′_{n,i} = 0** is asserted
+at every step. On the review's synthetic two-state fixture, finite differences give
+**0.09116734785**, the corrected recursion agrees, and dividing by Z_n alone gives
+**0.36456553850**. ND4 rejects the omission explicitly.
 
-**Cost.** Both are O(M²) per shot. At M = 256, N = 2×10⁵ and R = 16 a cell is of order 10¹⁰
-floating-point operations, expected in the minutes on one thread. **This is an estimate, not a
-measurement**; D1 measures it before D2 is proposed.
+### 4.3 The estimator is a conditional-information average
+
+S_N = Σ_n u_n is retained **for derivative checks only**. It is not the estimator: S_N²/N is
+unbiased for the finite-record information but its per-record variance need not shrink with N. Even
+for i.i.d. Bernoulli data, averaging 16 such estimates leaves about **35 % relative standard error
+in J** however long the records, so longer records alone do not cure it.
+
+The estimator averages the conditional information along the filtered history:
+
+  Ĵ = (1/N) Σ_n Σ_{y ∈ 4 outcomes} [∂_ε p_ε(y | Y_{<n})]² / p_ε(y | Y_{<n}) |_{ε=0},
+
+with p_ε(y | Y_{<n}) = Σ_i (Tᵀα_{n−1})_i E_y(x_i, ε) and its derivative taken from the same tangent.
+This keeps the full-history filter and tangent — it is **not** stationary single-shot averaging —
+and at ρ = 0 it reduces exactly to the i.i.d. single-shot Fisher information, which supplies an
+exact nesting check.
+
+### 4.4 The KL rate
+
+Two filters per record — emissions marginalised over run7's own 41-point white-Gaussian grid,
+against unmodulated emissions — accumulating D̂ = (1/N) Σ_n log(Z¹_n / Z⁰_n) under p₁. This is a
+time average of log ratios and does concentrate; its precision is still set by the pilot.
 
 ## 5. Numerical checks, all before any outcome-bearing run
 
 | Check | Requirement |
 |---|---|
-| ND1 nesting | At ρ = 0 the filter's rates reproduce the single-shot Fisher information and single-shot KL computed directly from the extracted run7 functions, under the same discretised marginal. |
-| ND2 grid | Convergence in M and in the wrapping range K: the change in C_eff is below a stated fraction of the 2 % tolerance. |
+| ND1 nesting | At ρ = 0, Ĵ and D̂ reproduce the i.i.d. single-shot Fisher information and KL from the extracted run7 functions, under the same discretised marginal, to a stated tolerance. |
+| ND2 grid | Convergence in spacing M and tail range L, below a stated fraction of the 2 % tolerance. |
 | ND3 brute force | On short records (N ≤ 8) the filter's likelihood equals an explicit sum over latent grid paths. |
-| ND4 score | The analytic score matches a central difference in ε on fixed records, to a stated tolerance. |
-| ND5 simulator | The simulated phase reproduces σ², the first circular moment and ρ within sampling error. |
-| ND6 marginal | The von Mises baseline (run7's own marginal, ρ = 0) against the Gaussian baseline (ρ = 0): reported as the marginal effect, never as part of the correlation effect. |
+| ND4 score | The analytic tangent matches central differences on fixed records **and** the un-corrected normalisation (α̃′/Z alone) is rejected, using the two-state fixture above. |
+| ND5 simulator | Stationary variance, first circular moment and ρ̂ reproduce their targets within sampling error. |
+| ND6 marginal | The von Mises baseline (ρ = 0) against the Gaussian baseline (ρ = 0), reported separately as the marginal effect. |
+| ND7 burn-in | The conditional-information average is stable in the discarded burn-in length, by a stated criterion, for both filter and tangent. |
 
 A failed check blocks the outcome.
 
-## 6. Uncertainty and the classification rule
+## 6. Interval construction and classification
 
-- R = 16 independent records per cell, paired across ρ by common random numbers; intervals are
-  R̄ ± t(0.975, 15)·s/√16.
-- **Primary quantity:** |C_eff,slope(ρ)/C_eff,slope(0) − 1|, compared with 2 %, at the matched
-  marginal and identical phase offsets.
-- **Classification:** BELOW if the interval lies wholly below 2 %; ABOVE if wholly above;
-  **UNRESOLVED if it crosses 2 %.**
-- The variance-channel change is reported separately with its own interval. Agreement between the
-  two channels is a further statistic, not D's change-from-independence criterion.
-- N and R are fixed before the outcome run, sized from a D1 variance pilot on disjoint seeds, as in
-  roadmap F. No top-ups, no outcome-driven extension.
+r2 named a generic t-interval without saying how a rate becomes a contrast ratio. Specified:
 
-## 7. Gates
+1. **Denominator.** J(0) is the directly computed i.i.d. value, deterministic under the matched
+   marginal; it is the primary denominator, not a second Monte-Carlo estimate.
+2. **Interval for J(ρ).** Across R paired records, R̄ ± t(0.975, R−1)·s/√R on Ĵ(ρ).
+3. **Transform.** g(J) = √(J/J(0)) − 1 is monotone increasing, so the signed interval maps
+   endpoint to endpoint.
+4. **Absolute image.** If the signed interval [lo, hi] contains 0, the absolute interval is
+   [0, max(|lo|,|hi|)] — an interval spanning zero must contain zero after the transform. Otherwise
+   it is [min(|lo|,|hi|), max(|lo|,|hi|)].
+5. **Classification.** BELOW if the absolute upper end < 2 %; ABOVE if the lower end > 2 %;
+   **UNRESOLVED if it straddles 2 %**.
+6. **Nonpositive bounds.** If the lower bound of Ĵ(ρ) is ≤ 0, the ratio is not formed and the point
+   is UNRESOLVED, as roadmap F does for R_lo ≤ 0.
+7. **Numerical error.** If the ND2 and ND7 residuals are not below their stated fraction of the
+   tolerance, the point is UNRESOLVED on numerical grounds rather than classified.
 
-- **D0** — this specification, revised.
-- **D1** — extract the four-outcome law into `analysis/lib` with baseline tests that preserve run7's
-  actual search (the variance channel searches `grid[::3]`, the slope channel the full 13×13 grid);
-  implement the filter, score recursion and simulator; run ND1–ND6; measure cost; and freeze a
-  compact `analysis/protocol_D.json` with inputs, estimators, checks, uncertainty rules and budget,
-  plus its digest. Its size reflects D's narrower scope.
-- **D2** — the outcome run at κ = 5 (primary) and κ = 10 (sensitivity), ρ ∈ {0, e^{−1/5}}, and C14's
-  disposition.
+The variance channel is reported separately with its own interval. Agreement between the two
+channels is a further statistic, never D's change-from-independence criterion.
 
-Each gate keeps its own approval; local commits are drafts until accepted.
+## 7. Gates and the pre-pilot freeze
+
+- **D0** — this specification.
+- **D1** — the baseline library extraction with synthetic tests (approved, proceeding), preserving
+  run7's actual search: the variance channel searches `grid[::3]`, the slope channel the full 13×13
+  grid. Then the unwrapped filter, tangent, estimator and simulator; ND1–ND7; a measured cost.
+- **The pre-pilot freeze.** Before the variance pilot runs, freeze in
+  `analysis/protocol_D.json`: the pilot's seeds, record length, deadline, the sizing rule that
+  turns pilot variance into N and R for the outcome run, the numerical tolerances, and the
+  filter/tangent burn-in convergence criteria. Freezing these after the pilot would leave the
+  sizing procedure unspecified.
+- **D2** — the outcome run at κ = 5 (primary) and κ = 10 (sensitivity), ρ ∈ {0, e^{−1/5}}, and
+  C14's disposition.
 
 ## 8. What D will still not settle
 
@@ -137,10 +162,16 @@ Each gate keeps its own approval; local commits are drafts until accepted.
 - Jointly unknown oscillator and signal models stay outside D.
 - On identifiability: comparable correlation times do not by themselves establish
   non-identifiability, and distinct times do not establish identifiability. D reports the size of an
-  effect under a fixed declared design; it makes no identifiability claim.
-- F's eventual pointwise verdicts concern the binary mid-fringe comparator and do not transfer here.
+  effect under a fixed declared design.
+- F's pointwise verdicts concern the binary mid-fringe comparator and do not transfer here.
 
 ## 9. Cost
 
-Not measured. §4's estimate is an expectation to be replaced by D1's measurement, and the budget is
-frozen with the D1 specification before any outcome-bearing computation.
+r2's "~10¹⁰ flops" was wrong in both arithmetic and unit. One propagation per shot at R = 16,
+N = 2×10⁵ and M = 256 is
+
+  R·N·M² = **2.097152×10¹¹ matrix terms**,
+
+and the score recursion adds a second propagation while the KL channel runs two filters, so the
+real count is several times that. This remains an **estimate**: D1 measures it, and no sizing rule
+is set from an unmeasured cost.
