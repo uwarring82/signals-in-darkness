@@ -3,9 +3,10 @@
  "supersedes_nothing": "analysis/outputs/res3_comparator.json and its figure are unchanged; sid_run3.py remains the producer of the historical artifact",
  "scope": "roadmap F is OPEN: no finite-window comparator is validated against the exact binary likelihood. This corrects a comparator's lag-one normalisation and establishes no finite-window truth map. C08's claim is unchanged.",
  "forms": {
-  "archived": "rho = r1/(F phi), a = phi (sid_run3.py, the defect)",
-  "fit": "rho = r1/phi, a = phi (sid_run4.py gp_rate_geomfit, first lag r1)",
-  "series": "6-term sinh series with A = F(u), 1024 midpoint frequencies"
+  "archived": "rho = r1/(F phi), a = phi, historical arithmetic (sid_run3.py, the defect)",
+  "archived_stable": "rho = r1/(F phi), a = phi, cancellation-free arithmetic: isolates the numerical correction at the archived normalisation",
+  "fit": "rho = r1/phi, a = phi, cancellation-free (sid_run4.py gp_rate_geomfit, first lag r1)",
+  "series": "6-term sinh series with A = F(u), 1024 midpoint frequencies; also replaces the geometric higher lags, so not a pure normalisation change"
  },
  "grid": {
   "T2_over_t_dead": 10.0,
@@ -374,13 +375,13 @@
   "fit_matches_r1": true
  },
  "provenance": {
-  "revision": "986c48b",
+  "revision": "277f18f",
   "python": "3.12.14",
   "platform": "macOS-26.6.2-arm64-arm-64bit",
   "machine": "arm64",
   "processor": "arm",
   "blas": "blas 3.9.0",
-  "started": "2026-09-17T08:30:13+0200",
+  "started": "2026-09-17T08:54:43+0200",
   "numpy": "2.4.4",
   "scipy": "1.17.1",
   "matplotlib": "3.10.8"
