@@ -31,11 +31,13 @@ exactly and is checked against iid_log_likelihood_ratios and iid_kl within sampl
 import math
 
 import numpy as np
+from scipy.signal import lfilter
 from scipy.special import i0e, i1e
 
 CONTRAST = 0.9                          # sid_run7 section B's C1 = C2
 SSQ = 0.3 ** 2                          # its white modulation variance
-MODULATION_POINTS = 41                  # its Gauss grid for that modulation
+MODULATION_POINTS = 41                  # its truncated grid for that modulation, kept for comparison
+BLOCK = 1 << 16                         # the simulator's draw block; prefixes agree per whole block
 OUTCOMES = [(b1, b2) for b1 in (-1, 1) for b2 in (-1, 1)]
 
 
@@ -88,8 +90,19 @@ def emissions(x, ph1, ph2, eps=0.0, C1=CONTRAST, C2=CONTRAST):
     return 0.25 * first * second, 0.25 * first * d_second
 
 
-def modulated_emissions(x, ph1, ph2, ssq=SSQ, points=MODULATION_POINTS, **kw):
-    """Emissions marginalised over the white Gaussian signal modulation, on run7's own grid."""
+def modulated_emissions(x, ph1, ph2, ssq=SSQ, C1=CONTRAST, C2=CONTRAST):
+    """The exact Gaussian marginal of the white signal modulation.
+
+    Averaging eps ~ N(0, ssq) gives E[cos(x + eps + ph2)] = exp(-ssq/2) cos(x + ph2), so the
+    marginal law is the emission with C2 attenuated by that factor. This is what the simulator
+    draws from, so the sampled likelihood ratio estimates the stated Gaussian KL exactly, up to the
+    latent grid alone. sid_run7's 41-point truncated sum is a different law by a deterministic
+    amount; modulated_emissions_grid keeps it for that comparison (review, 17 Sept 2026)."""
+    return emissions(x, ph1, ph2, C1=C1, C2=C2 * math.exp(-ssq / 2))[0]
+
+
+def modulated_emissions_grid(x, ph1, ph2, ssq=SSQ, points=MODULATION_POINTS, **kw):
+    """sid_run7 section B's truncated 41-point average, for the deterministic difference only."""
     xs = np.linspace(-4, 4, points) * math.sqrt(ssq)
     weights = np.exp(-xs ** 2 / (2 * ssq))
     weights /= weights.sum()
@@ -169,24 +182,104 @@ def kl_rate(y, chain, E1, E0, burn_in=0):
 
 
 # ------------------------------------------------------------------------------ simulator
-def simulate(chain, ph1, ph2, n, rng, modulated=False, ssq=SSQ, C1=CONTRAST, C2=CONTRAST):
+def ratio_interval(per_record_J, J0, t_quantile):
+    """The interval for g(J) = sqrt(J/J(0)) - 1 from paired per-record estimates of J(rho).
+
+    J(0) is the deterministic reference, never a second Monte-Carlo estimate. g is monotone, so the
+    signed interval maps endpoint to endpoint. A lower bound at or below zero cannot be transformed
+    and is reported instead: the caller records UNRESOLVED without forming the ratio."""
+    values = np.asarray(per_record_J, dtype=float)
+    if len(values) < 2:
+        raise ValueError("an interval needs at least two records")
+    mean = float(values.mean())
+    half = t_quantile * float(values.std(ddof=1)) / math.sqrt(len(values))
+    lo, hi = mean - half, mean + half
+    if lo <= 0:
+        return {"J_mean": mean, "J_lo": lo, "J_hi": hi, "nonpositive": True,
+                "signed": None, "records": len(values)}
+    g = lambda J: math.sqrt(J / J0) - 1                                    # noqa: E731
+    return {"J_mean": mean, "J_lo": lo, "J_hi": hi, "nonpositive": False,
+            "signed": (g(lo), g(hi)), "records": len(values)}
+
+
+def absolute_interval(signed):
+    """The absolute-value image of a signed interval. One that spans zero must contain zero."""
+    lo, hi = signed
+    if lo <= 0 <= hi:
+        return (0.0, max(abs(lo), abs(hi)))
+    return (min(abs(lo), abs(hi)), max(abs(lo), abs(hi)))
+
+
+def allowance_in_ratio_units(relative_J_residuals):
+    """Numerical residuals, given as relative changes in J, converted to ratio units and summed.
+
+    g'(J) J = 1/2 at the reference, so a relative residual in J is half as large in the ratio. They
+    are summed rather than added in quadrature: these are bounds, not independent random errors."""
+    return 0.5 * math.fsum(abs(float(r)) for r in relative_J_residuals)
+
+
+def widen(interval, allowance):
+    """Widen an absolute interval by the numerical allowance, in ratio units."""
+    lo, hi = interval
+    return (max(0.0, lo - allowance), hi + allowance)
+
+
+def classify(interval, tolerance):
+    """BELOW, ABOVE, or UNRESOLVED. Touching the tolerance is UNRESOLVED, not a decision."""
+    lo, hi = interval
+    if hi < tolerance:
+        return "BELOW"
+    if lo > tolerance:
+        return "ABOVE"
+    return "UNRESOLVED"
+
+
+def verdict(per_record_J, J0, t_quantile, relative_J_residuals, tolerance):
+    """The whole rule: interval, absolute image, numerical widening, classification.
+
+    The verdict must survive the widening; a result that only clears the tolerance before it is
+    widened is UNRESOLVED."""
+    interval = ratio_interval(per_record_J, J0, t_quantile)
+    allowance = allowance_in_ratio_units(relative_J_residuals)
+    if interval["nonpositive"]:
+        return {**interval, "allowance": allowance, "absolute": None, "widened": None,
+                "classification": "UNRESOLVED", "reason": "the lower bound of J(rho) is not positive"}
+    absolute = absolute_interval(interval["signed"])
+    widened = widen(absolute, allowance)
+    return {**interval, "allowance": allowance, "absolute": absolute, "widened": widened,
+            "classification": classify(widened, tolerance),
+            "classification_before_allowance": classify(absolute, tolerance)}
+
+
+def simulate(chain, ph1, ph2, n, rng, modulated=False, ssq=SSQ, C1=CONTRAST, C2=CONTRAST, block=BLOCK):
     """The AR(1) phase and its outcomes, in the continuum rather than on the filter's grid.
 
-    Draw order per shot: the phase innovation, then the signal modulation when modulated, then one
-    uniform for the outcome. The phase starts from its stationary law."""
+    Draw order: x_0 = standard_normal() * sigma; then, per block of at most BLOCK shots, the phase
+    innovations, then the signal modulation, then one uniform per shot. The modulation is drawn
+    under both hypotheses and multiplied by zero when unmodulated, so the stream does not depend on
+    the hypothesis and records pair across it as well as across rho.
+
+    Two records from one seed therefore agree on every complete block they share, and differ inside
+    a partial block; the protocol regenerates at its frozen length rather than relying on prefixes
+    of records of different lengths.
+
+    The modulated hypothesis draws eps ~ N(0, ssq) per shot. modulated_emissions is exactly its
+    per-shot marginal given x, so the filter's likelihood ratio estimates the stated Gaussian KL."""
     sigma, rho = chain["sigma"], chain["rho"]
-    x = rng.standard_normal() * sigma
-    innovations = rng.standard_normal(n)
-    signal = rng.standard_normal(n) * math.sqrt(ssq) if modulated else np.zeros(n)
-    uniforms = rng.random(n)
     sd = math.sqrt(1 - rho * rho) * sigma
+    x = rng.standard_normal() * sigma
     y = np.empty(n, dtype=np.int8)
     phases = np.empty(n)
-    for k in range(n):
-        x = rho * x + sd * innovations[k]
-        phases[k] = x
-        c1 = C1 * math.cos(x + ph1)
-        c2 = C2 * math.cos(x + signal[k] + ph2)
-        probabilities = [0.25 * (1 + b1 * c1) * (1 + b2 * c2) for b1, b2 in OUTCOMES]
-        y[k] = int(np.searchsorted(np.cumsum(probabilities), uniforms[k], side="right"))
+    for start in range(0, n, block):
+        nb = min(block, n - start)
+        innovations = rng.standard_normal(nb)
+        signal = rng.standard_normal(nb) * math.sqrt(ssq) * (1.0 if modulated else 0.0)
+        uniforms = rng.random(nb)
+        state, _ = lfilter([1.0], [1.0, -rho], sd * innovations, zi=[rho * x])
+        x = state[-1]
+        phases[start:start + nb] = state
+        c1 = C1 * np.cos(state + ph1)
+        c2 = C2 * np.cos(state + signal + ph2)
+        probabilities = np.stack([0.25 * (1 + b1 * c1) * (1 + b2 * c2) for b1, b2 in OUTCOMES])
+        y[start:start + nb] = (uniforms > np.cumsum(probabilities, axis=0)).sum(axis=0)
     return y, phases

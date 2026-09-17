@@ -6,7 +6,8 @@
 |---|---|---|---|
 | 1 | 16 Sept 2026 | `29302f6` | First plan: what exists, the information-rate diagnosis, eight open decisions. |
 | 2 | 17 Sept 2026 | `986c48b` | The review's eight decisions adopted; matched marginal, two estimands, a proposed algorithm, checks, uncertainty rules, gates. |
-| 3 | 17 Sept 2026 | this draft | Three mathematical corrections from the review: the latent state is filtered **unwrapped** (the wrapped kernel is a different process); the score recursion carries its **quotient-rule term**; the Fisher estimator becomes the **conditional-information average**, because S_N²/N does not concentrate. Adds the interval construction, corrected cost arithmetic and pre-pilot freezing rules. |
+| 3 | 17 Sept 2026 | `986c48b` | Three mathematical corrections from the review: the latent state is filtered **unwrapped** (the wrapped kernel is a different process); the score recursion carries its **quotient-rule term**; the Fisher estimator becomes the **conditional-information average**, because S_N²/N does not concentrate. Adds the interval construction, corrected cost arithmetic and pre-pilot freezing rules. |
+| 4 | 17 Sept 2026 | this draft | Review of the D1 package. The variance channel's likelihood uses the **exact Gaussian marginal**, since the simulator draws a continuous Gaussian and run7's 41-point truncated sum is a different law; that sum stays in the baseline and its deterministic difference is reported. The offsets are **frozen by index with a tie rule**: the variance optimum is fourfold degenerate. Sizing becomes an algorithm, and the allowance, check definitions and execution rules move into the protocol. |
 
 **Status: ACCEPTED as the design for implementation, 17 September 2026.** The three mathematical
 blockers of r2 are resolved. Approval covers **D1 implementation, synthetic tests and preparation of
@@ -41,11 +42,21 @@ declared sensitivity choice.
 
   P(B₁,B₂ | x, ε) = ¼ (1 + B₁ C̄₁ cos(x+ph₁)) (1 + B₂ C̄₂ cos(x+ε+ph₂)),  C̄₁ = C̄₂ = 0.9.
 
-**Signal.** The variance channel keeps run7's white Gaussian modulation, s = 0.3; oscillator
-parameters are identical under both hypotheses.
+**Signal.** The variance channel keeps run7's white Gaussian modulation, s = 0.3, and the
+oscillator parameters are identical under both hypotheses. The likelihood uses that signal's
+**exact** marginal, E[cos(x + ε + ph₂)] = e^{−s²/2} cos(x + ph₂), because the simulator draws the
+continuous Gaussian: run7's 41-point truncated sum is a different law, and using it would make the
+sampled ratio estimate something other than the stated KL. The truncated sum stays in
+`sid_servo.py` as the published baseline, and its deterministic difference — about 1.2×10⁻³
+relative in the KL at both κ — is reported separately, never folded into the correlation effect.
 
-**Offsets and records.** Offsets are frozen at the maximisers found at ρ = 0 under the matched
-marginal and reused at every ρ. Records are paired across ρ by common random numbers.
+**Offsets and records.** Offsets are the maximisers found at ρ = 0 under the matched marginal, and
+are reused at every ρ. They are **frozen by index** in the protocol rather than recomputed at run
+time: the slope optimum is (π/2, π/2) and unique, but the variance optimum is fourfold degenerate —
+(0,0), (0,π), (π,0) and (π,π) agree to about 10⁻¹³ relative — so `argmax` would choose among them by
+roundoff, as it did, picking index 0 at κ = 5 and index 56 at κ = 10. The protocol declares the tie
+rule and stores the chosen index. Records are paired across ρ, and across the two hypotheses, by
+common random numbers.
 
 ## 3. Two estimands, kept distinct
 

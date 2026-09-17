@@ -184,6 +184,125 @@ def test_correlation_raises_the_conditional_information_here():
 
 
 # ------------------------------------------------------------------ purity
+# ------------------------------------------------------------------ ND3 against the production filter
+def test_ND3_the_kl_filter_reproduces_a_brute_force_path_sum_at_nonzero_correlation():
+    """The brute force must check the filter D runs, not a loop rewritten in the test."""
+    chain = sr.latent_chain(0.5, 0.6, 4, 3.0)
+    E0 = sr.emissions(chain["x"], PH1, PH2)[0]
+    E1 = sr.modulated_emissions(chain["x"], PH1, PH2, ssq=0.25)
+    y = [0, 3, 1, 2, 0]
+
+    def brute(E):
+        total = 0.0
+        for path in itertools.product(range(4), repeat=len(y) + 1):
+            w = chain["pi"][path[0]]
+            for n, yn in enumerate(y, 1):
+                w *= chain["T"][path[n - 1], path[n]] * E[yn][path[n]]
+            total += w
+        return math.log(total)
+
+    out = sr.kl_rate(y, chain, E1, E0)
+    assert float(out["increments"].sum()) == pytest.approx(brute(E1) - brute(E0), rel=1e-12)
+
+
+def test_ND3_rejects_replacing_correlated_filtering_with_iid_marginalisation():
+    """At rho > 0 the stationary-marginal shortcut is a different number; the rho = 0 nesting
+    check cannot see this, which is why ND3 runs at nonzero correlation."""
+    chain = sr.latent_chain(0.5, 0.6, 4, 3.0)
+    E0 = sr.emissions(chain["x"], PH1, PH2)[0]
+    E1 = sr.modulated_emissions(chain["x"], PH1, PH2, ssq=0.25)
+    y = [0, 3, 1, 2, 0]
+
+    def brute(E):
+        total = 0.0
+        for path in itertools.product(range(4), repeat=len(y) + 1):
+            w = chain["pi"][path[0]]
+            for n, yn in enumerate(y, 1):
+                w *= chain["T"][path[n - 1], path[n]] * E[yn][path[n]]
+            total += w
+        return math.log(total)
+
+    def iid_marginalised(E):
+        p = E @ chain["pi"]
+        return float(np.sum(np.log(p[np.asarray(y)])))
+
+    truth = brute(E1) - brute(E0)
+    assert abs(iid_marginalised(E1) - iid_marginalised(E0) - truth) > 1e-6
+    assert float(sr.kl_rate(y, chain, E1, E0)["increments"].sum()) == pytest.approx(truth, rel=1e-12)
+
+
+def test_the_analytic_signal_marginal_differs_from_the_truncated_grid_by_a_deterministic_amount():
+    """Finding 1: the simulator draws a continuous Gaussian, so the likelihood must use its exact
+    marginal. run7's 41-point truncated sum is a different law, and the gap is reported, not hidden."""
+    chain = _chain(0.0)
+    x, pi = chain["x"], chain["pi"]
+    E0 = sr.emissions(x, 0.0, 0.0)[0]
+    analytic = sr.iid_kl(sr.modulated_emissions(x, 0.0, 0.0), E0, pi)
+    truncated = sr.iid_kl(sr.modulated_emissions_grid(x, 0.0, 0.0), E0, pi)
+    assert truncated != pytest.approx(analytic, rel=1e-5)
+    assert abs(truncated / analytic - 1) == pytest.approx(1.2e-3, rel=0.25)
+
+
+# ------------------------------------------------------------------ intervals, allowance, verdicts
+T15 = 2.131449545559323
+
+
+def test_the_ratio_interval_transforms_endpoint_to_endpoint_and_refuses_a_nonpositive_bound():
+    values = [1.0] * 8 + [1.2] * 8
+    out = sr.ratio_interval(values, 1.0, T15)
+    half = T15 * float(np.std(values, ddof=1)) / 4
+    assert out["J_lo"] == pytest.approx(1.1 - half) and out["J_hi"] == pytest.approx(1.1 + half)
+    assert out["signed"][0] == pytest.approx(math.sqrt(1.1 - half) - 1)
+    assert out["signed"][1] == pytest.approx(math.sqrt(1.1 + half) - 1)
+    # two widely separated records: the interval reaches below zero, where the transform has no image
+    wide = sr.ratio_interval([0.05, 1.0], 1.0, T15)
+    assert wide["J_lo"] < 0 and wide["nonpositive"] and wide["signed"] is None
+
+
+def test_the_absolute_image_of_an_interval_spanning_zero_contains_zero():
+    assert sr.absolute_interval((-0.01, 0.03)) == (0.0, 0.03)
+    assert sr.absolute_interval((-0.05, 0.02)) == (0.0, 0.05)
+    assert sr.absolute_interval((0.01, 0.03)) == (0.01, 0.03)
+    assert sr.absolute_interval((-0.05, -0.02)) == (0.02, 0.05)
+
+
+def test_the_allowance_is_half_the_relative_residuals_summed():
+    assert sr.allowance_in_ratio_units([0.004, 0.002]) == pytest.approx(0.003)
+    assert sr.allowance_in_ratio_units([]) == 0.0
+    assert sr.widen((0.0, 0.018), 0.003) == pytest.approx((0.0, 0.021))
+    assert sr.widen((0.03, 0.05), 0.011) == pytest.approx((0.019, 0.061))
+
+
+def test_classification_treats_contact_with_the_tolerance_as_unresolved():
+    assert sr.classify((0.0, 0.0199), 0.02) == "BELOW"
+    assert sr.classify((0.0, 0.02), 0.02) == "UNRESOLVED"        # exact contact from below
+    assert sr.classify((0.02, 0.05), 0.02) == "UNRESOLVED"       # exact contact from above
+    assert sr.classify((0.0201, 0.05), 0.02) == "ABOVE"
+    assert sr.classify((0.001, 0.05), 0.02) == "UNRESOLVED"
+
+
+def test_the_numerical_allowance_can_turn_a_decided_verdict_into_unresolved():
+    """The verdict must survive the widening: passing a convergence threshold is not enough."""
+    values = [0.9801, 0.9801, 0.9801, 0.9801] * 4          # sqrt(0.9801) - 1 = -0.01, no spread
+    decided = sr.verdict(values, 1.0, T15, [], 0.02)
+    assert decided["absolute"] == pytest.approx((0.01, 0.01))
+    assert decided["classification"] == "BELOW"
+    widened = sr.verdict(values, 1.0, T15, [0.004, 0.002], 0.02)   # allowance 0.003
+    assert widened["allowance"] == pytest.approx(0.003)
+    assert widened["widened"] == pytest.approx((0.007, 0.013))
+    assert widened["classification"] == "BELOW"
+    exhausted = sr.verdict(values, 1.0, T15, [0.02], 0.02)         # allowance 0.01
+    assert exhausted["widened"] == pytest.approx((0.0, 0.02))
+    assert exhausted["classification"] == "UNRESOLVED", "exact contact after widening"
+    assert exhausted["classification_before_allowance"] == "BELOW", "and it was decided before"
+
+
+def test_a_nonpositive_lower_bound_never_forms_the_ratio():
+    out = sr.verdict([0.05, 1.0], 1.0, T15, [0.001], 0.02)
+    assert out["classification"] == "UNRESOLVED" and out["absolute"] is None
+    assert "not positive" in out["reason"]
+
+
 def test_the_library_does_no_io_and_keeps_the_baseline_separate():
     source = (ROOT / "analysis" / "lib" / "sid_servo_rate.py").read_text()
     tree = ast.parse(source)
