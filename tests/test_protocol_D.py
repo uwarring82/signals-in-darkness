@@ -158,15 +158,45 @@ def test_the_grid_and_burn_in_checks_are_fully_specified():
     assert "i.i.d. marginalisation is rejected" in checks["ND3_brute_force"]["requirement"]
 
 
-def test_the_allowance_has_units_a_combination_rule_and_an_exhaustion_case():
+def test_the_allowance_is_adopted_propagated_and_kept_off_the_sizing_approximation():
     allowance = DOC["allowance"]
     assert len(allowance["inputs"]) == 3 and any("J(0)" in item for item in allowance["inputs"])
-    assert "0.5 x" in allowance["units"]
-    assert "summed, not added in quadrature" in allowance["combination"]
-    assert "survive" in allowance["application"]
+    assert "not certified error bounds" in allowance["nature"]
+    assert "absolute rate units" in allowance["units"]
+    assert "not added in quadrature" in allowance["combination"] and "separate" in allowance["combination"]
+    assert "sqrt((J_lo - e_rho)/(J0 + e_0))" in allowance["application"]
+    assert "first order" in allowance["application"]
+    assert "never in classification" in allowance["sizing_only"]
+    assert "UNRESOLVED" in allowance["nonpositive"]
     assert "UNRESOLVED_NUMERICAL" in allowance["exhaustion"] and "0.005" in allowance["exhaustion"]
     entering = [k for k, v in DOC["numerical_checks"].items() if isinstance(v, dict) and v.get("enters_allowance")]
     assert sorted(entering) == ["ND2_grid", "ND7_burn_in"]
+
+
+def test_the_score_and_simulator_checks_bind_their_acceptance_choices():
+    nd4 = DOC["numerical_checks"]["ND4_score"]
+    assert nd4["finite_difference_step"] == 1e-5
+    assert nd4["fixture"]["grid"] == {"M": 61, "L": 5.0} and nd4["fixture"]["seed"] == 7
+    assert nd4["fixture"]["observations"] == 200 and nd4["fixture"]["offsets"] == [0.4, 0.9]
+    assert "1e-12" in nd4["near_zero"] and nd4["rejection_relative"] == 1e-3
+    nd5 = DOC["numerical_checks"]["ND5_simulator"]
+    assert len(nd5["statistics"]) == 3
+    assert "N_eff = N (1 - rho^2)/(1 + rho^2)" in nd5["effective_sample_size"]
+    assert set(nd5["standard_errors"]) == {"variance", "lag_one", "circular_moment"}
+    assert "N_eff" in nd5["standard_errors"]["variance"]
+    assert "every check record" in nd5["aggregation"] and "sqrt(replicates)" in nd5["aggregation"]
+
+
+def test_the_runtime_stop_and_what_the_prediction_charges_are_frozen():
+    execution = DOC["execution"]
+    stop = execution["runtime_stop"]
+    assert "minimum of the applicable ceiling" in stop and "remaining aggregate" in stop
+    assert "setup, simulation and filtering" in stop
+    assert "INCOMPLETE" in stop and "never completed by shortening records" in stop
+    prediction = execution["cost_prediction"]
+    assert "warm-ups included" in prediction and "x 4" in prediction
+    assert "one filter per hypothesis" in prediction and str(bd.PREDICTION_MARGIN) in prediction
+    assert bd.PROPAGATIONS_PER_SHOT == 4
 
 
 def test_the_classification_rule_runs_through_its_reference_implementation():
@@ -176,11 +206,17 @@ def test_the_classification_rule_runs_through_its_reference_implementation():
     assert "UNRESOLVED_NUMERICAL" in DOC["classification"]["states"]
     assert any("touches it" in clause for clause in DOC["classification"]["rule"])
     assert DOC["uncertainty"]["reference_implementation"] == "analysis/lib/sid_servo_rate.py verdict()"
+    t15 = DOC["constants"]["t_0975_df15"]
     values = [0.9801] * DOC["records"]["evaluation"]["replicates"]
-    decided = sr.verdict(values, 1.0, DOC["constants"]["t_0975_df15"], [], tolerance)
-    widened = sr.verdict(values, 1.0, DOC["constants"]["t_0975_df15"], [0.02], tolerance)
+    decided = sr.verdict(values, 1.0, t15, tolerance)
+    widened = sr.verdict(values, 1.0, t15, tolerance, numerator_relative=[0.041])
     assert decided["classification"] == "BELOW"
     assert widened["classification"] == "UNRESOLVED" and widened["classification_before_allowance"] == "BELOW"
+    # the review's counterexample: the first-order form would decide it, the exact one does not
+    counterexample = sr.verdict([1.02096 ** 2] * 16, 1.0, t15, tolerance, denominator_relative=[0.0019])
+    assert counterexample["classification"] == "UNRESOLVED"
+    assert counterexample["classification_before_allowance"] == "ABOVE"
+    assert sr.sizing_allowance_in_ratio_units([0.0019]) < DOC["classification"]["kappa_D"] * tolerance
 
 
 # ------------------------------------------------------------------ sizing, execution, budget

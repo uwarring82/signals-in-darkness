@@ -75,6 +75,8 @@ CONSTANTS = {"t_0975_df7": 2.364624251592784, "t_0975_df15": 2.131449545559776,
 
 BUDGET = {"check_ceiling_seconds": 1800, "pilot_ceiling_seconds": 900,
           "point_ceiling_seconds": 3600, "aggregate_ceiling_seconds": 14400}
+PREDICTION_MARGIN = 1.10
+PROPAGATIONS_PER_SHOT = 4          # Fisher: filter and tangent; KL: one filter per hypothesis
 
 
 def sigma_for(kappa):
@@ -189,10 +191,27 @@ def build():
             "ND4_score": {
                 "requirement": "the analytic tangent matches central differences, and the normalisation "
                                "without the quotient-rule term is rejected",
-                "tolerance_relative": 1e-7, "tangent_sum_absolute": 1e-12, "enters_allowance": False},
+                "fixture": {"kappa": 5.0, "rho": "the design point's rho", "grid": {"M": 61, "L": 5.0},
+                            "offsets": [0.4, 0.9], "observations": 200, "seed": 7},
+                "finite_difference_step": 1e-5,
+                "tolerance_relative": 1e-7,
+                "near_zero": "if the reference score is below 1e-12 in absolute value the comparison is "
+                             "absolute at 1e-12, not relative",
+                "rejection_relative": 1e-3,
+                "tangent_sum_absolute": 1e-12, "enters_allowance": False},
             "ND5_simulator": {
                 "requirement": "stationary variance, lag-one correlation and first circular moment reproduce "
-                               "their targets", "tolerance_standard_errors": 6, "enters_allowance": False},
+                               "their targets",
+                "statistics": ["variance against sigma^2", "lag-one correlation against rho",
+                               "mean of cos(x) against exp(-sigma^2/2)"],
+                "effective_sample_size": "N_eff = N (1 - rho^2)/(1 + rho^2): the draws are correlated and an "
+                                         "i.i.d. standard error would be too small",
+                "standard_errors": {"variance": "sigma^2 sqrt(2/N_eff)",
+                                    "lag_one": "sqrt((1 - rho^2)/N)",
+                                    "circular_moment": "sqrt((0.5 (1 + exp(-2 sigma^2)) - exp(-sigma^2))/N_eff)"},
+                "aggregation": "every check record must satisfy |statistic - target| <= 6 SE, and the mean over "
+                               "the check records must satisfy the same bound with SE/sqrt(replicates)",
+                "tolerance_standard_errors": 6, "enters_allowance": False},
             "ND6_marginal": {
                 "requirement": "the von Mises baseline at rho = 0 against the Gaussian baseline at rho = 0, "
                                "reported separately as the marginal effect, never as correlation",
@@ -213,11 +232,20 @@ def build():
             "inputs": ["the ND2 aggregated relative change in J and in D",
                        "the ND7 aggregated relative change",
                        "the grid residual of J(0) itself, measured the same way"],
-            "units": "each input is a relative change in a rate; the delta method at the reference gives "
-                     "half as much in the ratio, so each contributes 0.5 x |relative change|",
-            "combination": "summed, not added in quadrature: these are bounds, not independent errors",
-            "application": "the summed allowance widens the absolute interval before it is compared with the "
-                           "tolerance, and the verdict must survive that widening",
+            "nature": "adopted numerical allowances, taken from refinement differences; they are not "
+                      "certified error bounds",
+            "units": "absolute rate units: each relative residual multiplies the rate it belongs to, the "
+                     "numerator residuals J_hat(rho) and the denominator residuals J(0)",
+            "combination": "summed within each side, not added in quadrature; numerator and denominator "
+                           "allowances stay separate",
+            "application": "propagated through the ratio before the absolute image is taken: "
+                           "lo = sqrt((J_lo - e_rho)/(J0 + e_0)) - 1 and hi = sqrt((J_hi + e_rho)/(J0 - e_0)) - 1. "
+                           "Widening the absolute interval by half the relative residual is first order at the "
+                           "reference only, and can declare a case the exact transformation leaves open",
+            "nonpositive": "if a permitted numerator or denominator is not positive, the ratio is not formed "
+                           "and the point is UNRESOLVED",
+            "sizing_only": "the first-order form, 0.5 x the summed relative residuals in ratio units, is used "
+                           "in the sizing rule and never in classification",
             "exhaustion": f"if the allowance alone reaches kappa_D x tolerance ({KAPPA_D * TOLERANCE:g}) the "
                           "point is UNRESOLVED_NUMERICAL and is not evaluated",
         },
@@ -230,7 +258,8 @@ def build():
             "reference": "J(0), deterministic and known before the pilot; the pilot records no mean, so no "
                          "measured interval centre enters the sizing",
             "half_width": "h(N) = t_0975_df15 x sqrt(U(N)/R) / (2 J(0)), the delta method at the reference",
-            "requirement": "h(N) + allowance <= kappa_D x tolerance",
+            "requirement": "h(N) + the first-order sizing allowance <= kappa_D x tolerance; sizing may use "
+                           "that approximation, classification may not",
             "solve": "N >= pilot_retained x U x t_0975_df15^2 / (4 R J(0)^2 (kappa_D x tolerance - allowance)^2)",
             "rounding": "round N up to a multiple of 10000, and never below the evaluation minimum",
             "replicates": "R is fixed at 16 for this protocol: the sixteen evaluation seeds and the df = 15 "
@@ -250,9 +279,10 @@ def build():
             "transform": "g(J) = sqrt(J/J(0)) - 1, monotone, endpoint to endpoint",
             "absolute_image": "a signed interval containing 0 maps to [0, max(|lo|,|hi|)]; otherwise "
                               "[min(|lo|,|hi|), max(|lo|,|hi|)]",
-            "numerical_allowance": "see the allowance block: it widens the absolute interval, including J(0)'s "
-                                   "own residual, and the verdict must survive the widening. Passing a "
-                                   "convergence threshold does not settle a result near the tolerance.",
+            "numerical_allowance": "see the allowance block: the adopted allowances, including J(0)'s own "
+                                   "residual, are propagated through the ratio and the verdict must survive "
+                                   "them. Passing a convergence threshold does not settle a result near the "
+                                   "tolerance, and halving the residual is not enough to decide one.",
             "nonpositive": "if the lower bound of J_hat(rho) is <= 0 the ratio is not formed: UNRESOLVED",
             "reference_implementation": "analysis/lib/sid_servo_rate.py verdict()",
         },
@@ -281,6 +311,15 @@ def build():
                                    "every run counts once however many artifacts it writes",
             "admission": "a phase starts only if its predicted cost fits the phase ceiling and the remaining "
                          "aggregate; a point whose prediction exceeds the point ceiling is NOT_ATTEMPTED",
+            "runtime_stop": "a phase stops at its start plus the minimum of the applicable ceiling (checks, "
+                            "pilot or point) and the remaining aggregate budget. The deadline covers setup, "
+                            "simulation and filtering alike, and a run that reaches it is INCOMPLETE with "
+                            "NO_VERDICT: it is never completed by shortening records",
+            "cost_prediction": f"charged per propagation over every shot the phase runs, warm-ups included. "
+                               f"The Fisher pass costs two propagations, the filter and its tangent, and the "
+                               f"KL pass two, one filter per hypothesis: R x (warm_up + retained) x 4 "
+                               f"propagation-shots, times the pilot's measured seconds per propagation-shot, "
+                               f"times a margin of {PREDICTION_MARGIN}",
             "interruption": "artifacts are written before any computation and checkpointed after every step; "
                             "an interrupted or stopped run keeps its elapsed time, is INCOMPLETE and receives "
                             "NO_VERDICT. An unaffordable or interrupted calculation never acquires a verdict "

@@ -210,18 +210,40 @@ def absolute_interval(signed):
     return (min(abs(lo), abs(hi)), max(abs(lo), abs(hi)))
 
 
-def allowance_in_ratio_units(relative_J_residuals):
-    """Numerical residuals, given as relative changes in J, converted to ratio units and summed.
+def sizing_allowance_in_ratio_units(relative_J_residuals):
+    """A first-order allowance in ratio units, for SIZING ONLY.
 
-    g'(J) J = 1/2 at the reference, so a relative residual in J is half as large in the ratio. They
-    are summed rather than added in quadrature: these are bounds, not independent random errors."""
+    g'(J) J = 1/2 at the reference, so a relative residual in J is about half as large in the ratio.
+    Summed, not added in quadrature. This is adequate for choosing N, and it is NOT what classifies
+    a verdict: halving can declare a case that the exact propagation leaves open. The review's
+    counterexample is in the tests."""
     return 0.5 * math.fsum(abs(float(r)) for r in relative_J_residuals)
 
 
-def widen(interval, allowance):
-    """Widen an absolute interval by the numerical allowance, in ratio units."""
-    lo, hi = interval
-    return (max(0.0, lo - allowance), hi + allowance)
+def numerical_allowances(relative_numerator, relative_denominator, J_mean, J0):
+    """The adopted allowances in absolute rate units, kept separate for numerator and denominator.
+
+    They come from refinement differences and are *adopted allowances*, not certified error bounds.
+    Summed, not added in quadrature."""
+    return (math.fsum(abs(float(r)) for r in relative_numerator) * J_mean,
+            math.fsum(abs(float(r)) for r in relative_denominator) * J0)
+
+
+def propagated_signed_interval(J_lo, J_hi, J0, e_rho=0.0, e_0=0.0):
+    """The allowances propagated through the ratio exactly, before the absolute image is taken:
+
+        lo = sqrt((J_lo - e_rho)/(J0 + e_0)) - 1,   hi = sqrt((J_hi + e_rho)/(J0 - e_0)) - 1.
+
+    Widening the absolute interval by half the relative residual instead is only first order at the
+    reference, and can turn a case the exact transformation leaves open into a decision.
+
+    Returns None when a permitted numerator or denominator is not positive; the caller records
+    UNRESOLVED rather than transforming."""
+    numerator_lo, numerator_hi = J_lo - e_rho, J_hi + e_rho
+    denominator_lo, denominator_hi = J0 + e_0, J0 - e_0
+    if numerator_lo <= 0 or denominator_hi <= 0:
+        return None
+    return (math.sqrt(numerator_lo / denominator_lo) - 1, math.sqrt(numerator_hi / denominator_hi) - 1)
 
 
 def classify(interval, tolerance):
@@ -234,21 +256,23 @@ def classify(interval, tolerance):
     return "UNRESOLVED"
 
 
-def verdict(per_record_J, J0, t_quantile, relative_J_residuals, tolerance):
-    """The whole rule: interval, absolute image, numerical widening, classification.
-
-    The verdict must survive the widening; a result that only clears the tolerance before it is
-    widened is UNRESOLVED."""
+def verdict(per_record_J, J0, t_quantile, tolerance, numerator_relative=(), denominator_relative=()):
+    """The whole rule: the sampling interval, the adopted allowances propagated through the ratio,
+    the absolute image, then classification. The verdict must survive the allowance."""
     interval = ratio_interval(per_record_J, J0, t_quantile)
-    allowance = allowance_in_ratio_units(relative_J_residuals)
+    e_rho, e_0 = numerical_allowances(numerator_relative, denominator_relative, interval["J_mean"], J0)
+    result = {**interval, "allowance_numerator": e_rho, "allowance_denominator": e_0}
     if interval["nonpositive"]:
-        return {**interval, "allowance": allowance, "absolute": None, "widened": None,
+        return {**result, "signed_with_allowance": None, "absolute": None,
                 "classification": "UNRESOLVED", "reason": "the lower bound of J(rho) is not positive"}
-    absolute = absolute_interval(interval["signed"])
-    widened = widen(absolute, allowance)
-    return {**interval, "allowance": allowance, "absolute": absolute, "widened": widened,
-            "classification": classify(widened, tolerance),
-            "classification_before_allowance": classify(absolute, tolerance)}
+    signed = propagated_signed_interval(interval["J_lo"], interval["J_hi"], J0, e_rho, e_0)
+    if signed is None:
+        return {**result, "signed_with_allowance": None, "absolute": None, "classification": "UNRESOLVED",
+                "reason": "the allowance admits a nonpositive rate; the ratio is not formed"}
+    absolute = absolute_interval(signed)
+    return {**result, "signed_with_allowance": signed, "absolute": absolute,
+            "classification": classify(absolute, tolerance),
+            "classification_before_allowance": classify(absolute_interval(interval["signed"]), tolerance)}
 
 
 def simulate(chain, ph1, ph2, n, rng, modulated=False, ssq=SSQ, C1=CONTRAST, C2=CONTRAST, block=BLOCK):

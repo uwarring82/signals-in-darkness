@@ -266,11 +266,46 @@ def test_the_absolute_image_of_an_interval_spanning_zero_contains_zero():
     assert sr.absolute_interval((-0.05, -0.02)) == (0.02, 0.05)
 
 
-def test_the_allowance_is_half_the_relative_residuals_summed():
-    assert sr.allowance_in_ratio_units([0.004, 0.002]) == pytest.approx(0.003)
-    assert sr.allowance_in_ratio_units([]) == 0.0
-    assert sr.widen((0.0, 0.018), 0.003) == pytest.approx((0.0, 0.021))
-    assert sr.widen((0.03, 0.05), 0.011) == pytest.approx((0.019, 0.061))
+def test_the_sizing_allowance_is_first_order_and_labelled_for_sizing_only():
+    assert sr.sizing_allowance_in_ratio_units([0.004, 0.002]) == pytest.approx(0.003)
+    assert sr.sizing_allowance_in_ratio_units([]) == 0.0
+    assert "SIZING ONLY" in sr.sizing_allowance_in_ratio_units.__doc__
+
+
+def test_the_allowances_are_absolute_and_kept_on_their_own_side():
+    e_rho, e_0 = sr.numerical_allowances([0.002, 0.001], [0.0019], J_mean=2.0, J0=1.0)
+    assert e_rho == pytest.approx(0.006) and e_0 == pytest.approx(0.0019)
+    assert sr.numerical_allowances([], [], 1.0, 1.0) == (0.0, 0.0)
+    assert "not certified error bounds" in sr.numerical_allowances.__doc__
+
+
+def test_the_allowance_is_propagated_through_the_ratio_not_added_to_it():
+    signed = sr.propagated_signed_interval(1.0, 1.0, 1.0, e_rho=0.0, e_0=0.0019)
+    assert signed[0] == pytest.approx(math.sqrt(1.0 / 1.0019) - 1)
+    assert signed[1] == pytest.approx(math.sqrt(1.0 / 0.9981) - 1)
+    assert sr.propagated_signed_interval(0.001, 1.0, 1.0, e_rho=0.002) is None    # numerator
+    assert sr.propagated_signed_interval(1.0, 1.0, 0.001, e_0=0.002) is None      # denominator
+
+
+def test_the_review_counterexample_is_unresolved_not_above():
+    """J0 = 1, sixteen identical J(rho) = 1.02096^2, denominator residual 0.0019, others zero.
+
+    The first-order allowance, 0.00095 in ratio units, would move the lower endpoint to 0.02001 and
+    declare ABOVE. The permitted denominator 1.0019 gives 1.02096/sqrt(1.0019) - 1 = 0.0199915,
+    below the tolerance, so the case is open. The allowance is well under the 0.005 exhaustion
+    threshold, which therefore does not catch it."""
+    J0, tolerance = 1.0, 0.02
+    values = [1.02096 ** 2] * 16
+    out = sr.verdict(values, J0, T15, tolerance, denominator_relative=[0.0019])
+    assert out["allowance_denominator"] == pytest.approx(0.0019)
+    assert out["signed_with_allowance"][0] == pytest.approx(1.02096 / math.sqrt(1.0019) - 1, rel=1e-12)
+    assert out["signed_with_allowance"][0] < tolerance < out["signed_with_allowance"][1]
+    assert out["classification"] == "UNRESOLVED"
+    assert out["classification_before_allowance"] == "ABOVE"
+    first_order = sr.sizing_allowance_in_ratio_units([0.0019])
+    assert first_order == pytest.approx(0.00095)
+    assert 1.02096 - 1 - first_order > tolerance, "the first-order form would have declared ABOVE"
+    assert first_order < 0.25 * tolerance, "and the exhaustion rule would not have caught it"
 
 
 def test_classification_treats_contact_with_the_tolerance_as_unresolved():
@@ -282,25 +317,25 @@ def test_classification_treats_contact_with_the_tolerance_as_unresolved():
 
 
 def test_the_numerical_allowance_can_turn_a_decided_verdict_into_unresolved():
-    """The verdict must survive the widening: passing a convergence threshold is not enough."""
-    values = [0.9801, 0.9801, 0.9801, 0.9801] * 4          # sqrt(0.9801) - 1 = -0.01, no spread
-    decided = sr.verdict(values, 1.0, T15, [], 0.02)
-    assert decided["absolute"] == pytest.approx((0.01, 0.01))
-    assert decided["classification"] == "BELOW"
-    widened = sr.verdict(values, 1.0, T15, [0.004, 0.002], 0.02)   # allowance 0.003
-    assert widened["allowance"] == pytest.approx(0.003)
-    assert widened["widened"] == pytest.approx((0.007, 0.013))
-    assert widened["classification"] == "BELOW"
-    exhausted = sr.verdict(values, 1.0, T15, [0.02], 0.02)         # allowance 0.01
-    assert exhausted["widened"] == pytest.approx((0.0, 0.02))
-    assert exhausted["classification"] == "UNRESOLVED", "exact contact after widening"
-    assert exhausted["classification_before_allowance"] == "BELOW", "and it was decided before"
+    """The verdict must survive the allowance: passing a convergence threshold is not enough."""
+    values = [0.9801] * 16                                  # sqrt(0.9801) - 1 = -0.01, no spread
+    decided = sr.verdict(values, 1.0, T15, 0.02)
+    assert decided["absolute"] == pytest.approx((0.01, 0.01)) and decided["classification"] == "BELOW"
+    small = sr.verdict(values, 1.0, T15, 0.02, numerator_relative=[0.004, 0.002])
+    assert small["classification"] == "BELOW"
+    large = sr.verdict(values, 1.0, T15, 0.02, numerator_relative=[0.041])
+    assert large["classification"] == "UNRESOLVED"
+    assert large["classification_before_allowance"] == "BELOW", "and it was decided before"
+    assert large["absolute"][1] > 0.02 > large["absolute"][0]
 
 
 def test_a_nonpositive_lower_bound_never_forms_the_ratio():
-    out = sr.verdict([0.05, 1.0], 1.0, T15, [0.001], 0.02)
+    out = sr.verdict([0.05, 1.0], 1.0, T15, 0.02)
     assert out["classification"] == "UNRESOLVED" and out["absolute"] is None
     assert "not positive" in out["reason"]
+    admitted = sr.verdict([1.0] * 16, 1.0, T15, 0.02, denominator_relative=[1.5])
+    assert admitted["classification"] == "UNRESOLVED" and admitted["absolute"] is None
+    assert "nonpositive rate" in admitted["reason"]
 
 
 def test_the_library_does_no_io_and_keeps_the_baseline_separate():
