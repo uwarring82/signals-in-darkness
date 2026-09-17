@@ -1,107 +1,144 @@
-# Signals in Darkness — note 30 (16 Sept 2026): the corrected mid-fringe map — DRAFT for review
+# Signals in Darkness — note 30: the corrected mid-fringe map — DRAFT r2 for review
 
-**Status: DRAFT.** A deterministic recomputation, proposed for review. No claim changes here: C08
-keeps the scope note 27 gave it, its four quoted coarse-grid thresholds. The archived producer
-`sid_run3.py`, its artifact `res3_comparator.json` and its figure are untouched, and the guard that
-pins the archived defect as a negative control still passes.
+**Revision log**
+
+| r | Date | Commit | Change |
+|---|---|---|---|
+| 1 | 16 Sept 2026 | `19e3c46` | First draft: the producer, the three forms, the threshold comparison. |
+| 2 | 17 Sept 2026 | this draft | The review's numerical finding adopted. A fourth form separates the numerical correction from the normalisation correction; the contour statistic is corrected from 22 % to 34.4 %; a second, milder cancellation in `rk_exact` is disclosed; the "differ only in the normalisation" sentence is narrowed to the fit; the five decisions are recorded as adopted. |
+
+**Status: DRAFT r2.** A deterministic recomputation. No claim changes here: C08 keeps the scope note
+27 gave it, its four quoted coarse-grid thresholds. `sid_run3.py`, `res3_comparator.json` and the
+figure are untouched, and the guard pinning the archived defect still passes.
 
 ## 1. What was built
 
-[`analysis/runs/sid_run14.py`](../analysis/runs/sid_run14.py) is the separately identified producer
-note 27 §1 asked for. It reads run3's own grid **from run3's source through the AST**, so the two
-producers cannot drift apart, and computes three rate forms on it:
+[`analysis/runs/sid_run14.py`](../analysis/runs/sid_run14.py) reads run3's grid **from run3's own
+source through the AST** and computes four rate forms on it, τ-optimised against the exact
+dark-extremum rate exactly as run3 does:
 
-| Form | Fitted process | First binary lag |
-|---|---|---|
-| `archived` | `rho = r1/(F phi)`, `a = phi` — sid_run3's call | `r1/F(u)` — the defect |
-| `fit` | `rho = r1/phi`, `a = phi` — run4's `gp_rate_geomfit` | `r1` — the correction |
-| `series` | six-term sinh series, `A = F(u)`, 1024 frequencies | exact `r_k` |
+| Form | Normalisation | Arithmetic | Role |
+|---|---|---|---|
+| `archived` | ρ = r₁/(F φ) | historical | reproduction control for the committed artifact |
+| `archived_stable` | ρ = r₁/(F φ) | cancellation-free | isolates the numerical correction |
+| `fit` | ρ = r₁/φ | cancellation-free | the correction: first lag r₁ |
+| `series` | six-term sinh series, A = F(u) | — | exact r_k; also replaces the higher lags |
 
-Each is τ-optimised against the exact dark-extremum rate exactly as run3 does. The output is
-`analysis/reproduction/res14_corrected_mid_fringe_map.json`; the run takes 9.3 s.
+Output: `analysis/reproduction/res14_corrected_mid_fringe_map.json`, 13 s.
 
 **Provenance control.** The `archived` form recomputed here reproduces the committed artifact
-exactly: all six stored thresholds and the win fraction `0.20037037037037037` are identical, not
-merely close. The corrected forms therefore differ from the archive only in the normalisation.
+exactly: all six stored thresholds and the win fraction `0.20037037037037037` are identical.
 
-## 2. What the correction changes
+## 2. Three separate effects, no longer mixed
 
-**The thresholds C08 quotes do not move.** Under both corrected forms:
+r1 reported a single "archived versus fit" statistic. That mixed an arithmetic artefact with the
+scientific change. Separated:
 
-| C̄₀ column | Archived | Corrected fit | Exact-r_k series |
-|---:|---:|---:|---:|
-| 0.1987 | 901.688 | 901.688 | 901.688 |
-| **0.4004** | **211.759** | **211.759** | **211.759** |
-| **0.4960** | **139.980** | **139.980** | **139.980** |
-| **0.6977** | **75.232** | **75.232** | **75.232** |
-| **0.8994** | **44.842** | **44.842** | **44.842** |
-| 0.9950 | 40.434 | 36.458 | 36.458 |
+| Change | Median shift | Max | Cells beyond 0.01 dec | Winner flips |
+|---|---:|---:|---:|---:|
+| **Numerical** (`archived` → `archived_stable`) | 4.6×10⁻¹¹ dec | 8.50 dec | 740 / 8100 | **0** |
+| **Normalisation** (`archived_stable` → `fit`) | **0.128472 dec = 34.42 %** | 0.825 dec | 6349 / 8100 | **30** |
+| **Higher lags** (`fit` → `series`) | 3×10⁻⁵ dec | 3.4×10⁻⁴ dec | 0 | 2 |
 
-The four bold rows are C08's claim, and they are unchanged, which is what note 27 predicted from the
-continuous solve. The correction is not vacuous, though: the C̄₀ = 0.995 column moves down by 9.8 %,
-and it is only the 10.9 % grid step that keeps the other columns still.
+The corrected contour statistic is therefore **34.4 %, not the 22 % reported in r1**: the old figure
+was depressed by the cancellation. The arithmetic alone flips no winner and moves no threshold — it
+distorts only rates that are already negligible — while the normalisation flips 30 winners and moves
+the win fraction from 0.200370 to 0.204074.
 
-**The map underneath does move.**
+**Thresholds.** All four forms agree in the four columns C08 quotes:
 
-- Winner flips: 30 of 8100 cells between `archived` and `fit` (0.37 %), 28 between `archived` and
-  `series`, and 2 between `fit` and `series`.
-- Win fraction: 0.200370 archived, 0.204074 fit, 0.203827 series.
-- Rate contours: the median absolute change in log₁₀(R_mid/R_ext) from `archived` to `fit` is 0.085,
-  about 22 % in the ratio, reaching +0.78 decades. This is the quantitative form of note 27's
-  warning that the archived rate contours and optimal-time panels are not validated by the survival
-  of the coarse thresholds.
+| C̄₀ | archived | archived_stable | fit | series |
+|---:|---:|---:|---:|---:|
+| 0.4004 | 211.759 | 211.759 | 211.759 | 211.759 |
+| 0.4960 | 139.980 | 139.980 | 139.980 | 139.980 |
+| 0.6977 | 75.232 | 75.232 | 75.232 | 75.232 |
+| 0.8994 | 44.842 | 44.842 | 44.842 | 44.842 |
+| 0.9950 | 40.43352203934773 | 40.43352203934773 | **36.45841237070733** | **36.45841237070733** |
 
-**The two corrected forms agree where it matters.** They give identical thresholds, win fractions
-within 2.5×10⁻⁴, and the same winner in 8098 of 8100 cells. Their largest log-ratio difference, 7.7
-decades, is at τ_c/t_dead = 0.1, C̄₀ = 0.05, where the mid-fringe rate is 1.1×10⁻¹⁶ against an
-extremum rate of 1.2×10⁻¹⁰: a dead channel, not a disagreement about a winner.
+The last row is **outside C08's four quoted thresholds**. It is the only threshold the correction
+moves, by −9.8 %, and it is the normalisation that moves it, not the arithmetic.
 
-## 3. Scope
+## 3. The cancellation, and its cause
 
-**Roadmap F is OPEN.** Gate 3 passed its numerical checks and pilots, and no comparator has been
-validated against the exact finite-window binary likelihood. This work corrects a comparator's
-lag-one normalisation; it does not establish a validated finite-window map, and neither corrected
-form is a truth model. If F closes VALIDATED at E3–E5, that licenses K1 at those tuples only; the
-C08 boundary points E1/E2 exceed their cost cap and will carry no verdict, so the boundary question
-stays open regardless.
+The archived closed form evaluates R = −½·log(α/(1+b²)) with α = 1 + a² − 2ρa². For small ρa the
+numerator and denominator agree to machine precision, so the result is roundoff. The same closed
+form reduces exactly, with t = a(1−2ρ) and S = √((1−a²)(1−t²)):
 
-## 4. Implementation notes worth a reviewer's eye
+  R = −½·log((1 + a t + S)/2),  and since (1 − a t)² − S² = (a − t)² exactly,
+  **R = −½·log1p(−ε),  ε = (a − t)² / (2(1 − a t + S)),  a − t = 2ρa.**
 
-- **The grid is run3's, not a retyped copy.** `run3_grid()` evaluates run3's own assignments for
-  `T2`, `td`, `gs`, `C0s`, `tcs` and `taus`. A test checks the result against the archived grid
-  arrays.
-- **run3's guard is kept.** Taus with `a1 <= 1e-12` contribute zero in every form, as in run3, so
-  the two maps drop the same taus.
-- **One overflow had to be avoided.** The series prefactor `(s² F)^(2m+1)` is not representable on
-  run3's own grid: at τ_c = 0.1 and τ = 30, u = 300 gives F ≈ 6×10¹²⁷, so `(s² F)^11` overflows,
-  although F and φ ≈ 2×10⁻¹³⁵ are both ordinary numbers and their product is small. The kernel is
-  therefore written in `a1 = F φ`, which is algebraically identical and stays below 10⁻³ there. A
-  test pins both halves of that statement.
-- **The producer writes once,** through `sid_repro.reproduction_path`, and opens the archive
-  read-only. A test hashes `res3_comparator.json` around a run.
+No step subtracts near-equal quantities, and the small-signal limit R → ½ρ²a² follows directly.
 
-## 5. Decisions I need
+At the review's cell (C̄₀ = 0.05, τ_c/t_dead = 0.1), maximised over the same τ grid:
 
-1. **Claim disposition.** I propose no new claim, per note 27: hold `res14` as a corrected
-   diagnostic artifact until F closes. The alternative is a new claim for the corrected thresholds,
-   which I do not recommend while the comparator itself is unvalidated.
-2. **Ledger pointer.** Add `res14_corrected_mid_fringe_map.json` to C08's errata field as the
-   corrected recomputation? The field currently points only to note 27.
-3. **The 0.995 column.** State the 40.434 → 36.458 move in the erratum? It lies outside C08's four
-   quoted thresholds but shows the correction has teeth.
-4. **Figure.** None produced. A corrected figure would need its own name and a caption stating that
-   it is not a validated finite-window map; I would rather wait for F.
-5. **Archiving.** The artifact is in `analysis/reproduction/`, which git ignores. Commit it
-   explicitly, as we did for the Gate-3 artifacts, or leave it reproducible-on-demand at 9.3 s?
+| Evaluation | Mid-fringe rate |
+|---|---:|
+| historical arithmetic | 1.0761908808×10⁻¹⁶ |
+| stable arithmetic | 2.2932836135×10⁻²⁴ |
+| 70-digit reference | 2.2932836576×10⁻²⁴ |
 
-## 6. Validation
+**Calling this a dead channel, as r1 did, named the symptom and missed the cause.** The channel is
+indeed negligible there, but the reported number was the arithmetic's own noise floor.
 
-- 8 new tests in [`tests/test_c08_corrected_map.py`](../tests/test_c08_corrected_map.py): the grid
-  against the archive, the vectorised rate against `sid_lib.gp_rate_geom` elementwise, the series
-  kernel against run4's kernel to 10⁻¹², the overflow statement, the lag-one contract separating
-  the two forms, both corrected forms reproducing two committed thresholds at full τ_c resolution,
-  the archive left byte-identical by a run, and an unknown argument refused.
-- The existing fold-provenance guard still passes: the archived form is still rejected by the
-  lag-one contract, which is the point of keeping it.
+### A second cancellation, disclosed
 
-**Not done:** no figure, no claim change, no ledger edit, no public-prose change.
+The stable value still differs from the 70-digit reference by 1.9×10⁻⁸. That residual is not in the
+rate formula: `sid_lib.rk_exact` computes r₁ as exp(−s²(1−a₁)) − exp(−s²(1+a₁)), which loses
+9.6×10⁻⁹ relative at this cell, and the rate goes as r₁². The algebraically equivalent
+C̄²e^{−s²}sinh(s²a₁) is accurate to 1×10⁻¹⁶ there.
+
+`rk_exact` is committed arithmetic shared by run3, run4 and the roadmap-F work, so this map keeps
+it: changing it would break comparability with the archive and reach beyond C08. The effect is far
+below anything that matters here — it moves no winner and no threshold — but the corrected rates in
+the far corner are accurate to about 10⁻⁸ relative, not to machine precision. **Decision requested:**
+leave `rk_exact` alone and keep this disclosure, or switch the corrected forms to the sinh form and
+report the difference.
+
+## 4. Scope
+
+**Roadmap F is OPEN.** Gate 3 passed its checks and pilots; no comparator has been validated against
+the exact finite-window binary likelihood, and F's eventual pointwise verdicts would not
+automatically validate this map. This corrects a comparator's lag-one normalisation and an
+arithmetic defect; it establishes no finite-window truth model.
+
+## 5. Implementation notes
+
+- **The grid is run3's**, evaluated from run3's own assignments; a test checks it against the
+  archived grid arrays.
+- **run3's guard is kept**: taus with a₁ ≤ 1e-12 contribute zero in every form.
+- **One overflow avoided**: the series prefactor (s²F)^11 is not representable on run3's grid — at
+  τ_c = 0.1, τ = 30, F ≈ 6×10¹²⁷ — although F and φ ≈ 2×10⁻¹³⁵ are ordinary and their product is
+  small. The kernel is written in a₁ = Fφ.
+- **One writer**, through `sid_repro.reproduction_path`; the archive is opened read-only, and a test
+  hashes it around a run.
+
+## 6. Decisions, as adopted from the review
+
+1. **C08's scope is retained; no new claim is created.**
+2. **The errata pointer** gains the corrected artifact and this note, after this numerical revision.
+3. **The 0.995 column** is stated explicitly, as lying outside C08's four quoted thresholds.
+4. **The figure is deferred.**
+5. **The artifact is committed**, regenerated from the clean committed producer. (The r1 artifact
+   recorded `29302f6+dirty`.)
+
+## 7. Independent verification by the review
+
+The review reproduced all three r1 maps, ran the 22 targeted tests, and refined the series to 12
+terms and 4096 frequencies: **no winner and no threshold changed**, and the largest relative change
+in the optimised series rate was 9.44×10⁻⁵. It also supplied the dead-corner cell and its 70-digit
+value, which this revision reproduces.
+
+## 8. Validation
+
+- 18 tests in [`tests/test_c08_corrected_map.py`](../tests/test_c08_corrected_map.py): the grid
+  against the archive; the historical form against `sid_lib.gp_rate_geom` elementwise; stable
+  against historical away from the cancellation; **the stable form against a 70-digit evaluation at
+  the review's cell**, with the historical form shown to be wrong there by a factor of 10⁸; the
+  second `rk_exact` cancellation; the series kernel against run4's; the overflow statement; the
+  lag-one contract; **all four forms reproducing the committed thresholds in C08's four columns**;
+  the changed 0.995 column separating the two normalisations; the artifact's separation of the
+  numerical and normalisation effects; the archive left byte-identical; and an unknown argument
+  refused.
+- The fold-provenance guard still rejects the archived form, which is why it is kept.
+
+**Not done:** no figure, no claim change, no public-prose change beyond the ledger's errata pointer.

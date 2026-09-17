@@ -9,9 +9,14 @@ rewrites res3 except to check that the archived form is reproduced.
 Three rate forms on run3's own grid, which is read from its source through the AST so that the two
 producers cannot drift apart:
 
-  archived   rho = r1/(F phi), a = phi   the committed form, recomputed as a reproduction control
-  fit        rho = r1/phi,     a = phi   run4's gp_rate_geomfit; its first lag is r1 (the fix)
-  series     six-term sinh series with A = F(u) at 1024 midpoint frequencies (run4's kernel)
+  archived         rho = r1/(F phi)  historical arithmetic: the committed form, reproduction control
+  archived_stable  rho = r1/(F phi)  the same normalisation, evaluated without cancellation
+  fit              rho = r1/phi      run4's gp_rate_geomfit; its first lag is r1 (the correction)
+  series           six-term sinh series with A = F(u), 1024 midpoint frequencies (run4's kernel)
+
+Comparing archived with archived_stable isolates the numerical correction; comparing
+archived_stable with fit isolates the normalisation correction, which is the one C08 is about.
+The series changes the higher lags as well, so it is not a pure normalisation change.
 
 Each form is tau-optimised against the exact dark-extremum rate, exactly as run3 does: per
 (tau_c, C0) cell the winner is the larger of max_tau R_mid and max_tau R_ext, and the C08
@@ -48,7 +53,7 @@ ARTIFACT = "res14_corrected_mid_fringe_map.json"
 GRID_NAMES = ("T2", "td", "gs", "C0s", "tcs", "taus")
 THRESHOLD_COLUMNS = (0.2, 0.4, 0.5, 0.7, 0.9, 0.99)      # run3's own six contrast columns
 TERMS, NF = 6, 1024
-FORMS = ("archived", "fit", "series")
+FORMS = ("archived", "archived_stable", "fit", "series")
 
 
 def run3_grid():
@@ -69,14 +74,34 @@ def run3_grid():
     return {name: ns[name] for name in GRID_NAMES}
 
 
-def geometric_rate(rho, a):
-    """gp_rate_geom over arrays; identical arithmetic, evaluated elementwise."""
+def geometric_rate_historical(rho, a):
+    """sid_lib.gp_rate_geom over arrays: the archive's own arithmetic, elementwise.
+
+    Kept for the reproduction control only. It subtracts two quantities that agree to machine
+    precision when rho a is small, so it returns roundoff, about 1e-16, where the rate is 1e-24."""
     alpha = 1 + a * a - 2 * rho * a * a
     beta = 2 * a * (rho - 1)
     small = np.abs(beta) < 1e-14
     safe = np.where(small, 1.0, beta)
     b = (-alpha + np.sqrt(np.maximum(alpha * alpha - beta * beta, 0.0))) / safe
     return np.where(small, 0.0, -0.5 * np.log(alpha / (1 + b * b)))
+
+
+def geometric_rate_stable(rho, a):
+    """The same rate, evaluated without cancellation.
+
+    With t = a(1 - 2 rho), the spectrum's Szego form gives R = -0.5 log((1 + a t + S)/2), where
+    S = sqrt((1 - a^2)(1 - t^2)). Since (1 - a t)^2 - S^2 = (a - t)^2 exactly,
+
+        R = -0.5 log1p(-eps),  eps = (a - t)^2 / (2 (1 - a t + S)),  a - t = 2 rho a,
+
+    and no step subtracts near-equal quantities. The small-signal limit R -> 0.5 rho^2 a^2 follows
+    directly. The historical form loses that limit entirely once rho a falls below about 1e-4."""
+    t = a * (1 - 2 * rho)
+    gap = 2 * rho * a                                    # a - t, formed exactly
+    S = np.sqrt(np.maximum((1 - a * a) * (1 - t * t), 0.0))
+    eps = gap * gap / (2 * (1 - a * t + S))
+    return -0.5 * np.log1p(-np.minimum(eps, 1 - 1e-300))
 
 
 def series_kernel(s2, a1, phi):
@@ -105,11 +130,14 @@ def column_rates(Ct, c, r1, a1, phi, kernel, live):
     safe_a1 = np.where(live, a1, 1.0)
     safe_r1 = np.where(live, r1, 0.0)
     safe_phi = np.where(live, phi, 1.0)
-    archived = np.where(live, geometric_rate(safe_r1 / safe_a1, safe_phi), 0.0) / c
-    fit = np.where(live, geometric_rate(safe_r1 / safe_phi, safe_phi), 0.0) / c
+    archived_rho, fit_rho = safe_r1 / safe_a1, safe_r1 / safe_phi
     d = (Ct * Ct)[:, None] * kernel
-    series = np.where(live, 0.5 * np.mean(d - np.log1p(d), axis=1), 0.0) / c
-    return {"archived": archived, "fit": fit, "series": series}
+    return {
+        "archived": np.where(live, geometric_rate_historical(archived_rho, safe_phi), 0.0) / c,
+        "archived_stable": np.where(live, geometric_rate_stable(archived_rho, safe_phi), 0.0) / c,
+        "fit": np.where(live, geometric_rate_stable(fit_rho, safe_phi), 0.0) / c,
+        "series": np.where(live, 0.5 * np.mean(d - np.log1p(d), axis=1), 0.0) / c,
+    }
 
 
 def map_over_grid(grid, stride=1, c0_columns=None):
@@ -176,6 +204,29 @@ def archived_reproduction(rows, win_fraction):
             "win_fraction_identical": bool(archive["tau_optimised_win_fraction"] == win_fraction)}
 
 
+def comparison(maps):
+    """Separate the numerical correction from the normalisation correction.
+
+    archived -> archived_stable is arithmetic alone, at one normalisation. archived_stable -> fit is
+    the lag-one normalisation with the arithmetic held fixed, which is the change C08 is about.
+    fit -> series also replaces the geometric higher lags, so it is not a normalisation change.
+    Reporting archived -> fit alone would mix the first two."""
+    def shifts(a, b):
+        with np.errstate(divide="ignore"):
+            d = np.log10(np.maximum(maps[b]["ratio"], 1e-300)) - np.log10(np.maximum(maps[a]["ratio"], 1e-300))
+        median = float(np.median(np.abs(d)))
+        return {"between": [a, b], "median_abs_log10_shift": median,
+                "median_percent": (10 ** median - 1) * 100,
+                "max_abs_log10_shift": float(np.max(np.abs(d))),
+                "cells_beyond_0p01_decades": int((np.abs(d) > 0.01).sum()),
+                "winner_flips": int(((maps[a]["win"] > 0) != (maps[b]["win"] > 0)).sum())}
+    return {"cells": int(maps["archived"]["win"].size),
+            "numerical_correction": shifts("archived", "archived_stable"),
+            "normalisation_correction": shifts("archived_stable", "fit"),
+            "higher_lag_change": shifts("fit", "series"),
+            "archived_to_fit_combined": shifts("archived", "fit")}
+
+
 def lag_one_contract(C=0.4, s=0.5, u=0.3, c_over_tau_c=0.35):
     """What the correction is: the fitted process's first binary lag, against the exact r1."""
     F, phi = (math.cosh(u) - 1) / (u - 1 + math.exp(-u)), math.exp(-c_over_tau_c)
@@ -222,9 +273,10 @@ def main(argv):
             "tau_over_T2_at_winner": np.round(maps[form]["tau_over_T2"], 6).tolist(),
             "s_at_winner": np.round(maps[form]["s_at_winner"], 6).tolist(),
         }
+    result["comparison"] = comparison(maps)
     if not quick:
         result["archived_reproduction"] = archived_reproduction(result["archived"]["thresholds"],
-                                                               result["archived"]["win_fraction"])
+                                                                result["archived"]["win_fraction"])
     name = ARTIFACT if not quick else ARTIFACT.replace(".json", "_QUICK_NOT_THE_MAP.json")
     path = sid_repro.reproduction_path(name)
     sid_repro.write_json(path, result, default=float, indent=1, allow_nan=False)
